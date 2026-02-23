@@ -1,0 +1,7 @@
+resolved jq 1.8.1 for x86_64-unknown-linux-gnu
+archive: tar.gz
+artifact: https://raw.githubusercontent.com/spiritledsoftware/crosspack-registry/eae5019d94f308f67408d42ce1c08b7bdfc1d9d7/artifacts/jq/jq-1.8.1-x86_64-unknown-linux-gnu.tar.gz
+cache: /home/ianpascoe/.openclaw/workspace-bezalel/projects/crosspack-registry/logs/rootmode-home-v3/.crosspack/cache/artifacts/jq/1.8.1/x86_64-unknown-linux-gnu/artifact.tar.gz (downloaded)
+install_root: /home/ianpascoe/.openclaw/workspace-bezalel/projects/crosspack-registry/logs/rootmode-home-v3/.crosspack/pkgs/jq/1.8.1
+exposed_bins: jq
+receipt: /home/ianpascoe/.openclaw/workspace-bezalel/projects/crosspack-registry/logs/rootmode-home-v3/.crosspack/state/installed/jq.receipt
