@@ -1,0 +1,15 @@
+name = "fd"
+version = "10.3.0"
+license = "Apache-2.0 OR MIT"
+homepage = "https://github.com/sharkdp/fd"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/sharkdp/fd/releases/download/v10.3.0/fd-v10.3.0-x86_64-unknown-linux-gnu.tar.gz"
+sha256 = "c3c2bc79f838e780173fc8f18b337ec273e7ba17c7ff8f551be29fc3c19b7916"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "fd"
+path = "fd"

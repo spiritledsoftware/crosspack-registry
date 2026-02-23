@@ -1,0 +1,19 @@
+name = "crosspack"
+version = "0.1.0"
+license = "MIT"
+homepage = "https://github.com/spiritledsoftware/crosspack"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://raw.githubusercontent.com/spiritledsoftware/crosspack-registry/main/artifacts/crosspack/crosspack-0.1.0-x86_64-unknown-linux-gnu.tar.gz"
+sha256 = "4ad0d120c8dc2e019d990e2f82c35f10ef7684703cebbacc4a8d345e4d27148d"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "crosspack"
+path = "bin/crosspack"
+
+[[artifacts.binaries]]
+name = "cpk"
+path = "bin/cpk"
