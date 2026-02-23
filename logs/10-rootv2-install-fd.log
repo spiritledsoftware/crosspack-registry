@@ -1,7 +1,0 @@
-resolved fd 10.3.0 for x86_64-unknown-linux-gnu
-archive: tar.gz
-artifact: https://github.com/sharkdp/fd/releases/download/v10.3.0/fd-v10.3.0-x86_64-unknown-linux-gnu.tar.gz
-cache: /home/ianpascoe/.openclaw/workspace-bezalel/projects/crosspack-registry/logs/rootmode-home-v2/.crosspack/cache/artifacts/fd/10.3.0/x86_64-unknown-linux-gnu/artifact.tar.gz (downloaded)
-install_root: /home/ianpascoe/.openclaw/workspace-bezalel/projects/crosspack-registry/logs/rootmode-home-v2/.crosspack/pkgs/fd/10.3.0
-exposed_bins: fd
-receipt: /home/ianpascoe/.openclaw/workspace-bezalel/projects/crosspack-registry/logs/rootmode-home-v2/.crosspack/state/installed/fd.receipt
