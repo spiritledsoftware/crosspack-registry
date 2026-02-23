@@ -1,0 +1,37 @@
+name = "fd"
+version = "10.3.0"
+license = "Apache-2.0 OR MIT"
+homepage = "https://github.com/sharkdp/fd"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/sharkdp/fd/releases/download/v10.3.0/fd-v10.3.0-x86_64-unknown-linux-gnu.tar.gz"
+sha256 = "c3c2bc79f838e780173fc8f18b337ec273e7ba17c7ff8f551be29fc3c19b7916"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "fd"
+path = "fd"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/sharkdp/fd/releases/download/v10.3.0/fd-v10.3.0-aarch64-apple-darwin.tar.gz"
+sha256 = "c7f59464783758cddf8f3f5fab1f0f0e8915a8f7adff9773f478e9265dd970c1"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "fd"
+path = "fd"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+url = "https://github.com/sharkdp/fd/releases/download/v10.3.0/fd-v10.3.0-aarch64-pc-windows-msvc.zip"
+sha256 = "013b8f8d1767245f5e23dd7d3707cc9f4d14d4c6ce12a239f5fcab8f70bd4283"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "fd"
+path = "fd.exe"

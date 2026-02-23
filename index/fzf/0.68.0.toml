@@ -1,0 +1,37 @@
+name = "fzf"
+version = "0.68.0"
+license = "MIT"
+homepage = "https://github.com/junegunn/fzf"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/junegunn/fzf/releases/download/v0.68.0/fzf-0.68.0-linux_amd64.tar.gz"
+sha256 = "545004a69eb65bb9adf32000971105ac21aea54bbecb618c55414d21b823fe95"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "fzf"
+path = "fzf"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/junegunn/fzf/releases/download/v0.68.0/fzf-0.68.0-darwin_amd64.tar.gz"
+sha256 = "30f0cfd4a65fd2a7f2ee31f2ca3a2bc0f53ea338f99fca5ec6ee77ebf5fcd5f7"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "fzf"
+path = "fzf"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/junegunn/fzf/releases/download/v0.68.0/fzf-0.68.0-darwin_arm64.tar.gz"
+sha256 = "1be89fbcf6f9cabf0f93f3276f17f580d5303fbf26f10890f0295f267ad50742"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "fzf"
+path = "fzf"

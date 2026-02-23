@@ -1,0 +1,3 @@
+$ cpk --registry-root /home/ianpascoe/.openclaw/workspace-bezalel/projects/crosspack-registry info jq
+Package: jq
+- 1.8.1
