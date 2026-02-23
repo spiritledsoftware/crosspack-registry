@@ -5,11 +5,45 @@ homepage = "https://github.com/jqlang/jq"
 
 [[artifacts]]
 target = "x86_64-unknown-linux-gnu"
-url = "https://raw.githubusercontent.com/spiritledsoftware/crosspack-registry/eae5019d94f308f67408d42ce1c08b7bdfc1d9d7/artifacts/jq/jq-1.8.1-x86_64-unknown-linux-gnu.tar.gz"
-sha256 = "5e486ffa036a9399d669b3941966c75aaca9da2792e8e6cc48fd29ab23674031"
-archive = "tar.gz"
-strip_components = 1
+url = "https://github.com/jqlang/jq/releases/download/jq-1.8.1/jq-linux-amd64"
+sha256 = "020468de7539ce70ef1bceaf7cde2e8c4f2ca6c3afb84642aabc5c97d9fc2a0d"
 
 [[artifacts.binaries]]
 name = "jq"
-path = "bin/jq"
+path = "jq-linux-amd64"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/jqlang/jq/releases/download/jq-1.8.1/jq-linux-arm64"
+sha256 = "6bc62f25981328edd3cfcfe6fe51b073f2d7e7710d7ef7fcdac28d4e384fc3d4"
+
+[[artifacts.binaries]]
+name = "jq"
+path = "jq-linux-arm64"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/jqlang/jq/releases/download/jq-1.8.1/jq-macos-amd64"
+sha256 = "e80dbe0d2a2597e3c11c404f03337b981d74b4a8504b70586c354b7697a7c27f"
+
+[[artifacts.binaries]]
+name = "jq"
+path = "jq-macos-amd64"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/jqlang/jq/releases/download/jq-1.8.1/jq-macos-arm64"
+sha256 = "a9fe3ea2f86dfc72f6728417521ec9067b343277152b114f4e98d8cb0e263603"
+
+[[artifacts.binaries]]
+name = "jq"
+path = "jq-macos-arm64"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/jqlang/jq/releases/download/jq-1.8.1/jq-windows-amd64.exe"
+sha256 = "23cb60a1354eed6bcc8d9b9735e8c7b388cd1fdcb75726b93bc299ef22dd9334"
+
+[[artifacts.binaries]]
+name = "jq"
+path = "jq-windows-amd64.exe"
