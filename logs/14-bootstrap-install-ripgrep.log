@@ -1,0 +1,7 @@
+resolved ripgrep 15.1.0 for x86_64-unknown-linux-gnu
+archive: tar.gz
+artifact: https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz
+cache: /home/ianpascoe/.openclaw/workspace-bezalel/projects/crosspack-registry/logs/bootstrap-home/.crosspack/cache/artifacts/ripgrep/15.1.0/x86_64-unknown-linux-gnu/artifact.tar.gz (downloaded)
+install_root: /home/ianpascoe/.openclaw/workspace-bezalel/projects/crosspack-registry/logs/bootstrap-home/.crosspack/pkgs/ripgrep/15.1.0
+exposed_bins: rg
+receipt: /home/ianpascoe/.openclaw/workspace-bezalel/projects/crosspack-registry/logs/bootstrap-home/.crosspack/state/installed/ripgrep.receipt
