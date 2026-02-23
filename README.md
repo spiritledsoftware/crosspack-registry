@@ -16,13 +16,13 @@ Official Crosspack registry source.
 
 Current artifact coverage in this registry:
 
-- `ripgrep@15.1.0`: linux (`x86_64-unknown-linux-gnu`), darwin (`aarch64-apple-darwin`), windows (`aarch64-pc-windows-msvc`)
-- `fd@10.3.0`: linux (`x86_64-unknown-linux-gnu`), darwin (`aarch64-apple-darwin`), windows (`aarch64-pc-windows-msvc`)
-- `fzf@0.68.0`: linux (`x86_64-unknown-linux-gnu`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`)
-- `jq@1.8.1`: linux (`x86_64-unknown-linux-gnu`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`)
-- `crosspack@0.1.0`: linux only (`x86_64-unknown-linux-gnu`)
+- `crosspack@0.0.2`: linux (`x86_64-unknown-linux-gnu`), darwin (`x86_64-apple-darwin`), windows (`x86_64-pc-windows-msvc`)
+- `ripgrep@15.1.0`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`, `aarch64-pc-windows-msvc`)
+- `fd@10.3.0`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`, `aarch64-pc-windows-msvc`)
+- `fzf@0.68.0`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`, `aarch64-pc-windows-msvc`)
+- `jq@1.8.1`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`)
 
-Caveat: `crosspack@0.1.0` currently has no published official darwin/windows release binaries, so the manifest remains linux-only.
+Caveat: `crosspack@0.0.2` does not yet publish official `aarch64-apple-darwin` or `aarch64-pc-windows-msvc` release assets.
 
 ## Package Update and Rollback Procedure
 

@@ -1,3 +1,2 @@
-$ cpk --registry-root /home/ianpascoe/.openclaw/workspace-bezalel/projects/crosspack-registry info crosspack
 Package: crosspack
-- 0.1.0
+- 0.0.2
