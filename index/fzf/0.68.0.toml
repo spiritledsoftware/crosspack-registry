@@ -1,0 +1,15 @@
+name = "fzf"
+version = "0.68.0"
+license = "MIT"
+homepage = "https://github.com/junegunn/fzf"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/junegunn/fzf/releases/download/v0.68.0/fzf-0.68.0-linux_amd64.tar.gz"
+sha256 = "545004a69eb65bb9adf32000971105ac21aea54bbecb618c55414d21b823fe95"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "fzf"
+path = "fzf"
