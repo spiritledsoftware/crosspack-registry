@@ -75,6 +75,57 @@ class RegistryScaffoldTests(unittest.TestCase):
         manifest = out_root / "demo" / "1.2.3.toml"
         self.assertFalse(manifest.exists(), "manifest must not be written on validation failure")
 
+    def test_refuses_to_overwrite_existing_manifest_without_force(self) -> None:
+        out_root = self.tmpdir / "index"
+        manifest = out_root / "demo" / "1.2.3.toml"
+        manifest.parent.mkdir(parents=True, exist_ok=True)
+        manifest.write_text("name = \"demo\"\nversion = \"1.2.3\"\n", encoding="utf-8")
+
+        result = self.run_scaffold(
+            "--name",
+            "demo",
+            "--version",
+            "1.2.3",
+            "--target",
+            "x86_64-unknown-linux-gnu",
+            "--url",
+            "https://example.com/demo-1.2.3.tar.gz",
+            "--output-root",
+            str(out_root),
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Refusing to overwrite existing manifest", result.stderr)
+        self.assertEqual(
+            manifest.read_text(encoding="utf-8"),
+            "name = \"demo\"\nversion = \"1.2.3\"\n",
+            "existing manifest should remain unchanged",
+        )
+
+    def test_overwrites_existing_manifest_with_force(self) -> None:
+        out_root = self.tmpdir / "index"
+        manifest = out_root / "demo" / "1.2.3.toml"
+        manifest.parent.mkdir(parents=True, exist_ok=True)
+        manifest.write_text("name = \"demo\"\nversion = \"1.2.3\"\n", encoding="utf-8")
+
+        result = self.run_scaffold(
+            "--name",
+            "demo",
+            "--version",
+            "1.2.3",
+            "--target",
+            "x86_64-unknown-linux-gnu",
+            "--url",
+            "https://example.com/demo-1.2.3.tar.gz",
+            "--output-root",
+            str(out_root),
+            "--force",
+        )
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        content = manifest.read_text(encoding="utf-8")
+        self.assertIn('sha256 = "TODO_SHA256"', content)
+
 
 if __name__ == "__main__":
     unittest.main()

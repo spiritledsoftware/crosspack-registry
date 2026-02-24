@@ -7,7 +7,17 @@ import argparse
 import sys
 from pathlib import Path
 
-import tomllib
+try:
+    import tomllib  # Python 3.11+
+except ModuleNotFoundError:  # pragma: no cover - exercised on Python 3.10
+    try:
+        import tomli as tomllib  # type: ignore[no-redef]
+    except ModuleNotFoundError as exc:  # pragma: no cover
+        print(
+            "Validation failed: Python 3.11+ required (or install tomli for Python 3.10)",
+            file=sys.stderr,
+        )
+        raise SystemExit(1) from exc
 
 
 class ValidationError(Exception):

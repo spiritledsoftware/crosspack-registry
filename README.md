@@ -63,5 +63,8 @@ Optional flags:
 - `--output-root <dir>` to scaffold outside `index/` (useful for tests/dry runs)
 - `--license <value>` and `--homepage <url>` to replace defaults
 - `--binary-name <name>` and `--binary-path <path>` to customize executable mapping
+- `--force` to overwrite an existing `<version>.toml` (default is safe no-overwrite)
 
 After scaffolding, replace placeholders with real values and then sign the manifest sidecar (`<version>.toml.sig`) as part of the normal publication flow.
+
+Validator runtime note: Python 3.11+ works out of the box (`tomllib`). On Python 3.10, install `tomli` so validation can parse TOML.

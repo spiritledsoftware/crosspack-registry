@@ -13,7 +13,8 @@ Usage:
     [--license <license>] \
     [--homepage <homepage-url>] \
     [--binary-name <binary-name>] \
-    [--binary-path <binary-path>]
+    [--binary-path <binary-path>] \
+    [--force]
 EOF
 }
 
@@ -26,6 +27,7 @@ LICENSE_VALUE="TODO_LICENSE"
 HOMEPAGE="TODO_HOMEPAGE"
 BINARY_NAME=""
 BINARY_PATH="TODO_BINARY_PATH"
+FORCE=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -65,6 +67,10 @@ while [[ $# -gt 0 ]]; do
       BINARY_PATH="$2"
       shift 2
       ;;
+    --force)
+      FORCE=1
+      shift
+      ;;
     -h|--help)
       usage
       exit 0
@@ -97,6 +103,12 @@ fi
 OUT_DIR="${OUTPUT_ROOT%/}/$NAME"
 OUT_FILE="$OUT_DIR/$VERSION.toml"
 TMP_FILE="$(mktemp)"
+
+if [[ -e "$OUT_FILE" && "$FORCE" -ne 1 ]]; then
+  rm -f "$TMP_FILE"
+  echo "Refusing to overwrite existing manifest: $OUT_FILE (use --force to overwrite)" >&2
+  exit 1
+fi
 
 cat > "$TMP_FILE" <<EOF
 name = "$NAME"
