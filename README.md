@@ -16,7 +16,7 @@ Official Crosspack registry source.
 
 Current artifact coverage in this registry:
 
-- `crosspack@0.0.3`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`, `x86_64-unknown-linux-musl`, `aarch64-unknown-linux-musl`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`)
+- `crosspack@0.0.4`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`, `x86_64-unknown-linux-musl`, `aarch64-unknown-linux-musl`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`)
 - `ripgrep@15.1.0`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`, `aarch64-pc-windows-msvc`)
 - `fd@10.3.0`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`, `aarch64-pc-windows-msvc`)
 - `fzf@0.68.0`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`, `aarch64-pc-windows-msvc`)
@@ -44,3 +44,57 @@ If a published package update must be rolled back:
 
 - Configure repository secret `CROSSPACK_REGISTRY_SIGNING_PRIVATE_KEY_PEM` (Ed25519 private key PEM).
 - Ensure workflow permissions allow `contents: write` so generated `.sig` files can be committed back to `main`.
+
+## Registry Preflight (Local + CI)
+
+CI enforces a registry quality gate that validates changed manifests and runs smoke-install checks.
+
+- Schema and required metadata checks for each changed `index/<package>/<version>.toml`
+- Checksum + signature format checks (`sha256` fields and matching `.toml.sig` sidecar)
+- Smoke-install path that downloads one artifact per changed manifest, verifies SHA-256, and validates extracted binaries
+
+Run the same checks locally:
+
+```bash
+./scripts/registry-preflight.sh
+```
+
+Useful variants:
+
+```bash
+# Full scan of all manifests (matches push/manual workflow behavior)
+REGISTRY_PREFLIGHT_ALL=1 ./scripts/registry-preflight.sh
+
+# Validate only manifests changed from a specific base commit (matches PR workflow behavior)
+REGISTRY_BASE_SHA=<base-sha> ./scripts/registry-preflight.sh
+```
+
+## Maintainer Scaffolding Workflow
+
+Use the scaffold command to create a new package entry with required fields and placeholder metadata sections:
+
+```bash
+scripts/registry-scaffold-entry.sh \
+  --name demo \
+  --version 1.2.3 \
+  --target x86_64-unknown-linux-gnu \
+  --url https://example.com/demo-1.2.3.tar.gz
+```
+
+Behavior:
+
+1. Renders deterministic TOML output at `index/<name>/<version>.toml`.
+2. Auto-populates placeholder metadata for artifact checksum (`sha256`) and source provenance/signature (`[source]` with `url`, `checksum`, `signature` placeholders).
+3. Validates the generated manifest before write via `scripts/registry-validate-entry.py`.
+4. Aborts without writing if validation fails.
+
+Optional flags:
+
+- `--output-root <dir>` to scaffold outside `index/` (useful for tests/dry runs)
+- `--license <value>` and `--homepage <url>` to replace defaults
+- `--binary-name <name>` and `--binary-path <path>` to customize executable mapping
+- `--force` to overwrite an existing `<version>.toml` (default is safe no-overwrite)
+
+After scaffolding, replace placeholders with real values and then sign the manifest sidecar (`<version>.toml.sig`) as part of the normal publication flow.
+
+Validator runtime note: Python 3.11+ works out of the box (`tomllib`). On Python 3.10, install `tomli` so validation can parse TOML.
