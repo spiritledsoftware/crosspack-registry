@@ -38,3 +38,30 @@ If a published package update must be rolled back:
 1. Revert the affected manifest(s) and signature sidecar(s) to the last known-good revision.
 2. Re-run signature verification and clean-prefix install validation.
 3. Publish the rollback commit and include links to new validation logs in the PR.
+
+## Maintainer Scaffolding Workflow
+
+Use the scaffold command to create a new package entry with required fields and placeholder metadata sections:
+
+```bash
+scripts/registry-scaffold-entry.sh \
+  --name demo \
+  --version 1.2.3 \
+  --target x86_64-unknown-linux-gnu \
+  --url https://example.com/demo-1.2.3.tar.gz
+```
+
+Behavior:
+
+1. Renders deterministic TOML output at `index/<name>/<version>.toml`.
+2. Auto-populates placeholder metadata for artifact checksum (`sha256`) and source provenance/signature (`[source]` with `url`, `checksum`, `signature` placeholders).
+3. Validates the generated manifest before write via `scripts/registry-validate-entry.py`.
+4. Aborts without writing if validation fails.
+
+Optional flags:
+
+- `--output-root <dir>` to scaffold outside `index/` (useful for tests/dry runs)
+- `--license <value>` and `--homepage <url>` to replace defaults
+- `--binary-name <name>` and `--binary-path <path>` to customize executable mapping
+
+After scaffolding, replace placeholders with real values and then sign the manifest sidecar (`<version>.toml.sig`) as part of the normal publication flow.
