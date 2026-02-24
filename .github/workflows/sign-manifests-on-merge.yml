@@ -1,0 +1,42 @@
+name: Sign Manifests On Merge
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  sign-manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Sign changed manifests
+        env:
+          SIGNING_PRIVATE_KEY_PEM: ${{ secrets.CROSSPACK_REGISTRY_SIGNING_PRIVATE_KEY_PEM }}
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          ./scripts/sign-changed-manifests.sh
+
+      - name: Commit signatures
+        run: |
+          set -euo pipefail
+
+          if [ -z "$(git status --porcelain -- 'index/**/*.toml.sig')" ]; then
+            echo "no signature updates to commit"
+            exit 0
+          fi
+
+          git config user.name "crosspack-registry-bot"
+          git config user.email "crosspack-registry-bot@users.noreply.github.com"
+          git add -A index
+          git commit -m "chore(signatures): update manifest sidecars"
+          git push origin HEAD:main

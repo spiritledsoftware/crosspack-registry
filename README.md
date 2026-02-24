@@ -29,15 +29,21 @@ Caveat: `crosspack@0.0.3` does not yet publish official `aarch64-pc-windows-msvc
 When updating package metadata in `index/`:
 
 1. Add or update `<version>.toml` with correct artifact metadata (`url`, `sha256`, `archive`, `strip_components`, `binaries`).
-2. Re-sign every changed manifest with the registry private key and commit matching sidecars (`<version>.toml.sig`).
-3. Validate end-to-end from a clean prefix with Crosspack bootstrap + install.
-4. Keep validation logs in `logs/` with command output for traceability.
+2. Open a PR with changed `index/<package>/<version>.toml` files (sidecars can be omitted in PRs).
+3. After merge to `main`, workflow `.github/workflows/sign-manifests-on-merge.yml` generates/updates matching sidecars (`<version>.toml.sig`) automatically.
+4. Validate end-to-end from a clean prefix with Crosspack bootstrap + install.
+5. Keep validation logs in `logs/` with command output for traceability.
 
 If a published package update must be rolled back:
 
 1. Revert the affected manifest(s) and signature sidecar(s) to the last known-good revision.
 2. Re-run signature verification and clean-prefix install validation.
 3. Publish the rollback commit and include links to new validation logs in the PR.
+
+## Automation Setup
+
+- Configure repository secret `CROSSPACK_REGISTRY_SIGNING_PRIVATE_KEY_PEM` (Ed25519 private key PEM).
+- Ensure workflow permissions allow `contents: write` so generated `.sig` files can be committed back to `main`.
 
 ## Registry Preflight (Local + CI)
 
