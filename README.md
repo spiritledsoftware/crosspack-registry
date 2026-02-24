@@ -38,3 +38,27 @@ If a published package update must be rolled back:
 1. Revert the affected manifest(s) and signature sidecar(s) to the last known-good revision.
 2. Re-run signature verification and clean-prefix install validation.
 3. Publish the rollback commit and include links to new validation logs in the PR.
+
+## Registry Preflight (Local + CI)
+
+CI enforces a registry quality gate that validates changed manifests and runs smoke-install checks.
+
+- Schema and required metadata checks for each changed `index/<package>/<version>.toml`
+- Checksum + signature format checks (`sha256` fields and matching `.toml.sig` sidecar)
+- Smoke-install path that downloads one artifact per changed manifest, verifies SHA-256, and validates extracted binaries
+
+Run the same checks locally:
+
+```bash
+./scripts/registry-preflight.sh
+```
+
+Useful variants:
+
+```bash
+# Full scan of all manifests (matches push/manual workflow behavior)
+REGISTRY_PREFLIGHT_ALL=1 ./scripts/registry-preflight.sh
+
+# Validate only manifests changed from a specific base commit (matches PR workflow behavior)
+REGISTRY_BASE_SHA=<base-sha> ./scripts/registry-preflight.sh
+```

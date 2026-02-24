@@ -1,0 +1,36 @@
+name: Registry Quality Gate
+
+on:
+  pull_request:
+    paths:
+      - 'index/**/*.toml'
+      - 'index/**/*.toml.sig'
+      - 'scripts/**'
+      - '.github/workflows/registry-quality-gate.yml'
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  preflight:
+    name: Validate Registry Manifests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Registry preflight (PR changed manifests)
+        if: github.event_name == 'pull_request'
+        env:
+          REGISTRY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: ./scripts/registry-preflight.sh
+
+      - name: Registry preflight (full scan)
+        if: github.event_name != 'pull_request'
+        env:
+          REGISTRY_PREFLIGHT_ALL: '1'
+        run: ./scripts/registry-preflight.sh
