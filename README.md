@@ -62,3 +62,33 @@ REGISTRY_PREFLIGHT_ALL=1 ./scripts/registry-preflight.sh
 # Validate only manifests changed from a specific base commit (matches PR workflow behavior)
 REGISTRY_BASE_SHA=<base-sha> ./scripts/registry-preflight.sh
 ```
+
+## Maintainer Scaffolding Workflow
+
+Use the scaffold command to create a new package entry with required fields and placeholder metadata sections:
+
+```bash
+scripts/registry-scaffold-entry.sh \
+  --name demo \
+  --version 1.2.3 \
+  --target x86_64-unknown-linux-gnu \
+  --url https://example.com/demo-1.2.3.tar.gz
+```
+
+Behavior:
+
+1. Renders deterministic TOML output at `index/<name>/<version>.toml`.
+2. Auto-populates placeholder metadata for artifact checksum (`sha256`) and source provenance/signature (`[source]` with `url`, `checksum`, `signature` placeholders).
+3. Validates the generated manifest before write via `scripts/registry-validate-entry.py`.
+4. Aborts without writing if validation fails.
+
+Optional flags:
+
+- `--output-root <dir>` to scaffold outside `index/` (useful for tests/dry runs)
+- `--license <value>` and `--homepage <url>` to replace defaults
+- `--binary-name <name>` and `--binary-path <path>` to customize executable mapping
+- `--force` to overwrite an existing `<version>.toml` (default is safe no-overwrite)
+
+After scaffolding, replace placeholders with real values and then sign the manifest sidecar (`<version>.toml.sig`) as part of the normal publication flow.
+
+Validator runtime note: Python 3.11+ works out of the box (`tomllib`). On Python 3.10, install `tomli` so validation can parse TOML.

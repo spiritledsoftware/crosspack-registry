@@ -9,11 +9,17 @@ if [[ "${REGISTRY_PREFLIGHT_ALL:-0}" == "1" ]]; then
   exit 0
 fi
 
+manifest_paths() {
+  rg '^index/.+\.toml(\.sig)?$' \
+    | sed 's/\.sig$//' \
+    | sort -u
+}
+
 if [[ -n "${REGISTRY_BASE_SHA:-}" ]] && git rev-parse --verify "$REGISTRY_BASE_SHA" >/dev/null 2>&1; then
   git diff --name-only "$REGISTRY_BASE_SHA"...HEAD -- index \
-    | rg '^index/.+\.toml$' || true
+    | manifest_paths || true
   exit 0
 fi
 
 git diff --name-only HEAD -- index \
-  | rg '^index/.+\.toml$' || true
+  | manifest_paths || true

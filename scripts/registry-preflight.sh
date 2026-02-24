@@ -7,8 +7,8 @@ cd "$repo_root"
 mapfile -t manifests < <("$repo_root/scripts/registry-changed-manifests.sh")
 
 if [[ "${#manifests[@]}" -eq 0 ]]; then
-  echo "No manifest changes detected. Nothing to validate."
-  exit 0
+  echo "No manifest changes detected. Running full registry preflight to validate tooling changes."
+  mapfile -t manifests < <(REGISTRY_PREFLIGHT_ALL=1 "$repo_root/scripts/registry-changed-manifests.sh")
 fi
 
 echo "Running registry preflight on ${#manifests[@]} manifest(s)..."
