@@ -16,7 +16,7 @@ Official Crosspack registry source.
 
 Current artifact coverage in this registry:
 
-- `crosspack@0.0.3`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`, `x86_64-unknown-linux-musl`, `aarch64-unknown-linux-musl`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`)
+- `crosspack@0.0.4`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`, `x86_64-unknown-linux-musl`, `aarch64-unknown-linux-musl`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`)
 - `ripgrep@15.1.0`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`, `aarch64-pc-windows-msvc`)
 - `fd@10.3.0`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`, `aarch64-pc-windows-msvc`)
 - `fzf@0.68.0`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`, `aarch64-pc-windows-msvc`)
