@@ -10,7 +10,7 @@ if [[ "${REGISTRY_PREFLIGHT_ALL:-0}" == "1" ]]; then
 fi
 
 manifest_paths() {
-  rg '^index/.+\.toml(\.sig)?$' \
+  grep -E '^index/.+\.toml(\.sig)?$' \
     | sed 's/\.sig$//' \
     | sort -u
 }
