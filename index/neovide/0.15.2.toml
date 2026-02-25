@@ -52,6 +52,7 @@ display_name = "Neovide"
 exec = "Neovide.app/Contents/MacOS/neovide"
 categories = ["Utility", "Development"]
 
+
 [[artifacts]]
 target = "x86_64-pc-windows-msvc"
 url = "https://github.com/neovide/neovide/releases/download/0.15.2/neovide.exe.zip"
