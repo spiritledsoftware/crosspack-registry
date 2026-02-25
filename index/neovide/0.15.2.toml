@@ -1,0 +1,54 @@
+name = "neovide"
+version = "0.15.2"
+license = "MIT"
+homepage = "https://github.com/neovide/neovide"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/neovide/neovide/releases/download/0.15.2/neovide-linux-x86_64.tar.gz"
+sha256 = "0965d5a0fecfd00b0ba12a14e1eb38e2f47efee7cf5d36f5aed36b008aa87138"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "neovide"
+path = "neovide"
+
+[[artifacts.gui_apps]]
+app_id = "io.neovide.neovide"
+display_name = "Neovide"
+exec = "neovide"
+categories = ["Utility", "Development"]
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/neovide/neovide/releases/download/0.15.2/Neovide-x86_64-apple-darwin.dmg"
+sha256 = "c7a8d29cc75d72a943c91d2519429b5dc5c55f9a50ea28bb80bb2272f60ddb13"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "neovide"
+path = "Neovide.app/Contents/MacOS/neovide"
+
+[[artifacts.gui_apps]]
+app_id = "io.neovide.neovide"
+display_name = "Neovide"
+exec = "Neovide.app/Contents/MacOS/neovide"
+categories = ["Utility", "Development"]
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/neovide/neovide/releases/download/0.15.2/neovide.exe.zip"
+sha256 = "8ad43abbb2d012aa9d89585349f589723cf01dc65607d417059923c623afd922"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "neovide"
+path = "neovide.exe"
+
+[[artifacts.gui_apps]]
+app_id = "io.neovide.neovide"
+display_name = "Neovide"
+exec = "neovide.exe"
+categories = ["Utility", "Development"]

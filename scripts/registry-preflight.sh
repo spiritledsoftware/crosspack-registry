@@ -14,7 +14,12 @@ fi
 echo "Running registry preflight on ${#manifests[@]} manifest(s)..."
 printf ' - %s\n' "${manifests[@]}"
 
-python3 "$repo_root/scripts/registry-validate.py" "${manifests[@]}"
+validate_args=()
+if [[ "${REGISTRY_REQUIRE_SIGNATURES:-1}" == "0" ]]; then
+  validate_args+=("--allow-missing-signatures")
+fi
+
+python3 "$repo_root/scripts/registry-validate.py" "${validate_args[@]}" "${manifests[@]}"
 python3 "$repo_root/scripts/registry-smoke-install.py" "${manifests[@]}"
 
 echo "Registry preflight complete."

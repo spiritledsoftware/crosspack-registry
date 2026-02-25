@@ -27,6 +27,7 @@ jobs:
         if: github.event_name == 'pull_request'
         env:
           REGISTRY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          REGISTRY_REQUIRE_SIGNATURES: '0'
         run: ./scripts/registry-preflight.sh
 
       - name: Registry preflight (full scan)

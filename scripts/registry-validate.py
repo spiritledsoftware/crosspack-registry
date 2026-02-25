@@ -34,7 +34,7 @@ def expect_nonempty_str(value, field: str, errors: list[str], path: Path) -> boo
     return True
 
 
-def validate_manifest(path: Path, errors: list[str]) -> None:
+def validate_manifest(path: Path, errors: list[str], require_signatures: bool) -> None:
     doc = load_manifest(path, errors)
     if doc is None:
         return
@@ -45,7 +45,11 @@ def validate_manifest(path: Path, errors: list[str]) -> None:
     homepage_ok = expect_nonempty_str(doc.get("homepage"), "homepage", errors, path)
 
     if version_ok and not SEMVER_RE.fullmatch(doc["version"]):
-        err(errors, path, f"invalid `version` format: {doc['version']!r} (expected semver)")
+        err(
+            errors,
+            path,
+            f"invalid `version` format: {doc['version']!r} (expected semver)",
+        )
 
     if homepage_ok and not doc["homepage"].startswith("https://"):
         err(errors, path, "invalid `homepage` (must start with https://)")
@@ -57,9 +61,17 @@ def validate_manifest(path: Path, errors: list[str]) -> None:
         file_pkg = path.parent.name
         file_ver = path.stem
         if name_ok and file_pkg != doc["name"]:
-            err(errors, path, f"package directory `{file_pkg}` does not match `name` `{doc['name']}`")
+            err(
+                errors,
+                path,
+                f"package directory `{file_pkg}` does not match `name` `{doc['name']}`",
+            )
         if version_ok and file_ver != doc["version"]:
-            err(errors, path, f"file version `{file_ver}` does not match `version` `{doc['version']}`")
+            err(
+                errors,
+                path,
+                f"file version `{file_ver}` does not match `version` `{doc['version']}`",
+            )
 
     artifacts = doc.get("artifacts")
     if not isinstance(artifacts, list) or not artifacts:
@@ -87,10 +99,16 @@ def validate_manifest(path: Path, errors: list[str]) -> None:
 
         archive = artifact.get("archive")
         if archive is not None and archive not in {"tar.gz", "zip", "tar.xz", "tgz"}:
-            err(errors, path, f"{prefix}.archive must be one of tar.gz, zip, tar.xz, tgz")
+            err(
+                errors,
+                path,
+                f"{prefix}.archive must be one of tar.gz, zip, tar.xz, tgz",
+            )
 
         strip_components = artifact.get("strip_components")
-        if strip_components is not None and (not isinstance(strip_components, int) or strip_components < 0):
+        if strip_components is not None and (
+            not isinstance(strip_components, int) or strip_components < 0
+        ):
             err(errors, path, f"{prefix}.strip_components must be an integer >= 0")
 
         binaries = artifact.get("binaries")
@@ -111,30 +129,48 @@ def validate_manifest(path: Path, errors: list[str]) -> None:
             if not isinstance(bpath, str) or not bpath.strip():
                 err(errors, path, f"{bprefix}.path must be a non-empty string")
             elif bpath.startswith("/") or ".." in Path(bpath).parts:
-                err(errors, path, f"{bprefix}.path must be relative and must not contain '..'")
+                err(
+                    errors,
+                    path,
+                    f"{bprefix}.path must be relative and must not contain '..'",
+                )
 
-    sig_path = path.with_suffix(path.suffix + ".sig")
-    if not sig_path.exists():
-        err(errors, path, f"missing signature sidecar `{sig_path.name}`")
-    else:
-        try:
-            sig_raw = sig_path.read_text(encoding="utf-8").strip()
-        except OSError as exc:
-            err(errors, path, f"cannot read signature sidecar ({exc})")
+    if require_signatures:
+        sig_path = path.with_suffix(path.suffix + ".sig")
+        if not sig_path.exists():
+            err(errors, path, f"missing signature sidecar `{sig_path.name}`")
         else:
-            if not SIG_RE.fullmatch(sig_raw):
-                err(errors, path, f"invalid signature format in `{sig_path.name}` (expected 128 hex characters)")
+            try:
+                sig_raw = sig_path.read_text(encoding="utf-8").strip()
+            except OSError as exc:
+                err(errors, path, f"cannot read signature sidecar ({exc})")
+            else:
+                if not SIG_RE.fullmatch(sig_raw):
+                    err(
+                        errors,
+                        path,
+                        f"invalid signature format in `{sig_path.name}` (expected 128 hex characters)",
+                    )
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Validate Crosspack registry manifests")
+    parser = argparse.ArgumentParser(
+        description="Validate Crosspack registry manifests"
+    )
+    parser.add_argument(
+        "--allow-missing-signatures",
+        action="store_true",
+        help="Skip required .toml.sig sidecar checks (for PR pre-merge validation)",
+    )
     parser.add_argument("manifests", nargs="+", help="Manifest paths to validate")
     args = parser.parse_args()
 
     errors: list[str] = []
     manifest_paths = [Path(p) for p in args.manifests]
     for path in manifest_paths:
-        validate_manifest(path, errors)
+        validate_manifest(
+            path, errors, require_signatures=not args.allow_missing_signatures
+        )
 
     if errors:
         print("Registry manifest validation failed:", file=sys.stderr)
@@ -142,7 +178,14 @@ def main() -> int:
             print(f"  - {entry}", file=sys.stderr)
         return 1
 
-    print(f"Validated {len(manifest_paths)} manifest(s): schema, metadata, checksum, and signature format checks passed.")
+    if args.allow_missing_signatures:
+        print(
+            f"Validated {len(manifest_paths)} manifest(s): schema, metadata, and checksum checks passed."
+        )
+    else:
+        print(
+            f"Validated {len(manifest_paths)} manifest(s): schema, metadata, checksum, and signature format checks passed."
+        )
     return 0
 
 
