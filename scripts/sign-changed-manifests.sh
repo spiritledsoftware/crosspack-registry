@@ -23,10 +23,11 @@ if [ -z "${BEFORE_SHA}" ] || [ "${BEFORE_SHA}" = "000000000000000000000000000000
 fi
 
 mapfile -t changed_manifests < <(
-  git diff --name-only "${BEFORE_SHA}" "${AFTER_SHA}" -- 'index/**/*.toml' \
+  git diff --name-only "${BEFORE_SHA}" "${AFTER_SHA}" -- 'index/**/*.toml' 'index/**/*.toml.sig' \
     | while IFS= read -r file; do
-        [ -f "$file" ] && printf '%s\n' "$file"
-      done
+        manifest_path="${file%.sig}"
+        [ -f "$manifest_path" ] && printf '%s\n' "$manifest_path"
+      done | sort -u
 )
 
 if [ "${#changed_manifests[@]}" -eq 0 ]; then
