@@ -13,6 +13,41 @@ on:
   workflow_dispatch:
 
 jobs:
+  detect-pr-manifests:
+    name: Detect PR Manifest Changes
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      manifests_json: ${{ steps.changed.outputs.manifests_json }}
+      manifest_count: ${{ steps.changed.outputs.manifest_count }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Collect changed manifests
+        id: changed
+        env:
+          REGISTRY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          mapfile -t manifests < <(REGISTRY_BASE_SHA="$REGISTRY_BASE_SHA" ./scripts/registry-changed-manifests.sh)
+
+          if [[ "${#manifests[@]}" -eq 0 ]]; then
+            echo "manifests_json=[]" >> "$GITHUB_OUTPUT"
+            echo "manifest_count=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          manifests_json="$(
+            printf '%s\n' "${manifests[@]}" \
+              | python3 -c 'import json, sys; print(json.dumps([line.strip() for line in sys.stdin if line.strip()]))'
+          )"
+
+          echo "manifests_json=$manifests_json" >> "$GITHUB_OUTPUT"
+          echo "manifest_count=${#manifests[@]}" >> "$GITHUB_OUTPUT"
+
   preflight:
     name: Validate Registry Manifests
     runs-on: ubuntu-latest
@@ -28,6 +63,7 @@ jobs:
         env:
           REGISTRY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           REGISTRY_REQUIRE_SIGNATURES: '0'
+          REGISTRY_PREFLIGHT_SKIP_SMOKE: '1'
         run: ./scripts/registry-preflight.sh
 
       - name: Registry preflight (full scan)
@@ -35,3 +71,44 @@ jobs:
         env:
           REGISTRY_PREFLIGHT_ALL: '1'
         run: ./scripts/registry-preflight.sh
+
+  pr-smoke:
+    name: PR Smoke Install (${{ matrix.os }})
+    if: github.event_name == 'pull_request'
+    needs:
+      - detect-pr-manifests
+      - preflight
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Smoke install (changed manifests)
+        if: needs.detect-pr-manifests.outputs.manifest_count != '0'
+        shell: bash
+        env:
+          MANIFESTS_JSON: ${{ needs.detect-pr-manifests.outputs.manifests_json }}
+        run: |
+          mapfile -t manifests < <(
+            python -c 'import json, os; [print(item) for item in json.loads(os.environ["MANIFESTS_JSON"])]'
+          )
+          python scripts/registry-smoke-install.py "${manifests[@]}"
+
+      - name: Skip changed-manifest smoke (none changed)
+        if: needs.detect-pr-manifests.outputs.manifest_count == '0'
+        shell: bash
+        run: echo "No changed manifests in this PR."
+
+      - name: Windows package-layout canary
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: python scripts/registry-smoke-install.py --app-bundle-canary
