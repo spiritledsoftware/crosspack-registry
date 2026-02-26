@@ -14,10 +14,6 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-APP_BUNDLE_CANARY_MANIFESTS = (REPO_ROOT / "index" / "jq" / "1.8.1.toml",)
-
-
 def fallback_manifest_identifier(path: Path) -> str:
     package = path.parent.name.strip() if path.parent.name else "unknown-package"
     version = path.stem.strip() if path.stem else "unknown-version"
@@ -74,12 +70,18 @@ def runner_target() -> str | None:
     return None
 
 
-def choose_artifact(artifacts: list[dict]) -> dict:
-    target = runner_target()
+def choose_artifact(
+    artifacts: list[dict],
+    *,
+    target: str | None,
+    require_target: bool,
+) -> dict | None:
     if target:
         for artifact in artifacts:
             if artifact.get("target") == target:
                 return artifact
+        if require_target:
+            return None
     return artifacts[0]
 
 
@@ -148,7 +150,7 @@ def extract_archive(src: Path, dest: Path, archive: str, strip_components: int) 
         raise ValueError(f"Unsupported archive format: {archive}")
 
 
-def smoke_manifest(path: Path) -> tuple[bool, str]:
+def smoke_manifest(path: Path, *, require_runner_target: bool = False) -> tuple[bool, str]:
     doc = tomllib.loads(path.read_text(encoding="utf-8"))
     package_id = manifest_identifier(doc, path)
     artifacts = doc.get("artifacts", [])
@@ -163,13 +165,30 @@ def smoke_manifest(path: Path) -> tuple[bool, str]:
             ),
         )
 
-    artifact = choose_artifact(artifacts)
+    resolved_runner_target = runner_target()
+    artifact = choose_artifact(
+        artifacts,
+        target=resolved_runner_target,
+        require_target=require_runner_target,
+    )
+    if artifact is None:
+        expected_target = resolved_runner_target or "unknown-runner-target"
+        return (
+            False,
+            failure_message(
+                path,
+                package_id,
+                f"no artifact matched runner target={expected_target}",
+                hint="add an artifact for this runner target or run without --require-runner-target",
+            ),
+        )
+
+    artifact_target = artifact.get("target", "unknown")
     url = artifact["url"]
     expected_sha = artifact["sha256"].lower()
     archive = artifact.get("archive")
     strip_components = int(artifact.get("strip_components", 0))
     binaries = artifact.get("binaries", [])
-    target = artifact.get("target", "unknown")
 
     with tempfile.TemporaryDirectory(prefix="registry-smoke-") as tmp:
         tmpdir = Path(tmp)
@@ -213,45 +232,72 @@ def smoke_manifest(path: Path) -> tuple[bool, str]:
                 failure_message(
                     path,
                     package_id,
-                    f"missing extracted binaries for target={target}: {missing_csv}",
+                    f"missing extracted binaries for target={artifact_target}: {missing_csv}",
                     failing_binary=missing_csv,
                     hint="verify artifacts[].binaries[].path and strip_components against the extracted archive layout",
                 ),
             )
 
-    return True, f"{path}: {package_id}: smoke-install ok via target={target}"
+    return True, f"{path}: {package_id}: smoke-install ok via target={artifact_target}"
+
+
+def app_bundle_canary() -> tuple[bool, str]:
+    with tempfile.TemporaryDirectory(prefix="registry-smoke-app-bundle-") as tmp:
+        tmpdir = Path(tmp)
+        payload = tmpdir / "neovide-style.zip"
+        install_root = tmpdir / "install"
+        install_root.mkdir(parents=True, exist_ok=True)
+
+        with zipfile.ZipFile(payload, mode="w") as zf:
+            zf.writestr("Neovide.app/Contents/MacOS/neovide", b"#!/bin/sh\nexit 0\n")
+
+        extract_archive(payload, install_root, "zip", 0)
+        expected = install_root / "Neovide.app" / "Contents" / "MacOS" / "neovide"
+        if not expected.exists() or not expected.is_file():
+            return (
+                False,
+                "app-bundle-canary: target=macOS reason=missing Neovide.app/Contents/MacOS/neovide after extraction",
+            )
+
+    return (
+        True,
+        "app-bundle-canary: target=macOS status=verified Neovide.app/Contents/MacOS/neovide extraction",
+    )
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run smoke-install checks for registry manifests")
     parser.add_argument("manifests", nargs="*", help="Manifest paths to smoke-test")
     parser.add_argument(
+        "--require-runner-target",
+        action="store_true",
+        help="Fail when a manifest has no artifact for the current runner target",
+    )
+    parser.add_argument(
         "--app-bundle-canary",
         action="store_true",
-        help="Include a representative app-bundle smoke manifest (jq direct .exe layout on Windows)",
+        help="Run local app-bundle extraction canary (.app/Contents/MacOS path)",
     )
     args = parser.parse_args()
 
-    manifests = [Path(manifest) for manifest in args.manifests]
-    if args.app_bundle_canary:
-        manifests.extend(APP_BUNDLE_CANARY_MANIFESTS)
+    if not args.manifests and not args.app_bundle_canary:
+        parser.error("provide at least one manifest path or --app-bundle-canary")
 
     deduped_manifests: list[Path] = []
     seen: set[str] = set()
-    for manifest in manifests:
+    for manifest in args.manifests:
         key = str(manifest)
         if key in seen:
             continue
         seen.add(key)
-        deduped_manifests.append(manifest)
-
-    if not deduped_manifests:
-        parser.error("provide at least one manifest path or pass --app-bundle-canary")
+        deduped_manifests.append(Path(manifest))
 
     failures = []
+    completed_checks = 0
+
     for path in deduped_manifests:
         try:
-            ok, message = smoke_manifest(path)
+            ok, message = smoke_manifest(path, require_runner_target=args.require_runner_target)
         except Exception as exc:  # noqa: BLE001
             ok, message = (
                 False,
@@ -265,6 +311,19 @@ def main() -> int:
 
         if ok:
             print(message)
+            completed_checks += 1
+        else:
+            failures.append(message)
+
+    if args.app_bundle_canary:
+        try:
+            ok, message = app_bundle_canary()
+        except Exception as exc:  # noqa: BLE001
+            ok, message = False, f"app-bundle-canary: target=macOS reason=crashed ({exc})"
+
+        if ok:
+            print(message)
+            completed_checks += 1
         else:
             failures.append(message)
 
@@ -274,7 +333,10 @@ def main() -> int:
             print(f"  - {failure}", file=sys.stderr)
         return 1
 
-    print(f"Smoke-install checks passed for {len(deduped_manifests)} manifest(s).")
+    print(
+        f"Smoke-install checks passed for {completed_checks} check(s) "
+        f"({len(deduped_manifests)} manifest(s), app_bundle_canary={args.app_bundle_canary})."
+    )
     return 0
 
 

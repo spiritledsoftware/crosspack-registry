@@ -51,9 +51,9 @@ CI enforces a registry quality gate that validates changed manifests and runs sm
 
 - Schema and required metadata checks for each changed `index/<package>/<version>.toml`
 - Checksum + signature format checks (`sha256` fields and matching `.toml.sig` sidecar)
-- PR smoke-install matrix on `ubuntu-latest` and `windows-latest` for changed manifests
-- Windows package-layout canary via `python scripts/registry-smoke-install.py --app-bundle-canary` (currently validates direct `.exe` layout with `index/jq/1.8.1.toml`)
+- PR smoke-install matrix on `ubuntu-latest` and `macos-latest` for changed manifests
 - Smoke-install path that downloads one artifact per selected manifest, verifies SHA-256, and validates extracted binaries
+- macOS app-bundle canary via `python3 scripts/registry-smoke-install.py --app-bundle-canary` (validates `.app/Contents/MacOS/*` extraction layout)
 
 Run the same checks locally:
 
@@ -73,6 +73,17 @@ REGISTRY_PREFLIGHT_ALL=1 REGISTRY_PREFLIGHT_SKIP_SMOKE=1 ./scripts/registry-pref
 # Validate only manifests changed from a specific base commit (matches PR workflow behavior)
 REGISTRY_BASE_SHA=<base-sha> ./scripts/registry-preflight.sh
 ```
+
+### Bounded Runtime Strategy (CI)
+
+To keep PR feedback fast while preserving coverage:
+
+- Validation runs once in preflight.
+- Smoke-install runs in a 2-runner OS matrix (`ubuntu-latest`, `macos-latest`) and only for manifests changed in the PR diff.
+- Matrix uses capped concurrency (`max-parallel: 2`).
+- Each smoke check downloads exactly one artifact per changed manifest for the current runner target.
+- If no manifests changed for a matrix runner, that runner exits early.
+- macOS also runs a tiny local app-bundle canary (`Neovide.app/Contents/MacOS/neovide`) with no network fetch.
 
 ## Maintainer Scaffolding Workflow
 
