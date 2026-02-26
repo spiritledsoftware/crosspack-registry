@@ -1,0 +1,63 @@
+name: Bump Crosspack Registry Submodule
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: bump-crosspack-submodule
+  cancel-in-progress: true
+
+jobs:
+  bump-submodule:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.CROSSPACK_BOT_APP_ID }}
+          private-key: ${{ secrets.CROSSPACK_BOT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: crosspack
+
+      - name: Checkout crosspack
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.repository_owner }}/crosspack
+          ref: main
+          token: ${{ steps.app-token.outputs.token }}
+          path: crosspack
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Fast-forward registry submodule to main
+        working-directory: crosspack
+        run: |
+          set -euo pipefail
+
+          git -C registry fetch origin main
+          git -C registry checkout main
+          git -C registry pull --ff-only origin main
+
+      - name: Create or update submodule bump PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          path: crosspack
+          token: ${{ steps.app-token.outputs.token }}
+          commit-message: "chore(registry): bump submodule to latest main"
+          title: "chore(registry): bump submodule to latest main"
+          body: |
+            ## Summary
+            - bump `registry` submodule to the latest `main` commit from `crosspack-registry`
+            - generated automatically from `crosspack-registry` push `${{ github.sha }}`
+          branch: chore/registry-submodule-bump
+          delete-branch: true
+          labels: automation
