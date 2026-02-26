@@ -60,4 +60,3 @@ jobs:
             - generated automatically from `crosspack-registry` push `${{ github.sha }}`
           branch: chore/registry-submodule-bump
           delete-branch: true
-          labels: automation
