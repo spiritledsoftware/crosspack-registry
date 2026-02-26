@@ -6,10 +6,6 @@ on:
       - main
   workflow_dispatch:
 
-permissions:
-  contents: write
-  pull-requests: write
-
 concurrency:
   group: bump-crosspack-submodule
   cancel-in-progress: true
@@ -26,7 +22,7 @@ jobs:
           app-id: ${{ vars.CROSSPACK_BOT_APP_ID }}
           private-key: ${{ secrets.CROSSPACK_BOT_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
-          repositories: crosspack
+          repositories: ${{ vars.CROSSPACK_REPOSITORY_NAME || 'crosspack' }}
 
       - name: Checkout crosspack
         uses: actions/checkout@v6
@@ -47,16 +43,21 @@ jobs:
           git -C registry checkout main
           git -C registry pull --ff-only origin main
 
-      - name: Create or update submodule bump PR
-        uses: peter-evans/create-pull-request@v7
-        with:
-          path: crosspack
-          token: ${{ steps.app-token.outputs.token }}
-          commit-message: "chore(registry): bump submodule to latest main"
-          title: "chore(registry): bump submodule to latest main"
-          body: |
-            ## Summary
-            - bump `registry` submodule to the latest `main` commit from `crosspack-registry`
-            - generated automatically from `crosspack-registry` push `${{ github.sha }}`
-          branch: chore/registry-submodule-bump
-          delete-branch: true
+      - name: Commit and push submodule bump
+        working-directory: crosspack
+        env:
+          REGISTRY_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$(git status --porcelain -- registry)" ]; then
+            echo "registry submodule already up to date"
+            exit 0
+          fi
+
+          git config user.name "crosspack-bot"
+          git config user.email "crosspack-bot@users.noreply.github.com"
+
+          git add registry
+          git commit -m "chore(registry): bump submodule to ${REGISTRY_SHA}"
+          git push origin HEAD:main
