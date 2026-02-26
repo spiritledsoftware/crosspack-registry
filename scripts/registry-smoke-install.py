@@ -14,6 +14,47 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+APP_BUNDLE_CANARY_MANIFESTS = (REPO_ROOT / "index" / "jq" / "1.8.1.toml",)
+
+
+def fallback_manifest_identifier(path: Path) -> str:
+    package = path.parent.name.strip() if path.parent.name else "unknown-package"
+    version = path.stem.strip() if path.stem else "unknown-version"
+    return f"{package}@{version}"
+
+
+def manifest_identifier(doc: dict, path: Path) -> str:
+    name = doc.get("name")
+    version = doc.get("version")
+    if isinstance(name, str) and name.strip() and isinstance(version, str) and version.strip():
+        return f"{name}@{version}"
+    return fallback_manifest_identifier(path)
+
+
+def best_effort_manifest_identifier(path: Path) -> str:
+    try:
+        doc = tomllib.loads(path.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001
+        return fallback_manifest_identifier(path)
+    return manifest_identifier(doc, path)
+
+
+def failure_message(
+    path: Path,
+    package_id: str,
+    reason: str,
+    *,
+    hint: str,
+    failing_binary: str | None = None,
+) -> str:
+    message = f"{path}: {package_id}: smoke-install failed: {reason}"
+    if failing_binary:
+        message += f"; failing binary path: {failing_binary}"
+    message += f"; remediation hint: {hint}"
+    return message
+
+
 def runner_target() -> str | None:
     system = platform.system().lower()
     machine = platform.machine().lower()
@@ -109,9 +150,18 @@ def extract_archive(src: Path, dest: Path, archive: str, strip_components: int) 
 
 def smoke_manifest(path: Path) -> tuple[bool, str]:
     doc = tomllib.loads(path.read_text(encoding="utf-8"))
+    package_id = manifest_identifier(doc, path)
     artifacts = doc.get("artifacts", [])
     if not artifacts:
-        return False, f"{path}: no artifacts available for smoke-install"
+        return (
+            False,
+            failure_message(
+                path,
+                package_id,
+                "no artifacts available for smoke-install",
+                hint="add at least one [[artifacts]] entry with url, sha256, and binaries metadata",
+            ),
+        )
 
     artifact = choose_artifact(artifacts)
     url = artifact["url"]
@@ -119,6 +169,7 @@ def smoke_manifest(path: Path) -> tuple[bool, str]:
     archive = artifact.get("archive")
     strip_components = int(artifact.get("strip_components", 0))
     binaries = artifact.get("binaries", [])
+    target = artifact.get("target", "unknown")
 
     with tempfile.TemporaryDirectory(prefix="registry-smoke-") as tmp:
         tmpdir = Path(tmp)
@@ -131,7 +182,12 @@ def smoke_manifest(path: Path) -> tuple[bool, str]:
         if actual_sha != expected_sha:
             return (
                 False,
-                f"{path}: checksum mismatch for {url} (expected {expected_sha}, got {actual_sha})",
+                failure_message(
+                    path,
+                    package_id,
+                    f"checksum mismatch for {url} (expected {expected_sha}, got {actual_sha})",
+                    hint="update artifacts[].sha256 to match the published asset bytes for this target",
+                ),
             )
 
         if archive:
@@ -152,24 +208,60 @@ def smoke_manifest(path: Path) -> tuple[bool, str]:
 
         if missing:
             missing_csv = ", ".join(missing)
-            return False, f"{path}: smoke-install failed, missing extracted binaries: {missing_csv}"
+            return (
+                False,
+                failure_message(
+                    path,
+                    package_id,
+                    f"missing extracted binaries for target={target}: {missing_csv}",
+                    failing_binary=missing_csv,
+                    hint="verify artifacts[].binaries[].path and strip_components against the extracted archive layout",
+                ),
+            )
 
-    target = artifact.get("target", "unknown")
-    return True, f"{path}: smoke-install ok via target={target}"
+    return True, f"{path}: {package_id}: smoke-install ok via target={target}"
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run smoke-install checks for registry manifests")
-    parser.add_argument("manifests", nargs="+", help="Manifest paths to smoke-test")
+    parser.add_argument("manifests", nargs="*", help="Manifest paths to smoke-test")
+    parser.add_argument(
+        "--app-bundle-canary",
+        action="store_true",
+        help="Include a representative app-bundle smoke manifest (jq direct .exe layout on Windows)",
+    )
     args = parser.parse_args()
 
+    manifests = [Path(manifest) for manifest in args.manifests]
+    if args.app_bundle_canary:
+        manifests.extend(APP_BUNDLE_CANARY_MANIFESTS)
+
+    deduped_manifests: list[Path] = []
+    seen: set[str] = set()
+    for manifest in manifests:
+        key = str(manifest)
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped_manifests.append(manifest)
+
+    if not deduped_manifests:
+        parser.error("provide at least one manifest path or pass --app-bundle-canary")
+
     failures = []
-    for manifest in args.manifests:
-        path = Path(manifest)
+    for path in deduped_manifests:
         try:
             ok, message = smoke_manifest(path)
         except Exception as exc:  # noqa: BLE001
-            ok, message = False, f"{path}: smoke-install crashed ({exc})"
+            ok, message = (
+                False,
+                failure_message(
+                    path,
+                    best_effort_manifest_identifier(path),
+                    f"smoke-install crashed ({exc})",
+                    hint="run scripts/registry-validate.py for the manifest and verify artifact metadata fields",
+                ),
+            )
 
         if ok:
             print(message)
@@ -182,7 +274,7 @@ def main() -> int:
             print(f"  - {failure}", file=sys.stderr)
         return 1
 
-    print(f"Smoke-install checks passed for {len(args.manifests)} manifest(s).")
+    print(f"Smoke-install checks passed for {len(deduped_manifests)} manifest(s).")
     return 0
 
 

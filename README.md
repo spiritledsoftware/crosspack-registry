@@ -51,7 +51,9 @@ CI enforces a registry quality gate that validates changed manifests and runs sm
 
 - Schema and required metadata checks for each changed `index/<package>/<version>.toml`
 - Checksum + signature format checks (`sha256` fields and matching `.toml.sig` sidecar)
-- Smoke-install path that downloads one artifact per changed manifest, verifies SHA-256, and validates extracted binaries
+- PR smoke-install matrix on `ubuntu-latest` and `windows-latest` for changed manifests
+- Windows package-layout canary via `python scripts/registry-smoke-install.py --app-bundle-canary` (currently validates direct `.exe` layout with `index/jq/1.8.1.toml`)
+- Smoke-install path that downloads one artifact per selected manifest, verifies SHA-256, and validates extracted binaries
 
 Run the same checks locally:
 
@@ -64,6 +66,9 @@ Useful variants:
 ```bash
 # Full scan of all manifests (matches push/manual workflow behavior)
 REGISTRY_PREFLIGHT_ALL=1 ./scripts/registry-preflight.sh
+
+# Full scan without smoke-install (useful when iterating on validation logic only)
+REGISTRY_PREFLIGHT_ALL=1 REGISTRY_PREFLIGHT_SKIP_SMOKE=1 ./scripts/registry-preflight.sh
 
 # Validate only manifests changed from a specific base commit (matches PR workflow behavior)
 REGISTRY_BASE_SHA=<base-sha> ./scripts/registry-preflight.sh
