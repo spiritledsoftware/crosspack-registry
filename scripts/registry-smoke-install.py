@@ -23,7 +23,12 @@ def fallback_manifest_identifier(path: Path) -> str:
 def manifest_identifier(doc: dict, path: Path) -> str:
     name = doc.get("name")
     version = doc.get("version")
-    if isinstance(name, str) and name.strip() and isinstance(version, str) and version.strip():
+    if (
+        isinstance(name, str)
+        and name.strip()
+        and isinstance(version, str)
+        and version.strip()
+    ):
         return f"{name}@{version}"
     return fallback_manifest_identifier(path)
 
@@ -86,7 +91,9 @@ def choose_artifact(
 
 
 def download(url: str, dest: Path) -> None:
-    req = urllib.request.Request(url, headers={"User-Agent": "crosspack-registry-ci/1.0"})
+    req = urllib.request.Request(
+        url, headers={"User-Agent": "crosspack-registry-ci/1.0"}
+    )
     with urllib.request.urlopen(req, timeout=60) as resp:
         with dest.open("wb") as out:
             shutil.copyfileobj(resp, out)
@@ -111,7 +118,10 @@ def strip_name(name: str, strip_components: int) -> str | None:
 
 def extract_archive(src: Path, dest: Path, archive: str, strip_components: int) -> None:
     if archive in {"tar.gz", "tgz", "tar.xz"}:
-        mode = {"tar.gz": "r:gz", "tgz": "r:gz", "tar.xz": "r:xz"}[archive]
+        if archive in {"tar.gz", "tgz"}:
+            mode = "r:gz"
+        else:
+            mode = "r:xz"
         with tarfile.open(src, mode) as tf:
             for member in tf.getmembers():
                 if not member.name:
@@ -146,11 +156,18 @@ def extract_archive(src: Path, dest: Path, archive: str, strip_components: int) 
                 target.parent.mkdir(parents=True, exist_ok=True)
                 with zf.open(member, "r") as zsrc, target.open("wb") as out:
                     shutil.copyfileobj(zsrc, out)
+    elif archive == "bin":
+        target = dest / "payload.bin"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, target)
+        target.chmod(target.stat().st_mode | 0o755)
     else:
         raise ValueError(f"Unsupported archive format: {archive}")
 
 
-def smoke_manifest(path: Path, *, require_runner_target: bool = False) -> tuple[bool, str]:
+def smoke_manifest(
+    path: Path, *, require_runner_target: bool = False
+) -> tuple[bool, str]:
     doc = tomllib.loads(path.read_text(encoding="utf-8"))
     package_id = manifest_identifier(doc, path)
     artifacts = doc.get("artifacts", [])
@@ -209,8 +226,15 @@ def smoke_manifest(path: Path, *, require_runner_target: bool = False) -> tuple[
                 ),
             )
 
-        if archive:
+        if archive in {"tar.gz", "tgz", "tar.xz", "zip"}:
             extract_archive(payload, install_root, archive, strip_components)
+        elif archive == "bin":
+            for binary in binaries:
+                binary_path = Path(binary["path"])
+                dest = install_root / binary_path
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(payload, dest)
+                dest.chmod(dest.stat().st_mode | 0o755)
         else:
             for binary in binaries:
                 binary_path = Path(binary["path"])
@@ -266,7 +290,9 @@ def app_bundle_canary() -> tuple[bool, str]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run smoke-install checks for registry manifests")
+    parser = argparse.ArgumentParser(
+        description="Run smoke-install checks for registry manifests"
+    )
     parser.add_argument("manifests", nargs="*", help="Manifest paths to smoke-test")
     parser.add_argument(
         "--require-runner-target",
@@ -297,7 +323,9 @@ def main() -> int:
 
     for path in deduped_manifests:
         try:
-            ok, message = smoke_manifest(path, require_runner_target=args.require_runner_target)
+            ok, message = smoke_manifest(
+                path, require_runner_target=args.require_runner_target
+            )
         except Exception as exc:  # noqa: BLE001
             ok, message = (
                 False,
@@ -319,7 +347,10 @@ def main() -> int:
         try:
             ok, message = app_bundle_canary()
         except Exception as exc:  # noqa: BLE001
-            ok, message = False, f"app-bundle-canary: target=macOS reason=crashed ({exc})"
+            ok, message = (
+                False,
+                f"app-bundle-canary: target=macOS reason=crashed ({exc})",
+            )
 
         if ok:
             print(message)

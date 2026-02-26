@@ -98,11 +98,17 @@ def validate_manifest(path: Path, errors: list[str], require_signatures: bool) -
             err(errors, path, f"{prefix}.sha256 must be 64 hex characters")
 
         archive = artifact.get("archive")
-        if archive is not None and archive not in {"tar.gz", "zip", "tar.xz", "tgz"}:
+        if archive is not None and archive not in {
+            "tar.gz",
+            "zip",
+            "tar.xz",
+            "tgz",
+            "bin",
+        }:
             err(
                 errors,
                 path,
-                f"{prefix}.archive must be one of tar.gz, zip, tar.xz, tgz",
+                f"{prefix}.archive must be one of tar.gz, zip, tar.xz, tgz, bin",
             )
 
         strip_components = artifact.get("strip_components")
