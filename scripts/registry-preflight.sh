@@ -4,11 +4,20 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
-mapfile -t manifests < <("$repo_root/scripts/registry-changed-manifests.sh")
+manifests=()
+load_manifests() {
+  manifests=()
+  while IFS= read -r manifest; do
+    [[ -n "$manifest" ]] || continue
+    manifests+=("$manifest")
+  done < <("$@")
+}
+
+load_manifests "$repo_root/scripts/registry-changed-manifests.sh"
 
 if [[ "${#manifests[@]}" -eq 0 ]]; then
   echo "No manifest changes detected. Running full registry preflight to validate tooling changes."
-  mapfile -t manifests < <(REGISTRY_PREFLIGHT_ALL=1 "$repo_root/scripts/registry-changed-manifests.sh")
+  load_manifests env REGISTRY_PREFLIGHT_ALL=1 "$repo_root/scripts/registry-changed-manifests.sh"
 fi
 
 echo "Running registry preflight on ${#manifests[@]} manifest(s)..."
@@ -21,10 +30,10 @@ fi
 
 python3 "$repo_root/scripts/registry-validate.py" "${validate_args[@]}" "${manifests[@]}"
 
-if [[ "${REGISTRY_PREFLIGHT_SKIP_SMOKE:-0}" == "1" ]]; then
-  echo "Skipping smoke-install checks (REGISTRY_PREFLIGHT_SKIP_SMOKE=1)."
-else
+if [[ "${REGISTRY_PREFLIGHT_SKIP_SMOKE:-0}" != "1" ]]; then
   python3 "$repo_root/scripts/registry-smoke-install.py" "${manifests[@]}"
+else
+  echo "Skipping smoke-install checks (REGISTRY_PREFLIGHT_SKIP_SMOKE=1)."
 fi
 
 echo "Registry preflight complete."

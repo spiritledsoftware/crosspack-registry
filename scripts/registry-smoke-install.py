@@ -14,6 +14,43 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 
+def fallback_manifest_identifier(path: Path) -> str:
+    package = path.parent.name.strip() if path.parent.name else "unknown-package"
+    version = path.stem.strip() if path.stem else "unknown-version"
+    return f"{package}@{version}"
+
+
+def manifest_identifier(doc: dict, path: Path) -> str:
+    name = doc.get("name")
+    version = doc.get("version")
+    if isinstance(name, str) and name.strip() and isinstance(version, str) and version.strip():
+        return f"{name}@{version}"
+    return fallback_manifest_identifier(path)
+
+
+def best_effort_manifest_identifier(path: Path) -> str:
+    try:
+        doc = tomllib.loads(path.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001
+        return fallback_manifest_identifier(path)
+    return manifest_identifier(doc, path)
+
+
+def failure_message(
+    path: Path,
+    package_id: str,
+    reason: str,
+    *,
+    hint: str,
+    failing_binary: str | None = None,
+) -> str:
+    message = f"{path}: {package_id}: smoke-install failed: {reason}"
+    if failing_binary:
+        message += f"; failing binary path: {failing_binary}"
+    message += f"; remediation hint: {hint}"
+    return message
+
+
 def runner_target() -> str | None:
     system = platform.system().lower()
     machine = platform.machine().lower()
@@ -113,29 +150,37 @@ def extract_archive(src: Path, dest: Path, archive: str, strip_components: int) 
         raise ValueError(f"Unsupported archive format: {archive}")
 
 
-def manifest_ref(doc: dict, path: Path) -> str:
-    name = str(doc.get("name") or path.parent.name)
-    version = str(doc.get("version") or path.stem)
-    return f"{name}@{version}"
-
-
-def smoke_manifest(path: Path, *, require_runner_target: bool) -> tuple[bool, str]:
+def smoke_manifest(path: Path, *, require_runner_target: bool = False) -> tuple[bool, str]:
     doc = tomllib.loads(path.read_text(encoding="utf-8"))
-    package = manifest_ref(doc, path)
-    runner = runner_target() or "unknown"
+    package_id = manifest_identifier(doc, path)
     artifacts = doc.get("artifacts", [])
     if not artifacts:
-        return False, f"{package} ({path}): target={runner} reason=no artifacts available for smoke-install"
+        return (
+            False,
+            failure_message(
+                path,
+                package_id,
+                "no artifacts available for smoke-install",
+                hint="add at least one [[artifacts]] entry with url, sha256, and binaries metadata",
+            ),
+        )
 
+    resolved_runner_target = runner_target()
     artifact = choose_artifact(
         artifacts,
-        target=runner_target(),
+        target=resolved_runner_target,
         require_target=require_runner_target,
     )
     if artifact is None:
+        expected_target = resolved_runner_target or "unknown-runner-target"
         return (
             False,
-            f"{package} ({path}): target={runner} reason=no artifact matched runner target",
+            failure_message(
+                path,
+                package_id,
+                f"no artifact matched runner target={expected_target}",
+                hint="add an artifact for this runner target or run without --require-runner-target",
+            ),
         )
 
     artifact_target = artifact.get("target", "unknown")
@@ -156,9 +201,11 @@ def smoke_manifest(path: Path, *, require_runner_target: bool) -> tuple[bool, st
         if actual_sha != expected_sha:
             return (
                 False,
-                (
-                    f"{package} ({path}): target={runner} artifact={artifact_target} "
-                    f"reason=checksum mismatch for {url} (expected {expected_sha}, got {actual_sha})"
+                failure_message(
+                    path,
+                    package_id,
+                    f"checksum mismatch for {url} (expected {expected_sha}, got {actual_sha})",
+                    hint="update artifacts[].sha256 to match the published asset bytes for this target",
                 ),
             )
 
@@ -182,16 +229,16 @@ def smoke_manifest(path: Path, *, require_runner_target: bool) -> tuple[bool, st
             missing_csv = ", ".join(missing)
             return (
                 False,
-                (
-                    f"{package} ({path}): target={runner} artifact={artifact_target} "
-                    f"reason=missing extracted binaries: {missing_csv}"
+                failure_message(
+                    path,
+                    package_id,
+                    f"missing extracted binaries for target={artifact_target}: {missing_csv}",
+                    failing_binary=missing_csv,
+                    hint="verify artifacts[].binaries[].path and strip_components against the extracted archive layout",
                 ),
             )
 
-    return (
-        True,
-        f"{package} ({path}): target={runner} artifact={artifact_target} status=smoke-install ok",
-    )
+    return True, f"{path}: {package_id}: smoke-install ok via target={artifact_target}"
 
 
 def app_bundle_canary() -> tuple[bool, str]:
@@ -209,10 +256,7 @@ def app_bundle_canary() -> tuple[bool, str]:
         if not expected.exists() or not expected.is_file():
             return (
                 False,
-                (
-                    "app-bundle-canary: target=macOS "
-                    "reason=missing Neovide.app/Contents/MacOS/neovide after extraction"
-                ),
+                "app-bundle-canary: target=macOS reason=missing Neovide.app/Contents/MacOS/neovide after extraction",
             )
 
     return (
@@ -223,6 +267,7 @@ def app_bundle_canary() -> tuple[bool, str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run smoke-install checks for registry manifests")
+    parser.add_argument("manifests", nargs="*", help="Manifest paths to smoke-test")
     parser.add_argument(
         "--require-runner-target",
         action="store_true",
@@ -233,19 +278,36 @@ def main() -> int:
         action="store_true",
         help="Run local app-bundle extraction canary (.app/Contents/MacOS path)",
     )
-    parser.add_argument("manifests", nargs="*", help="Manifest paths to smoke-test")
     args = parser.parse_args()
+
     if not args.manifests and not args.app_bundle_canary:
         parser.error("provide at least one manifest path or --app-bundle-canary")
 
+    deduped_manifests: list[Path] = []
+    seen: set[str] = set()
+    for manifest in args.manifests:
+        key = str(manifest)
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped_manifests.append(Path(manifest))
+
     failures = []
     completed_checks = 0
-    for manifest in args.manifests:
-        path = Path(manifest)
+
+    for path in deduped_manifests:
         try:
             ok, message = smoke_manifest(path, require_runner_target=args.require_runner_target)
         except Exception as exc:  # noqa: BLE001
-            ok, message = False, f"{path}: target={runner_target() or 'unknown'} reason=smoke-install crashed ({exc})"
+            ok, message = (
+                False,
+                failure_message(
+                    path,
+                    best_effort_manifest_identifier(path),
+                    f"smoke-install crashed ({exc})",
+                    hint="run scripts/registry-validate.py for the manifest and verify artifact metadata fields",
+                ),
+            )
 
         if ok:
             print(message)
@@ -273,7 +335,7 @@ def main() -> int:
 
     print(
         f"Smoke-install checks passed for {completed_checks} check(s) "
-        f"({len(args.manifests)} manifest(s), app_bundle_canary={args.app_bundle_canary})."
+        f"({len(deduped_manifests)} manifest(s), app_bundle_canary={args.app_bundle_canary})."
     )
     return 0
 
