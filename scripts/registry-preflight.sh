@@ -20,6 +20,11 @@ if [[ "${REGISTRY_REQUIRE_SIGNATURES:-1}" == "0" ]]; then
 fi
 
 python3 "$repo_root/scripts/registry-validate.py" "${validate_args[@]}" "${manifests[@]}"
-python3 "$repo_root/scripts/registry-smoke-install.py" "${manifests[@]}"
+
+if [[ "${REGISTRY_PREFLIGHT_SKIP_SMOKE:-0}" == "1" ]]; then
+  echo "Skipping smoke-install checks (REGISTRY_PREFLIGHT_SKIP_SMOKE=1)."
+else
+  python3 "$repo_root/scripts/registry-smoke-install.py" "${manifests[@]}"
+fi
 
 echo "Registry preflight complete."

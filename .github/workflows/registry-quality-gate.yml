@@ -28,6 +28,7 @@ jobs:
         env:
           REGISTRY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           REGISTRY_REQUIRE_SIGNATURES: '0'
+          REGISTRY_PREFLIGHT_SKIP_SMOKE: '1'
         run: ./scripts/registry-preflight.sh
 
       - name: Registry preflight (full scan)
@@ -35,3 +36,54 @@ jobs:
         env:
           REGISTRY_PREFLIGHT_ALL: '1'
         run: ./scripts/registry-preflight.sh
+
+  smoke-install-matrix:
+    name: Smoke Install (${{ matrix.os }})
+    if: github.event_name == 'pull_request'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      # Bounded runtime: two runners only, and each runner processes only changed manifests.
+      fail-fast: true
+      max-parallel: 2
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed manifests for this PR
+        id: changed
+        env:
+          REGISTRY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          mapfile -t manifests < <(./scripts/registry-changed-manifests.sh)
+          echo "count=${#manifests[@]}" >> "$GITHUB_OUTPUT"
+
+          if [[ "${#manifests[@]}" -eq 0 ]]; then
+            echo "No changed manifests detected for ${RUNNER_OS}; skipping smoke-install."
+            exit 0
+          fi
+
+          manifest_file="${RUNNER_TEMP}/registry-changed-manifests.txt"
+          printf '%s\n' "${manifests[@]}" > "$manifest_file"
+          echo "manifest_file=${manifest_file}" >> "$GITHUB_OUTPUT"
+
+          echo "Changed manifests for ${RUNNER_OS}:"
+          printf ' - %s\n' "${manifests[@]}"
+
+      - name: Smoke-install changed manifests on runner target
+        if: steps.changed.outputs.count != '0'
+        run: |
+          mapfile -t manifests < "${{ steps.changed.outputs.manifest_file }}"
+          python3 ./scripts/registry-smoke-install.py --require-runner-target "${manifests[@]}"
+
+      - name: App-bundle smoke canary (macOS)
+        if: steps.changed.outputs.count != '0' && runner.os == 'macOS'
+        run: |
+          python3 ./scripts/registry-smoke-install.py --app-bundle-canary
