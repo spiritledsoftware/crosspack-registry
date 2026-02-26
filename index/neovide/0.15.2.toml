@@ -33,7 +33,7 @@ path = "Neovide.app/Contents/MacOS/neovide"
 [[artifacts.gui_apps]]
 app_id = "io.neovide.neovide"
 display_name = "Neovide"
-exec = "Neovide.app/Contents/MacOS/neovide"
+exec = "Neovide.app"
 categories = ["Utility", "Development"]
 
 [[artifacts]]
@@ -49,7 +49,7 @@ path = "Neovide.app/Contents/MacOS/neovide"
 [[artifacts.gui_apps]]
 app_id = "io.neovide.neovide"
 display_name = "Neovide"
-exec = "Neovide.app/Contents/MacOS/neovide"
+exec = "Neovide.app"
 categories = ["Utility", "Development"]
 
 [[artifacts]]
