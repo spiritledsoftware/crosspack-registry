@@ -1,0 +1,59 @@
+name = "delta"
+version = "0.18.2"
+license = "MIT"
+homepage = "https://github.com/dandavison/delta"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/dandavison/delta/releases/download/0.18.2/delta-0.18.2-x86_64-unknown-linux-gnu.tar.gz"
+sha256 = "99607c43238e11a77fe90a914d8c2d64961aff84b60b8186c1b5691b39955b0f"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "delta"
+path = "delta"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/dandavison/delta/releases/download/0.18.2/delta-0.18.2-aarch64-unknown-linux-gnu.tar.gz"
+sha256 = "adf7674086daa4582f598f74ce9caa6b70c1ba8f4a57d2911499b37826b014f9"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "delta"
+path = "delta"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/dandavison/delta/releases/download/0.18.2/delta-0.18.2-x86_64-apple-darwin.tar.gz"
+sha256 = "e9b5c4a9e73d2119c687e074f0d97f188e30e5fe8ae0e6d455755f74bb5cc0cf"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "delta"
+path = "delta"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/dandavison/delta/releases/download/0.18.2/delta-0.18.2-aarch64-apple-darwin.tar.gz"
+sha256 = "6ba38dce9f91ee1b9a24aa4aede1db7195258fe176c3f8276ae2d4457d8170a0"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "delta"
+path = "delta"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/dandavison/delta/releases/download/0.18.2/delta-0.18.2-x86_64-pc-windows-msvc.zip"
+sha256 = "6ea59864091b4cfca89d9ee38388ff1a3ccdc8244b6e1cdd5201259de89b0b06"
+archive = "zip"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "delta"
+path = "delta.exe"

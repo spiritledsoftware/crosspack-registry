@@ -1,0 +1,79 @@
+name = "uv"
+version = "0.10.6"
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/astral-sh/uv"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/astral-sh/uv/releases/download/0.10.6/uv-x86_64-unknown-linux-gnu.tar.gz"
+sha256 = "aaa402e19d14a6b9a4267fcf4ec35380f804c68923525cea67cd6ee05bb4e930"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "uv"
+path = "uv"
+
+[[artifacts.binaries]]
+name = "uvx"
+path = "uvx"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/astral-sh/uv/releases/download/0.10.6/uv-aarch64-unknown-linux-gnu.tar.gz"
+sha256 = "9380705294a85e3e634570abddd5b2577900c1873c29b790c7abc56a81dce4bc"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "uv"
+path = "uv"
+
+[[artifacts.binaries]]
+name = "uvx"
+path = "uvx"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/astral-sh/uv/releases/download/0.10.6/uv-x86_64-apple-darwin.tar.gz"
+sha256 = "d7647571fb17a5107d4d23cc190418039c157fd7361ddb59bc6f8127a49e3eac"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "uv"
+path = "uv"
+
+[[artifacts.binaries]]
+name = "uvx"
+path = "uvx"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/astral-sh/uv/releases/download/0.10.6/uv-aarch64-apple-darwin.tar.gz"
+sha256 = "3993249d8f51deaf34cfce037e57e294e82267ff1f9dc45b7983a17afaf065b4"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "uv"
+path = "uv"
+
+[[artifacts.binaries]]
+name = "uvx"
+path = "uvx"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/astral-sh/uv/releases/download/0.10.6/uv-x86_64-pc-windows-msvc.zip"
+sha256 = "b27eb789f281e398a82197477de727fc8faf08605152115686da2c3cba0d25f7"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "uv"
+path = "uv.exe"
+
+[[artifacts.binaries]]
+name = "uvx"
+path = "uvx.exe"
