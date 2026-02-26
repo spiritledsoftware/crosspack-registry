@@ -24,7 +24,7 @@ categories = ["Utility", "Development"]
 target = "aarch64-apple-darwin"
 url = "https://github.com/neovide/neovide/releases/download/0.15.2/Neovide-aarch64-apple-darwin.dmg"
 sha256 = "8c672ce737796e648a706ee69191c557ebe56fe07f998904014fc05f19e53fad"
-strip_components = 1
+strip_components = 0
 
 [[artifacts.binaries]]
 name = "neovide"
@@ -40,7 +40,7 @@ categories = ["Utility", "Development"]
 target = "x86_64-apple-darwin"
 url = "https://github.com/neovide/neovide/releases/download/0.15.2/Neovide-x86_64-apple-darwin.dmg"
 sha256 = "c7a8d29cc75d72a943c91d2519429b5dc5c55f9a50ea28bb80bb2272f60ddb13"
-strip_components = 1
+strip_components = 0
 
 [[artifacts.binaries]]
 name = "neovide"
