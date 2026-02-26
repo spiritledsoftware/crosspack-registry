@@ -1,0 +1,59 @@
+name = "lazygit"
+version = "0.59.0"
+license = "MIT"
+homepage = "https://github.com/jesseduffield/lazygit"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/jesseduffield/lazygit/releases/download/v0.59.0/lazygit_0.59.0_linux_x86_64.tar.gz"
+sha256 = "264283f40a40c899d702a338b20622f690221f753f03bac827c1f34e91f516c2"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "lazygit"
+path = "lazygit"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/jesseduffield/lazygit/releases/download/v0.59.0/lazygit_0.59.0_linux_arm64.tar.gz"
+sha256 = "a334a6c125169f21942f1a8b02043932575547a6250a1a734d62111efd92aa8f"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "lazygit"
+path = "lazygit"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/jesseduffield/lazygit/releases/download/v0.59.0/lazygit_0.59.0_darwin_x86_64.tar.gz"
+sha256 = "365db34a92d017f7e77fe03aa461a921c6a31832fa9d427a7b06c86732821f55"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "lazygit"
+path = "lazygit"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/jesseduffield/lazygit/releases/download/v0.59.0/lazygit_0.59.0_darwin_arm64.tar.gz"
+sha256 = "cdd42e86b16b3bc21ec5cbe4be92d688e39f3806b53b63c54d1af4f498302ed8"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "lazygit"
+path = "lazygit"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/jesseduffield/lazygit/releases/download/v0.59.0/lazygit_0.59.0_windows_x86_64.zip"
+sha256 = "3f2c43d4596498ca4e1c31c0430e4a2e015624d82ea25bb306c8695e6613d912"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "lazygit"
+path = "lazygit.exe"
