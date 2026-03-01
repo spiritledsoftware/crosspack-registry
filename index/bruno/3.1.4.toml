@@ -1,0 +1,100 @@
+name = "bruno"
+version = "3.1.4"
+license = "MIT"
+homepage = "https://github.com/usebruno/bruno"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/usebruno/bruno/releases/download/v3.1.4/bruno_3.1.4_x86_64_linux.AppImage"
+sha256 = "55a30be5a7902203109611e32fa14d0c4225d66121aaa08247da5ea1e8498f3e"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "bruno"
+path = "bruno"
+
+[[artifacts.gui_apps]]
+app_id = "com.usebruno.app"
+display_name = "Bruno"
+exec = "bruno"
+categories = ["Development"]
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/usebruno/bruno/releases/download/v3.1.4/bruno_3.1.4_arm64_linux.AppImage"
+sha256 = "a4788e7b28bd78bdf3572bf3c0b486f0ac72b6f89fc30716cf49ad736ae43e16"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "bruno"
+path = "bruno"
+
+[[artifacts.gui_apps]]
+app_id = "com.usebruno.app"
+display_name = "Bruno"
+exec = "bruno"
+categories = ["Development"]
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/usebruno/bruno/releases/download/v3.1.4/bruno_3.1.4_x64_mac.dmg"
+sha256 = "5afdc04491a0a3e33575595fc6fff02f92fe6733f35871d8b0e431f1f455becb"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "bruno"
+path = "Bruno.app/Contents/MacOS/Bruno"
+
+[[artifacts.gui_apps]]
+app_id = "com.usebruno.app"
+display_name = "Bruno"
+exec = "Bruno.app"
+categories = ["Development"]
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/usebruno/bruno/releases/download/v3.1.4/bruno_3.1.4_arm64_mac.dmg"
+sha256 = "99599391b6e1d24ef0e1915a5b6abcfe3f81ffe7119d522412e799a2c7655cd8"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "bruno"
+path = "Bruno.app/Contents/MacOS/Bruno"
+
+[[artifacts.gui_apps]]
+app_id = "com.usebruno.app"
+display_name = "Bruno"
+exec = "Bruno.app"
+categories = ["Development"]
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/usebruno/bruno/releases/download/v3.1.4/bruno_3.1.4_x64_win.exe"
+sha256 = "5c3aa4775573e79b9d7078892b4df67ae604258b561de914842dd29c13ca5104"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "bruno"
+path = "bruno.exe"
+
+[[artifacts.gui_apps]]
+app_id = "com.usebruno.app"
+display_name = "Bruno"
+exec = "bruno.exe"
+categories = ["Development"]
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+url = "https://github.com/usebruno/bruno/releases/download/v3.1.4/bruno_3.1.4_arm64_win.exe"
+sha256 = "c5a8b1c925c1641ee8e996b58eca0d1973e78ed733a0f0535dda24cc55c3fdff"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "bruno"
+path = "bruno.exe"
+
+[[artifacts.gui_apps]]
+app_id = "com.usebruno.app"
+display_name = "Bruno"
+exec = "bruno.exe"
+categories = ["Development"]
