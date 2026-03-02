@@ -1,0 +1,32 @@
+name = "dbeaver"
+version = "25.3.5"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/dbeaver/dbeaver/releases/download/25.3.5/dbeaver-ce-25.3.5-linux-x86_64.tar.gz"
+sha256 = "a548cb336b4f215b86898a6fd1481f52720d3d1c7375b06f00f7de5f856cae7f"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/dbeaver/dbeaver/releases/download/25.3.5/dbeaver-ce-25.3.5-linux-aarch64.tar.gz"
+sha256 = "dba459aeaa5c8873a09fa086261af1bf2821c5a203a23bf51a40bb0dff4ac320"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/dbeaver/dbeaver/releases/download/25.3.5/dbeaver-ce-25.3.5-macos-x86_64.dmg"
+sha256 = "196ae8da178a527cbba6c3729b66c0f26f07be4f7a1a20d58580c6f708282628"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/dbeaver/dbeaver/releases/download/25.3.5/dbeaver-ce-25.3.5-macos-aarch64.dmg"
+sha256 = "2b682354729848bc0097426e699cb96432c45e9b261c72cf7d9524bae4d4a28e"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/dbeaver/dbeaver/releases/download/25.3.5/dbeaver-ce-25.3.5-windows-x86_64.zip"
+sha256 = "20b44004e28cd8e369d65fe8c28713a1c4c9f5e700d8cbe095a71f9035612f6f"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+url = "https://github.com/dbeaver/dbeaver/releases/download/25.3.5/dbeaver-ce-25.3.5-windows-aarch64.zip"
+sha256 = "0ff731fd8d0639b3f4ca74d94af667f6dafba28ecd9cbb7dcf52024ea5eb0cf5"

@@ -9,7 +9,7 @@ Usage:
     --version <version> \
     --target <target-triple> \
     --url <artifact-url> \
-    [--output-root <index-dir>] \
+    [--output-root <registry-root>] \
     [--license <license>] \
     [--homepage <homepage-url>] \
     [--binary-name <binary-name>] \
@@ -22,9 +22,9 @@ NAME=""
 VERSION=""
 TARGET=""
 URL=""
-OUTPUT_ROOT="index"
+OUTPUT_ROOT="."
 LICENSE_VALUE="TODO_LICENSE"
-HOMEPAGE="TODO_HOMEPAGE"
+HOMEPAGE="https://example.invalid/TODO_HOMEPAGE"
 BINARY_NAME=""
 BINARY_PATH="TODO_BINARY_PATH"
 FORCE=0
@@ -93,54 +93,93 @@ if [[ -z "$BINARY_NAME" ]]; then
   BINARY_NAME="$NAME"
 fi
 
-ARCHIVE_LINES=""
-if [[ "$URL" == *.tar.gz || "$URL" == *.tgz ]]; then
-  ARCHIVE_LINES=$'archive = "tar.gz"\nstrip_components = 1\n'
-elif [[ "$URL" == *.zip ]]; then
-  ARCHIVE_LINES=$'archive = "zip"\nstrip_components = 0\n'
+url_path="$URL"
+url_path="${url_path%%\?*}"
+url_path="${url_path%%\#*}"
+asset_name="${url_path##*/}"
+if [[ -z "$asset_name" || "$asset_name" == "$url_path" ]]; then
+  asset_name="TODO_ASSET_NAME"
+fi
+asset_template="${asset_name/$VERSION/\{version\}}"
+
+archive_lines=""
+if [[ "$asset_name" == *.tar.gz || "$asset_name" == *.tgz ]]; then
+  archive_lines=$'archive = "tar.gz"\nstrip_components = 1\n'
+elif [[ "$asset_name" == *.zip ]]; then
+  archive_lines=$'archive = "zip"\nstrip_components = 0\n'
 fi
 
-OUT_DIR="${OUTPUT_ROOT%/}/$NAME"
-OUT_FILE="$OUT_DIR/$VERSION.toml"
-TMP_FILE="$(mktemp)"
+package_out="${OUTPUT_ROOT%/}/packages/${NAME}.toml"
+release_dir="${OUTPUT_ROOT%/}/releases/${NAME}"
+release_out="${release_dir}/${VERSION}.toml"
 
-if [[ -e "$OUT_FILE" && "$FORCE" -ne 1 ]]; then
-  rm -f "$TMP_FILE"
-  echo "Refusing to overwrite existing manifest: $OUT_FILE (use --force to overwrite)" >&2
+if [[ -e "$release_out" && "$FORCE" -ne 1 ]]; then
+  echo "Refusing to overwrite existing release manifest: $release_out (use --force to overwrite)" >&2
   exit 1
 fi
 
-cat > "$TMP_FILE" <<EOF
+tmp_root="$(mktemp -d)"
+tmp_package="$tmp_root/packages/${NAME}.toml"
+tmp_release="$tmp_root/releases/${NAME}/${VERSION}.toml"
+mkdir -p "$(dirname "$tmp_package")" "$(dirname "$tmp_release")"
+
+cleanup() {
+  rm -rf "$tmp_root"
+}
+trap cleanup EXIT
+
+cat > "$tmp_package" <<EOF
 name = "$NAME"
-version = "$VERSION"
 license = "$LICENSE_VALUE"
 homepage = "$HOMEPAGE"
 
 [source]
-url = "TODO_SOURCE_URL"
-checksum = "TODO_SOURCE_CHECKSUM"
-signature = "TODO_SOURCE_SIGNATURE"
+provider = "github"
+repo = "TODO_OWNER/TODO_REPO"
+include_prereleases = false
 
 [[artifacts]]
 target = "$TARGET"
-url = "$URL"
-sha256 = "TODO_SHA256"
-${ARCHIVE_LINES}
-[[artifacts.binaries]]
+asset = "$asset_template"
+${archive_lines}[[artifacts.binaries]]
 name = "$BINARY_NAME"
 path = "$BINARY_PATH"
 EOF
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VALIDATOR="$SCRIPT_DIR/registry-validate-entry.py"
+cat > "$tmp_release" <<EOF
+name = "$NAME"
+version = "$VERSION"
 
-if ! python3 "$VALIDATOR" "$TMP_FILE" >/dev/null; then
-  rm -f "$TMP_FILE"
-  echo "Validation failed; manifest not written" >&2
+[[artifacts]]
+target = "$TARGET"
+url = "$URL"
+sha256 = "0000000000000000000000000000000000000000000000000000000000000000"
+EOF
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VALIDATOR="$SCRIPT_DIR/registry-validate.py"
+
+package_validation_path="$tmp_package"
+write_package=1
+if [[ -e "$package_out" && "$FORCE" -ne 1 ]]; then
+  package_validation_path="$package_out"
+  write_package=0
+fi
+
+if ! python3 "$VALIDATOR" --allow-missing-signatures "$package_validation_path" "$tmp_release" >/dev/null; then
+  echo "Validation failed; manifests not written" >&2
   exit 1
 fi
 
-mkdir -p "$OUT_DIR"
-mv "$TMP_FILE" "$OUT_FILE"
+mkdir -p "$release_dir"
+mv "$tmp_release" "$release_out"
 
-echo "Scaffolded: $OUT_FILE"
+if [[ "$write_package" -eq 1 ]]; then
+  mkdir -p "$(dirname "$package_out")"
+  cp "$tmp_package" "$package_out"
+  echo "Scaffolded package template: $package_out"
+else
+  echo "Using existing package template: $package_out"
+fi
+
+echo "Scaffolded release manifest: $release_out"

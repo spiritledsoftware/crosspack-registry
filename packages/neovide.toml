@@ -1,0 +1,70 @@
+name = "neovide"
+license = "MIT"
+homepage = "https://github.com/neovide/neovide"
+
+[source]
+provider = "github"
+repo = "neovide/neovide"
+include_prereleases = false
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "neovide-linux-x86_64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "neovide"
+path = "neovide"
+
+[[artifacts.gui_apps]]
+app_id = "io.neovide.neovide"
+display_name = "Neovide"
+exec = "neovide"
+categories = ["Utility", "Development"]
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "Neovide-aarch64-apple-darwin.dmg"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "neovide"
+path = "Neovide.app/Contents/MacOS/neovide"
+
+[[artifacts.gui_apps]]
+app_id = "io.neovide.neovide"
+display_name = "Neovide"
+exec = "Neovide.app"
+categories = ["Utility", "Development"]
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "Neovide-x86_64-apple-darwin.dmg"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "neovide"
+path = "Neovide.app/Contents/MacOS/neovide"
+
+[[artifacts.gui_apps]]
+app_id = "io.neovide.neovide"
+display_name = "Neovide"
+exec = "Neovide.app"
+categories = ["Utility", "Development"]
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "neovide.exe.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "neovide"
+path = "neovide.exe"
+
+[[artifacts.gui_apps]]
+app_id = "io.neovide.neovide"
+display_name = "Neovide"
+exec = "neovide.exe"
+categories = ["Utility", "Development"]

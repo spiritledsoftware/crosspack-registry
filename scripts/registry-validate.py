@@ -11,6 +11,8 @@ SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?
 SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 SIG_RE = re.compile(r"^[0-9a-fA-F]{128}$")
 TARGET_RE = re.compile(r"^[A-Za-z0-9._-]+$")
+REPO_RE = re.compile(r"^[^/\s]+/[^/\s]+$")
+ARCHIVE_VALUES = {"tar.gz", "zip", "tar.xz", "tgz", "bin"}
 
 
 def err(errors: list[str], path: Path, message: str) -> None:
@@ -34,43 +36,76 @@ def expect_nonempty_str(value, field: str, errors: list[str], path: Path) -> boo
     return True
 
 
-def validate_manifest(path: Path, errors: list[str], require_signatures: bool) -> None:
-    doc = load_manifest(path, errors)
-    if doc is None:
-        return
+def is_relative_without_parent_segments(value: str) -> bool:
+    candidate = Path(value)
+    return not candidate.is_absolute() and ".." not in candidate.parts
 
-    name_ok = expect_nonempty_str(doc.get("name"), "name", errors, path)
-    version_ok = expect_nonempty_str(doc.get("version"), "version", errors, path)
-    expect_nonempty_str(doc.get("license"), "license", errors, path)
-    homepage_ok = expect_nonempty_str(doc.get("homepage"), "homepage", errors, path)
 
-    if version_ok and not SEMVER_RE.fullmatch(doc["version"]):
+def validate_common_artifact_template_fields(
+    *, artifact: dict, prefix: str, path: Path, errors: list[str]
+) -> None:
+    target = artifact.get("target")
+    if not isinstance(target, str) or not TARGET_RE.fullmatch(target):
+        err(errors, path, f"{prefix}.target must match {TARGET_RE.pattern}")
+
+    archive = artifact.get("archive")
+    if archive is not None and archive not in ARCHIVE_VALUES:
         err(
             errors,
             path,
-            f"invalid `version` format: {doc['version']!r} (expected semver)",
+            f"{prefix}.archive must be one of {', '.join(sorted(ARCHIVE_VALUES))}",
         )
 
-    if homepage_ok and not doc["homepage"].startswith("https://"):
+    strip_components = artifact.get("strip_components")
+    if strip_components is not None and (
+        isinstance(strip_components, bool)
+        or not isinstance(strip_components, int)
+        or strip_components < 0
+    ):
+        err(errors, path, f"{prefix}.strip_components must be an integer >= 0")
+
+
+def validate_package_manifest(path: Path, doc: dict, errors: list[str]) -> None:
+    name_ok = expect_nonempty_str(doc.get("name"), "name", errors, path)
+    expect_nonempty_str(doc.get("license"), "license", errors, path)
+    homepage_ok = expect_nonempty_str(doc.get("homepage"), "homepage", errors, path)
+
+    if homepage_ok and not str(doc["homepage"]).startswith("https://"):
         err(errors, path, "invalid `homepage` (must start with https://)")
 
-    # Ensure file path conventions match metadata.
-    if len(path.parts) < 3:
-        err(errors, path, "manifest must live under index/<name>/<version>.toml")
+    source = doc.get("source")
+    if not isinstance(source, dict):
+        err(errors, path, "missing or invalid `source` (must be a table)")
     else:
-        file_pkg = path.parent.name
-        file_ver = path.stem
+        provider_ok = expect_nonempty_str(
+            source.get("provider"), "source.provider", errors, path
+        )
+        if provider_ok and source["provider"] != "github":
+            err(errors, path, "source.provider must be 'github'")
+
+        repo_ok = expect_nonempty_str(source.get("repo"), "source.repo", errors, path)
+        if repo_ok and not REPO_RE.fullmatch(str(source["repo"])):
+            err(errors, path, "source.repo must look like owner/name")
+
+        include_prereleases = source.get("include_prereleases")
+        if include_prereleases is not None and not isinstance(
+            include_prereleases, bool
+        ):
+            err(errors, path, "source.include_prereleases must be a boolean")
+
+        tag_prefix = source.get("tag_prefix")
+        if tag_prefix is not None and not isinstance(tag_prefix, str):
+            err(errors, path, "source.tag_prefix must be a string")
+
+    if len(path.parts) < 2 or path.parts[-2] != "packages":
+        err(errors, path, "package manifest must live under packages/<name>.toml")
+    else:
+        file_pkg = path.stem
         if name_ok and file_pkg != doc["name"]:
             err(
                 errors,
                 path,
-                f"package directory `{file_pkg}` does not match `name` `{doc['name']}`",
-            )
-        if version_ok and file_ver != doc["version"]:
-            err(
-                errors,
-                path,
-                f"file version `{file_ver}` does not match `version` `{doc['version']}`",
+                f"package filename `{file_pkg}` does not match `name` `{doc['name']}`",
             )
 
     artifacts = doc.get("artifacts")
@@ -84,84 +119,203 @@ def validate_manifest(path: Path, errors: list[str], require_signatures: bool) -
             err(errors, path, f"{prefix} must be a table")
             continue
 
-        target = artifact.get("target")
-        url = artifact.get("url")
-        sha256 = artifact.get("sha256")
+        validate_common_artifact_template_fields(
+            artifact=artifact,
+            prefix=prefix,
+            path=path,
+            errors=errors,
+        )
 
-        if not isinstance(target, str) or not TARGET_RE.fullmatch(target):
-            err(errors, path, f"{prefix}.target must match {TARGET_RE.pattern}")
-
-        if not isinstance(url, str) or not url.startswith("https://"):
-            err(errors, path, f"{prefix}.url must start with https://")
-
-        if not isinstance(sha256, str) or not SHA256_RE.fullmatch(sha256):
-            err(errors, path, f"{prefix}.sha256 must be 64 hex characters")
-
-        archive = artifact.get("archive")
-        if archive is not None and archive not in {
-            "tar.gz",
-            "zip",
-            "tar.xz",
-            "tgz",
-            "bin",
-        }:
-            err(
-                errors,
-                path,
-                f"{prefix}.archive must be one of tar.gz, zip, tar.xz, tgz, bin",
-            )
-
-        strip_components = artifact.get("strip_components")
-        if strip_components is not None and (
-            not isinstance(strip_components, int) or strip_components < 0
-        ):
-            err(errors, path, f"{prefix}.strip_components must be an integer >= 0")
+        asset = artifact.get("asset")
+        if not isinstance(asset, str) or not asset.strip():
+            err(errors, path, f"{prefix}.asset must be a non-empty string")
 
         binaries = artifact.get("binaries")
         if not isinstance(binaries, list) or not binaries:
             err(errors, path, f"{prefix}.binaries must be a non-empty array")
-            continue
-
-        for bidx, binary in enumerate(binaries, start=1):
-            bprefix = f"{prefix}.binaries[{bidx}]"
-            if not isinstance(binary, dict):
-                err(errors, path, f"{bprefix} must be a table")
-                continue
-
-            bname = binary.get("name")
-            bpath = binary.get("path")
-            if not isinstance(bname, str) or not bname.strip():
-                err(errors, path, f"{bprefix}.name must be a non-empty string")
-            if not isinstance(bpath, str) or not bpath.strip():
-                err(errors, path, f"{bprefix}.path must be a non-empty string")
-            elif bpath.startswith("/") or ".." in Path(bpath).parts:
-                err(
-                    errors,
-                    path,
-                    f"{bprefix}.path must be relative and must not contain '..'",
-                )
-
-    if require_signatures:
-        sig_path = path.with_suffix(path.suffix + ".sig")
-        if not sig_path.exists():
-            err(errors, path, f"missing signature sidecar `{sig_path.name}`")
         else:
-            try:
-                sig_raw = sig_path.read_text(encoding="utf-8").strip()
-            except OSError as exc:
-                err(errors, path, f"cannot read signature sidecar ({exc})")
-            else:
-                if not SIG_RE.fullmatch(sig_raw):
+            for bidx, binary in enumerate(binaries, start=1):
+                bprefix = f"{prefix}.binaries[{bidx}]"
+                if not isinstance(binary, dict):
+                    err(errors, path, f"{bprefix} must be a table")
+                    continue
+
+                bname = binary.get("name")
+                bpath = binary.get("path")
+                if not isinstance(bname, str) or not bname.strip():
+                    err(errors, path, f"{bprefix}.name must be a non-empty string")
+                if not isinstance(bpath, str) or not bpath.strip():
+                    err(errors, path, f"{bprefix}.path must be a non-empty string")
+                elif not is_relative_without_parent_segments(bpath):
                     err(
                         errors,
                         path,
-                        f"invalid signature format in `{sig_path.name}` (expected 128 hex characters)",
+                        f"{bprefix}.path must be relative and must not contain '..'",
                     )
+
+        completions = artifact.get("completions", [])
+        if not isinstance(completions, list):
+            err(errors, path, f"{prefix}.completions must be an array when present")
+        else:
+            for cidx, completion in enumerate(completions, start=1):
+                cprefix = f"{prefix}.completions[{cidx}]"
+                if not isinstance(completion, dict):
+                    err(errors, path, f"{cprefix} must be a table")
+                    continue
+                if (
+                    not isinstance(completion.get("shell"), str)
+                    or not str(completion.get("shell")).strip()
+                ):
+                    err(errors, path, f"{cprefix}.shell must be a non-empty string")
+                completion_path = completion.get("path")
+                if not isinstance(completion_path, str) or not completion_path.strip():
+                    err(errors, path, f"{cprefix}.path must be a non-empty string")
+                elif not is_relative_without_parent_segments(completion_path):
+                    err(
+                        errors,
+                        path,
+                        f"{cprefix}.path must be relative and must not contain '..'",
+                    )
+
+        gui_apps = artifact.get("gui_apps", [])
+        if not isinstance(gui_apps, list):
+            err(errors, path, f"{prefix}.gui_apps must be an array when present")
+        else:
+            for gidx, gui_app in enumerate(gui_apps, start=1):
+                gprefix = f"{prefix}.gui_apps[{gidx}]"
+                if not isinstance(gui_app, dict):
+                    err(errors, path, f"{gprefix} must be a table")
+                    continue
+
+                for field in ("app_id", "display_name", "exec"):
+                    field_value = gui_app.get(field)
+                    if not isinstance(field_value, str) or not field_value.strip():
+                        err(
+                            errors,
+                            path,
+                            f"{gprefix}.{field} must be a non-empty string",
+                        )
+
+                categories = gui_app.get("categories")
+                if not isinstance(categories, list) or not categories:
+                    err(errors, path, f"{gprefix}.categories must be a non-empty array")
+                else:
+                    for cat_idx, category in enumerate(categories, start=1):
+                        if not isinstance(category, str) or not category.strip():
+                            err(
+                                errors,
+                                path,
+                                f"{gprefix}.categories[{cat_idx}] must be a non-empty string",
+                            )
+
+
+def validate_release_manifest(path: Path, doc: dict, errors: list[str]) -> None:
+    name_ok = expect_nonempty_str(doc.get("name"), "name", errors, path)
+    version_ok = expect_nonempty_str(doc.get("version"), "version", errors, path)
+
+    if version_ok and not SEMVER_RE.fullmatch(str(doc["version"])):
+        err(
+            errors,
+            path,
+            f"invalid `version` format: {doc['version']!r} (expected semver)",
+        )
+
+    if len(path.parts) < 3 or path.parts[-3] != "releases":
+        err(
+            errors,
+            path,
+            "release manifest must live under releases/<name>/<version>.toml",
+        )
+    else:
+        file_pkg = path.parent.name
+        file_ver = path.stem
+        if name_ok and file_pkg != doc["name"]:
+            err(
+                errors,
+                path,
+                f"release directory `{file_pkg}` does not match `name` `{doc['name']}`",
+            )
+        if version_ok and file_ver != doc["version"]:
+            err(
+                errors,
+                path,
+                f"release filename `{file_ver}` does not match `version` `{doc['version']}`",
+            )
+
+    artifacts = doc.get("artifacts")
+    if not isinstance(artifacts, list) or not artifacts:
+        err(errors, path, "missing or invalid `artifacts` (must be a non-empty array)")
+        artifacts = []
+
+    for idx, artifact in enumerate(artifacts, start=1):
+        prefix = f"artifacts[{idx}]"
+        if not isinstance(artifact, dict):
+            err(errors, path, f"{prefix} must be a table")
+            continue
+
+        validate_common_artifact_template_fields(
+            artifact=artifact,
+            prefix=prefix,
+            path=path,
+            errors=errors,
+        )
+
+        url = artifact.get("url")
+        if not isinstance(url, str) or not url.startswith("https://"):
+            err(errors, path, f"{prefix}.url must start with https://")
+
+        sha256 = artifact.get("sha256")
+        if not isinstance(sha256, str) or not SHA256_RE.fullmatch(sha256):
+            err(errors, path, f"{prefix}.sha256 must be 64 hex characters")
+
+
+def validate_signature_sidecar(path: Path, errors: list[str]) -> None:
+    sig_path = path.with_suffix(path.suffix + ".sig")
+    if not sig_path.exists():
+        err(errors, path, f"missing signature sidecar `{sig_path.name}`")
+        return
+
+    try:
+        sig_raw = sig_path.read_text(encoding="utf-8").strip()
+    except OSError as exc:
+        err(errors, path, f"cannot read signature sidecar ({exc})")
+        return
+
+    if not SIG_RE.fullmatch(sig_raw):
+        err(
+            errors,
+            path,
+            f"invalid signature format in `{sig_path.name}` (expected 128 hex characters)",
+        )
+
+
+def validate_manifest(path: Path, errors: list[str], require_signatures: bool) -> None:
+    doc = load_manifest(path, errors)
+    if doc is None:
+        return
+
+    if not isinstance(doc, dict):
+        err(errors, path, "manifest root must be a table")
+        return
+
+    if len(path.parts) >= 2 and path.parts[-2] == "packages":
+        validate_package_manifest(path, doc, errors)
+    elif len(path.parts) >= 3 and path.parts[-3] == "releases":
+        validate_release_manifest(path, doc, errors)
+    else:
+        err(
+            errors,
+            path,
+            "manifest path must be under packages/ or releases/<name>/",
+        )
+
+    if require_signatures:
+        validate_signature_sidecar(path, errors)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Validate Crosspack registry manifests"
+        description="Validate Crosspack registry package and release manifests"
     )
     parser.add_argument(
         "--allow-missing-signatures",
@@ -175,7 +329,9 @@ def main() -> int:
     manifest_paths = [Path(p) for p in args.manifests]
     for path in manifest_paths:
         validate_manifest(
-            path, errors, require_signatures=not args.allow_missing_signatures
+            path,
+            errors,
+            require_signatures=not args.allow_missing_signatures,
         )
 
     if errors:
@@ -186,11 +342,11 @@ def main() -> int:
 
     if args.allow_missing_signatures:
         print(
-            f"Validated {len(manifest_paths)} manifest(s): schema, metadata, and checksum checks passed."
+            f"Validated {len(manifest_paths)} manifest(s): package/release schema and checksum checks passed."
         )
     else:
         print(
-            f"Validated {len(manifest_paths)} manifest(s): schema, metadata, checksum, and signature format checks passed."
+            f"Validated {len(manifest_paths)} manifest(s): package/release schema, checksum, and signature format checks passed."
         )
     return 0
 

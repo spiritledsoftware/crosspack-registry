@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Run without writing manifests or opening PRs'
+        description: 'Run without writing package/release metadata or opening PRs'
         required: false
         default: false
         type: boolean
@@ -24,7 +24,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  update-registry-manifests:
+  update-registry-metadata:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -38,7 +38,7 @@ jobs:
           python-version: '3.11'
 
       - name: Validate source configuration
-        run: python3 scripts/registry-validate-source.py registry/sources/*.toml
+        run: python3 scripts/registry-validate-source.py --require-package-coverage registry/sources/*.toml
 
       - name: Run release bot (dry run)
         if: github.event_name == 'workflow_dispatch' && inputs.dry_run

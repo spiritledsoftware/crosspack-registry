@@ -31,7 +31,18 @@ fi
 python3 "$repo_root/scripts/registry-validate.py" "${validate_args[@]}" "${manifests[@]}"
 
 if [[ "${REGISTRY_PREFLIGHT_SKIP_SMOKE:-0}" != "1" ]]; then
-  python3 "$repo_root/scripts/registry-smoke-install.py" "${manifests[@]}"
+  release_manifests=()
+  for manifest in "${manifests[@]}"; do
+    if [[ "$manifest" == releases/*/*.toml ]]; then
+      release_manifests+=("$manifest")
+    fi
+  done
+
+  if [[ "${#release_manifests[@]}" -gt 0 ]]; then
+    python3 "$repo_root/scripts/registry-smoke-install.py" "${release_manifests[@]}"
+  else
+    echo "Skipping smoke-install checks (no release manifests selected)."
+  fi
 else
   echo "Skipping smoke-install checks (REGISTRY_PREFLIGHT_SKIP_SMOKE=1)."
 fi

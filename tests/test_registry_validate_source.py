@@ -10,13 +10,17 @@ SCRIPT = REPO_ROOT / "scripts" / "registry-validate-source.py"
 
 
 class RegistryValidateSourceTests(unittest.TestCase):
-    def test_every_indexed_package_has_source_config(self) -> None:
-        index_root = REPO_ROOT / "index"
+    def test_every_packaged_package_has_source_config(self) -> None:
+        packages_root = REPO_ROOT / "packages"
         sources_root = REPO_ROOT / "registry" / "sources"
-        indexed_packages = {p.name for p in index_root.iterdir() if p.is_dir()}
+        packaged_packages = {
+            p.stem
+            for p in packages_root.glob("*.toml")
+            if p.is_file() and p.suffix == ".toml"
+        }
         source_packages = {p.stem for p in sources_root.glob("*.toml")}
 
-        missing = sorted(indexed_packages - source_packages)
+        missing = sorted(packaged_packages - source_packages)
         self.assertEqual(missing, [], msg=f"Missing source configs: {missing}")
 
     def test_valid_source_config_passes(self) -> None:

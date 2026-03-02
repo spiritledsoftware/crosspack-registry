@@ -132,6 +132,17 @@ def main(argv: list[str]) -> int:
         description="Validate registry source configuration"
     )
     parser.add_argument("configs", nargs="+", type=Path, help="registry/sources/*.toml")
+    parser.add_argument(
+        "--require-package-coverage",
+        action="store_true",
+        help="Fail if any packages/*.toml template lacks a matching source config",
+    )
+    parser.add_argument(
+        "--packages-root",
+        type=Path,
+        default=Path("packages"),
+        help="Package template root used with --require-package-coverage",
+    )
     args = parser.parse_args(argv)
 
     errors: list[str] = []
@@ -147,6 +158,23 @@ def main(argv: list[str]) -> int:
             errors.append(f"{path}: invalid TOML ({exc})")
         except ValidationError as exc:
             errors.append(f"{path}: {exc}")
+
+    if args.require_package_coverage:
+        if not args.packages_root.is_dir():
+            errors.append(f"{args.packages_root}: packages root not found")
+        else:
+            source_packages = {path.stem for path in args.configs}
+            package_templates = {
+                path.stem
+                for path in args.packages_root.glob("*.toml")
+                if path.is_file() and path.suffix == ".toml"
+            }
+            missing = sorted(package_templates - source_packages)
+            if missing:
+                errors.append(
+                    "package coverage failed: missing source config(s) for "
+                    + ", ".join(missing)
+                )
 
     if errors:
         print("Source config validation failed:", file=sys.stderr)
