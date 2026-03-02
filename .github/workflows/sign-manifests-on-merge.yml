@@ -37,13 +37,13 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ -z "$(git status --porcelain -- 'index/**/*.toml.sig')" ]; then
+          if [ -z "$(git status --porcelain -- 'packages/*.toml.sig' 'releases/**/*.toml.sig')" ]; then
             echo "no signature updates to commit"
             exit 0
           fi
 
           git config user.name "crosspack-registry-bot"
           git config user.email "crosspack-registry-bot@users.noreply.github.com"
-          git add -A index
+          git add -A packages releases
           git commit -m "chore(signatures): update manifest sidecars"
           git push origin HEAD:main

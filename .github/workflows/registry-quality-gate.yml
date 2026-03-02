@@ -3,8 +3,10 @@ name: Registry Quality Gate
 on:
   pull_request:
     paths:
-      - 'index/**/*.toml'
-      - 'index/**/*.toml.sig'
+      - 'packages/*.toml'
+      - 'packages/*.toml.sig'
+      - 'releases/**/*.toml'
+      - 'releases/**/*.toml.sig'
       - 'scripts/**'
       - '.github/workflows/registry-quality-gate.yml'
   push:
@@ -20,6 +22,8 @@ jobs:
     outputs:
       manifests_json: ${{ steps.changed.outputs.manifests_json }}
       manifest_count: ${{ steps.changed.outputs.manifest_count }}
+      release_manifests_json: ${{ steps.changed.outputs.release_manifests_json }}
+      release_manifest_count: ${{ steps.changed.outputs.release_manifest_count }}
 
     steps:
       - name: Checkout
@@ -41,8 +45,18 @@ jobs:
             MANIFESTS_JSON="$manifests_json" python3 -c 'import json, os; print(len(json.loads(os.environ["MANIFESTS_JSON"])))'
           )"
 
+          release_manifests_json="$(
+            MANIFESTS_JSON="$manifests_json" python3 -c 'import json, os; print(json.dumps([path for path in json.loads(os.environ["MANIFESTS_JSON"]) if path.startswith("releases/")]))'
+          )"
+
+          release_manifest_count="$(
+            RELEASE_MANIFESTS_JSON="$release_manifests_json" python3 -c 'import json, os; print(len(json.loads(os.environ["RELEASE_MANIFESTS_JSON"])))'
+          )"
+
           echo "manifests_json=$manifests_json" >> "$GITHUB_OUTPUT"
           echo "manifest_count=$manifest_count" >> "$GITHUB_OUTPUT"
+          echo "release_manifests_json=$release_manifests_json" >> "$GITHUB_OUTPUT"
+          echo "release_manifest_count=$release_manifest_count" >> "$GITHUB_OUTPUT"
 
   preflight:
     name: Validate Registry Manifests
@@ -90,11 +104,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Smoke install (changed manifests)
-        if: needs.detect-pr-manifests.outputs.manifest_count != '0'
+      - name: Smoke install (changed releases)
+        if: needs.detect-pr-manifests.outputs.release_manifest_count != '0'
         shell: bash
         env:
-          MANIFESTS_JSON: ${{ needs.detect-pr-manifests.outputs.manifests_json }}
+          MANIFESTS_JSON: ${{ needs.detect-pr-manifests.outputs.release_manifests_json }}
         run: |
           python3 - <<'PY'
           import json
@@ -116,10 +130,10 @@ jobs:
           subprocess.run(cmd, check=True)
           PY
 
-      - name: Skip changed-manifest smoke (none changed)
-        if: needs.detect-pr-manifests.outputs.manifest_count == '0'
+      - name: Skip changed-release smoke (none changed)
+        if: needs.detect-pr-manifests.outputs.release_manifest_count == '0'
         shell: bash
-        run: echo "No changed manifests in this PR."
+        run: echo "No changed release manifests in this PR."
 
       - name: App-bundle smoke canary (macOS)
         if: runner.os == 'macOS'

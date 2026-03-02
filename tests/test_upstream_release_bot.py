@@ -44,7 +44,7 @@ class UpstreamReleaseBotTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            existing_manifest = tmp_path / "index" / "ripgrep" / "15.1.0.toml"
+            existing_manifest = tmp_path / "releases" / "ripgrep" / "15.1.0.toml"
             existing_manifest.parent.mkdir(parents=True)
             existing_manifest.write_text('name = "ripgrep"\n', encoding="utf-8")
 
@@ -65,7 +65,7 @@ class UpstreamReleaseBotTests(unittest.TestCase):
 
             planned = self.bot.plan_updates_for_config(
                 config_path=config_path,
-                index_root=tmp_path / "index",
+                releases_root=tmp_path / "releases",
                 releases=releases,
             )
 
@@ -94,7 +94,7 @@ class UpstreamReleaseBotTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            existing_manifest = tmp_path / "index" / "ripgrep" / "15.2.0.toml"
+            existing_manifest = tmp_path / "releases" / "ripgrep" / "15.2.0.toml"
             existing_manifest.parent.mkdir(parents=True)
             existing_manifest.write_text('name = "ripgrep"\n', encoding="utf-8")
 
@@ -115,7 +115,7 @@ class UpstreamReleaseBotTests(unittest.TestCase):
 
             planned = self.bot.plan_updates_for_config(
                 config_path=config_path,
-                index_root=tmp_path / "index",
+                releases_root=tmp_path / "releases",
                 releases=releases,
             )
 
