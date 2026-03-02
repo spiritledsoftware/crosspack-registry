@@ -1,0 +1,165 @@
+name = "fd"
+license = "Apache-2.0 OR MIT"
+homepage = "https://github.com/sharkdp/fd"
+
+[source]
+provider = "github"
+repo = "sharkdp/fd"
+tag_prefix = "v"
+include_prereleases = false
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "fd-v{version}-x86_64-unknown-linux-gnu.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "fd"
+path = "fd"
+
+[[artifacts.completions]]
+shell = "bash"
+path = "autocomplete/fd.bash"
+
+[[artifacts.completions]]
+shell = "zsh"
+path = "autocomplete/_fd"
+
+[[artifacts.completions]]
+shell = "fish"
+path = "autocomplete/fd.fish"
+
+[[artifacts.completions]]
+shell = "powershell"
+path = "autocomplete/fd.ps1"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "fd-v{version}-aarch64-unknown-linux-gnu.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "fd"
+path = "fd"
+
+[[artifacts.completions]]
+shell = "bash"
+path = "autocomplete/fd.bash"
+
+[[artifacts.completions]]
+shell = "zsh"
+path = "autocomplete/_fd"
+
+[[artifacts.completions]]
+shell = "fish"
+path = "autocomplete/fd.fish"
+
+[[artifacts.completions]]
+shell = "powershell"
+path = "autocomplete/fd.ps1"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "fd-v{version}-x86_64-apple-darwin.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "fd"
+path = "fd"
+
+[[artifacts.completions]]
+shell = "bash"
+path = "autocomplete/fd.bash"
+
+[[artifacts.completions]]
+shell = "zsh"
+path = "autocomplete/_fd"
+
+[[artifacts.completions]]
+shell = "fish"
+path = "autocomplete/fd.fish"
+
+[[artifacts.completions]]
+shell = "powershell"
+path = "autocomplete/fd.ps1"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "fd-v{version}-aarch64-apple-darwin.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "fd"
+path = "fd"
+
+[[artifacts.completions]]
+shell = "bash"
+path = "autocomplete/fd.bash"
+
+[[artifacts.completions]]
+shell = "zsh"
+path = "autocomplete/_fd"
+
+[[artifacts.completions]]
+shell = "fish"
+path = "autocomplete/fd.fish"
+
+[[artifacts.completions]]
+shell = "powershell"
+path = "autocomplete/fd.ps1"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "fd-v{version}-x86_64-pc-windows-msvc.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "fd"
+path = "fd.exe"
+
+[[artifacts.completions]]
+shell = "bash"
+path = "autocomplete/fd.bash"
+
+[[artifacts.completions]]
+shell = "zsh"
+path = "autocomplete/_fd"
+
+[[artifacts.completions]]
+shell = "fish"
+path = "autocomplete/fd.fish"
+
+[[artifacts.completions]]
+shell = "powershell"
+path = "autocomplete/fd.ps1"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+asset = "fd-v{version}-aarch64-pc-windows-msvc.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "fd"
+path = "fd.exe"
+
+[[artifacts.completions]]
+shell = "bash"
+path = "autocomplete/fd.bash"
+
+[[artifacts.completions]]
+shell = "zsh"
+path = "autocomplete/_fd"
+
+[[artifacts.completions]]
+shell = "fish"
+path = "autocomplete/fd.fish"
+
+[[artifacts.completions]]
+shell = "powershell"
+path = "autocomplete/fd.ps1"

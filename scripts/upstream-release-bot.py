@@ -83,7 +83,7 @@ def load_config(path: Path) -> dict:
 
 
 def plan_updates_for_config(
-    *, config_path: Path, index_root: Path, releases: list[dict]
+    *, config_path: Path, releases_root: Path, releases: list[dict]
 ) -> list[PlannedUpdate]:
     config = load_config(config_path)
     package = str(config["name"])
@@ -97,7 +97,7 @@ def plan_updates_for_config(
         raise RuntimeError(f"tag_prefix must be a string in {config_path}")
 
     existing_versions = {
-        p.stem for p in (index_root / package).glob("*.toml") if p.is_file()
+        p.stem for p in (releases_root / package).glob("*.toml") if p.is_file()
     }
 
     for release in releases:
@@ -134,7 +134,7 @@ def _run(cmd: list[str], *, cwd: Path) -> subprocess.CompletedProcess[str]:
 def _open_or_update_pr(
     *,
     repo_root: Path,
-    manifest_path: Path,
+    staged_paths: list[Path],
     package: str,
     version: str,
     base_branch: str,
@@ -144,7 +144,7 @@ def _open_or_update_pr(
     title = f"chore(registry): add {package} {version}"
     body = (
         "## Summary\n"
-        f"- add generated registry manifest for `{package}` `{version}`\n"
+        f"- add generated package/release metadata for `{package}` `{version}`\n"
         "- produced by upstream release bot\n"
     )
 
@@ -160,7 +160,8 @@ def _open_or_update_pr(
         )
     else:
         _run(["git", "switch", "-C", branch_name, base_branch], cwd=repo_root)
-    _run(["git", "add", str(manifest_path)], cwd=repo_root)
+    if staged_paths:
+        _run(["git", "add", *(str(path) for path in staged_paths)], cwd=repo_root)
     staged = _run(["git", "diff", "--cached", "--name-only"], cwd=repo_root)
     if not staged.stdout.strip():
         return
@@ -216,10 +217,16 @@ def main(argv: list[str]) -> int:
         help="Path containing source configs",
     )
     parser.add_argument(
-        "--index-root",
+        "--packages-root",
         type=Path,
-        default=Path("index"),
-        help="Registry index directory",
+        default=Path("packages"),
+        help="Registry package template directory",
+    )
+    parser.add_argument(
+        "--releases-root",
+        type=Path,
+        default=Path("releases"),
+        help="Registry release manifest directory",
     )
     parser.add_argument("--package", action="append", help="Limit to package name")
     parser.add_argument(
@@ -261,7 +268,7 @@ def main(argv: list[str]) -> int:
         planned.extend(
             plan_updates_for_config(
                 config_path=config_path,
-                index_root=args.index_root,
+                releases_root=args.releases_root,
                 releases=releases,
             )
         )
@@ -270,38 +277,59 @@ def main(argv: list[str]) -> int:
         print("No new releases detected")
         return 0
 
-    created = 0
+    created_releases = 0
+    written_packages = 0
     for update in planned:
-        manifest_path = args.index_root / update.package / f"{update.version}.toml"
-        if manifest_path.exists():
+        package_path = args.packages_root / f"{update.package}.toml"
+        release_path = args.releases_root / update.package / f"{update.version}.toml"
+        if release_path.exists():
             continue
 
+        package_text = generator.generate_package_text(config_path=update.config_path)
         if args.dry_run:
-            print(f"[dry-run] would generate {manifest_path}")
-            created += 1
+            if not package_path.exists():
+                print(f"[dry-run] would generate {package_path}")
+            print(f"[dry-run] would generate {release_path}")
+            created_releases += 1
             continue
 
-        manifest_text = generator.generate_manifest_text(
+        staged_paths: list[Path] = []
+        current_package_text = (
+            package_path.read_text(encoding="utf-8") if package_path.exists() else None
+        )
+        if current_package_text != package_text:
+            package_path.parent.mkdir(parents=True, exist_ok=True)
+            package_path.write_text(package_text, encoding="utf-8")
+            print(f"Generated {package_path}")
+            written_packages += 1
+            staged_paths.append(package_path)
+
+        release_text = generator.generate_release_text(
             config_path=update.config_path,
             version=update.version,
             release=update.release,
         )
-        manifest_path.parent.mkdir(parents=True, exist_ok=True)
-        manifest_path.write_text(manifest_text, encoding="utf-8")
-        print(f"Generated {manifest_path}")
-        created += 1
+        release_path.parent.mkdir(parents=True, exist_ok=True)
+        release_path.write_text(release_text, encoding="utf-8")
+        print(f"Generated {release_path}")
+        created_releases += 1
+        staged_paths.append(release_path)
 
         if args.create_prs:
             _open_or_update_pr(
                 repo_root=repo_root,
-                manifest_path=manifest_path,
+                staged_paths=staged_paths,
                 package=update.package,
                 version=update.version,
                 base_branch=args.base_branch,
                 branch_prefix=args.branch_prefix,
             )
 
-    print(f"Planned {len(planned)} update(s), created {created} manifest(s)")
+    print(
+        "Planned "
+        f"{len(planned)} update(s), wrote {created_releases} release manifest(s), "
+        f"updated {written_packages} package template(s)"
+    )
     return 0
 
 

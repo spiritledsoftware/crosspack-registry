@@ -35,30 +35,22 @@ def _line(key: str, value: object) -> str:
     raise GenerateError(f"unsupported TOML value type for {key}")
 
 
-def render_manifest(doc: dict) -> str:
-    chunks: list[str] = []
-    chunks.append(_line("name", doc["name"]))
-    chunks.append(_line("version", doc["version"]))
-    chunks.append(_line("license", doc["license"]))
-    chunks.append(_line("homepage", doc["homepage"]))
-    chunks.append("")
-
-    for artifact in doc["artifacts"]:
+def _render_artifact_templates(chunks: list[str], artifacts: list[dict]) -> None:
+    for artifact in artifacts:
         chunks.append("[[artifacts]]")
         chunks.append(_line("target", artifact["target"]))
-        chunks.append(_line("url", artifact["url"]))
-        chunks.append(_line("sha256", artifact["sha256"]))
+        chunks.append(_line("asset", artifact["asset"]))
         if "archive" in artifact:
             chunks.append(_line("archive", artifact["archive"]))
         if "strip_components" in artifact:
             chunks.append(_line("strip_components", artifact["strip_components"]))
         chunks.append("")
 
-        for binary in artifact["binaries"]:
+        for binary in artifact.get("binaries", []):
             chunks.append("[[artifacts.binaries]]")
             chunks.append(_line("name", binary["name"]))
             chunks.append(_line("path", binary["path"]))
-        if artifact["binaries"]:
+        if artifact.get("binaries"):
             chunks.append("")
 
         for completion in artifact.get("completions", []):
@@ -74,6 +66,46 @@ def render_manifest(doc: dict) -> str:
             chunks.append(_line("exec", gui_app["exec"]))
             chunks.append(_line("categories", gui_app["categories"]))
             chunks.append("")
+
+
+def render_package_text(doc: dict) -> str:
+    chunks: list[str] = []
+    chunks.append(_line("name", doc["name"]))
+    chunks.append(_line("license", doc["license"]))
+    chunks.append(_line("homepage", doc["homepage"]))
+    chunks.append("")
+
+    source = doc.get("source")
+    if isinstance(source, dict):
+        chunks.append("[source]")
+        chunks.append(_line("provider", source["provider"]))
+        chunks.append(_line("repo", source["repo"]))
+        if "tag_prefix" in source:
+            chunks.append(_line("tag_prefix", source["tag_prefix"]))
+        if "include_prereleases" in source:
+            chunks.append(_line("include_prereleases", source["include_prereleases"]))
+        chunks.append("")
+
+    artifacts = doc.get("artifacts")
+    if not isinstance(artifacts, list) or not artifacts:
+        raise GenerateError("package template requires a non-empty artifacts array")
+
+    _render_artifact_templates(chunks, artifacts)
+    return "\n".join(chunks).rstrip() + "\n"
+
+
+def render_release_text(doc: dict) -> str:
+    chunks: list[str] = []
+    chunks.append(_line("name", doc["name"]))
+    chunks.append(_line("version", doc["version"]))
+    chunks.append("")
+
+    for artifact in doc["artifacts"]:
+        chunks.append("[[artifacts]]")
+        chunks.append(_line("target", artifact["target"]))
+        chunks.append(_line("url", artifact["url"]))
+        chunks.append(_line("sha256", artifact["sha256"]))
+        chunks.append("")
 
     return "\n".join(chunks).rstrip() + "\n"
 
@@ -115,19 +147,27 @@ def _asset_map(release: dict) -> dict[str, dict]:
     return out
 
 
-def generate_manifest_text(
+def load_source_config(config_path: Path) -> dict:
+    config = tomllib.loads(config_path.read_text(encoding="utf-8"))
+    if not isinstance(config, dict):
+        raise GenerateError("source config root must be a table")
+    return config
+
+
+def generate_package_text(*, config_path: Path) -> str:
+    return render_package_text(load_source_config(config_path))
+
+
+def generate_release_text(
     *,
     config_path: Path,
     version: str,
     release: dict,
     downloader=download,
 ) -> str:
-    config = tomllib.loads(config_path.read_text(encoding="utf-8"))
-    if not isinstance(config, dict):
-        raise GenerateError("source config root must be a table")
-
+    config = load_source_config(config_path)
     assets = _asset_map(release)
-    manifest_artifacts: list[dict] = []
+    release_artifacts: list[dict] = []
 
     for artifact in config.get("artifacts", []):
         target = artifact["target"]
@@ -147,35 +187,29 @@ def generate_manifest_text(
             downloader(url, artifact_path)
             checksum = sha256_file(artifact_path)
 
-        entry = {
-            "target": target,
-            "url": url,
-            "sha256": checksum,
-            "binaries": artifact["binaries"],
-        }
-        if "archive" in artifact:
-            entry["archive"] = artifact["archive"]
-        if "strip_components" in artifact:
-            entry["strip_components"] = artifact["strip_components"]
-        if "completions" in artifact:
-            entry["completions"] = artifact["completions"]
-        if "gui_apps" in artifact:
-            entry["gui_apps"] = artifact["gui_apps"]
-        manifest_artifacts.append(entry)
+        release_artifacts.append(
+            {
+                "target": target,
+                "url": url,
+                "sha256": checksum,
+            }
+        )
 
     document = {
         "name": config["name"],
         "version": version,
-        "license": config["license"],
-        "homepage": config["homepage"],
-        "artifacts": manifest_artifacts,
+        "artifacts": release_artifacts,
     }
-    return render_manifest(document)
+    return render_release_text(document)
+
+
+# Backward-compat helper for scripts importing the old symbol name.
+generate_manifest_text = generate_release_text
 
 
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(
-        description="Generate registry manifest from source config"
+        description="Generate registry release manifest from source config"
     )
     parser.add_argument(
         "--config", required=True, type=Path, help="registry/sources/<pkg>.toml"
@@ -185,12 +219,12 @@ def main(argv: list[str]) -> int:
         "--release-json", required=True, type=Path, help="Path to release JSON"
     )
     parser.add_argument(
-        "--output", required=True, type=Path, help="Output manifest path"
+        "--output", required=True, type=Path, help="Output release manifest path"
     )
     args = parser.parse_args(argv)
 
     release = json.loads(args.release_json.read_text(encoding="utf-8"))
-    text = generate_manifest_text(
+    text = generate_release_text(
         config_path=args.config,
         version=args.version,
         release=release,

@@ -4,49 +4,37 @@ Official Crosspack registry source.
 
 ## Structure
 
-- `registry.pub` — trusted Ed25519 public key (hex-encoded, 32-byte key as 64 hex chars)
-- `index/` — package metadata index
+- `registry.pub` - trusted Ed25519 public key (hex-encoded, 32-byte key as 64 hex chars)
+- `packages/` - package templates (`<package>.toml` + `<package>.toml.sig`)
+- `releases/` - version documents (`<package>/<version>.toml` + `<package>/<version>.toml.sig`)
+- `registry/sources/` - upstream source configuration used by automation
 
-## Notes
+## Package and Release Contracts
 
-- Keep signing private key material out of git history.
-- Crosspack clients should pin the SHA-256 fingerprint of `registry.pub` bytes.
-
-## Platform Coverage
-
-Current artifact coverage in this registry:
-
-- `crosspack@0.0.4`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`, `x86_64-unknown-linux-musl`, `aarch64-unknown-linux-musl`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`)
-- `ripgrep@15.1.0`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`, `aarch64-pc-windows-msvc`)
-- `fd@10.3.0`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`, `aarch64-pc-windows-msvc`)
-- `fzf@0.68.0`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`, `aarch64-pc-windows-msvc`)
-- `jq@1.8.1`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`)
-- `gh@2.87.3`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`)
-- `lazygit@0.59.0`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`)
-- `uv@0.10.6`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`)
-- `starship@1.24.2`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-musl`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`)
-- `bat@0.26.1`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`)
-- `delta@0.18.2`: linux (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`), darwin (`x86_64-apple-darwin`, `aarch64-apple-darwin`), windows (`x86_64-pc-windows-msvc`)
-
-Caveat: `crosspack@0.0.3` does not yet publish official `aarch64-pc-windows-msvc` release assets.
-
-Caveat: `starship@1.24.2` currently ships `aarch64-unknown-linux-musl` (not `aarch64-unknown-linux-gnu`) in this registry.
+- `packages/<package>.toml` stores shared package metadata and artifact templates:
+  - package identity (`name`, `license`, `homepage`)
+  - upstream source metadata (`[source]`)
+  - artifact template metadata (`target`, `asset`, archive hints, binaries/completions/gui metadata)
+- `releases/<package>/<version>.toml` stores version-specific resolved artifact data:
+  - `name`, `version`
+  - per-target `url` + `sha256`
+- signatures are detached hex sidecars (`.sig`) for both package and release docs
 
 ## Package Update and Rollback Procedure
 
-When updating package metadata in `index/`:
+When updating package metadata:
 
-1. Add or update `<version>.toml` with correct artifact metadata (`url`, `sha256`, `archive`, `strip_components`, `binaries`).
-2. Open a PR with changed `index/<package>/<version>.toml` files (sidecars can be omitted in PRs).
-3. After merge to `main`, workflow `.github/workflows/sign-manifests-on-merge.yml` generates/updates matching sidecars (`<version>.toml.sig`) automatically.
-4. Validate end-to-end from a clean prefix with Crosspack bootstrap + install.
+1. Update package template in `packages/<package>.toml` if shared metadata/template fields changed.
+2. Add a release document in `releases/<package>/<version>.toml` with resolved `url` + `sha256` per target.
+3. Open a PR with changed package/release documents.
+4. After merge to `main`, workflow `.github/workflows/sign-manifests-on-merge.yml` signs changed documents and updates sidecars.
 5. Keep validation logs in `logs/` with command output for traceability.
 
-If a published package update must be rolled back:
+If a published update must be rolled back:
 
-1. Revert the affected manifest(s) and signature sidecar(s) to the last known-good revision.
-2. Re-run signature verification and clean-prefix install validation.
-3. Publish the rollback commit and include links to new validation logs in the PR.
+1. Revert affected package/release document(s) and sidecar(s) to last known-good revision.
+2. Re-run validation and clean-prefix install checks.
+3. Publish rollback commit with links to fresh validation logs.
 
 ## Automation Setup
 
@@ -55,11 +43,13 @@ If a published package update must be rolled back:
 
 ## Upstream Release Bot
 
-Manifest updates no longer need to be hand-authored for configured packages.
+Manifest updates do not need to be hand-authored for configured packages.
 
 - Source-of-truth config lives in `registry/sources/*.toml`.
-- Workflow `.github/workflows/upstream-release-bot.yml` checks upstream releases on a schedule and opens PRs for new versions.
-- Generated manifests still flow through `.github/workflows/registry-quality-gate.yml` and are signed after merge by `.github/workflows/sign-manifests-on-merge.yml`.
+- Workflow `.github/workflows/upstream-release-bot.yml` checks upstream releases and opens PRs for new versions.
+- The bot writes:
+  - package template docs in `packages/`
+  - release docs in `releases/<package>/`
 
 Useful commands:
 
@@ -74,21 +64,15 @@ python3 scripts/upstream-release-bot.py --dry-run
 python3 scripts/upstream-release-bot.py --dry-run --package ripgrep
 ```
 
-Emergency/manual override remains available:
-
-- Use `scripts/registry-scaffold-entry.sh` for one-off hotfix manifests.
-- Open a normal PR with `index/<package>/<version>.toml` changes.
-- Allow post-merge signature automation to generate/update `.sig` sidecars.
-
 ## Registry Preflight (Local + CI)
 
-CI enforces a registry quality gate that validates changed manifests and runs smoke-install checks.
+CI enforces a registry quality gate that validates changed package/release docs and runs smoke-install checks for changed releases.
 
-- Schema and required metadata checks for each changed `index/<package>/<version>.toml`
-- Checksum + signature format checks (`sha256` fields and matching `.toml.sig` sidecar)
-- PR smoke-install matrix on `ubuntu-latest` and `macos-latest` for changed manifests
-- Smoke-install path that downloads one artifact per selected manifest, verifies SHA-256, and validates extracted binaries
-- macOS app-bundle canary via `python3 scripts/registry-smoke-install.py --app-bundle-canary` (validates `.app/Contents/MacOS/*` extraction layout)
+- Schema checks for `packages/*.toml` and `releases/*/*.toml`
+- Path/name/version consistency checks
+- Required sidecar format checks (`.toml.sig` as 128 hex chars)
+- PR smoke-install matrix on `ubuntu-latest` and `macos-latest` for changed release docs
+- macOS app-bundle canary via `python3 scripts/registry-smoke-install.py --app-bundle-canary`
 
 Run the same checks locally:
 
@@ -99,30 +83,19 @@ Run the same checks locally:
 Useful variants:
 
 ```bash
-# Full scan of all manifests (matches push/manual workflow behavior)
+# Full scan of all package/release manifests
 REGISTRY_PREFLIGHT_ALL=1 ./scripts/registry-preflight.sh
 
-# Full scan without smoke-install (useful when iterating on validation logic only)
+# Full scan without smoke-install
 REGISTRY_PREFLIGHT_ALL=1 REGISTRY_PREFLIGHT_SKIP_SMOKE=1 ./scripts/registry-preflight.sh
 
-# Validate only manifests changed from a specific base commit (matches PR workflow behavior)
+# Validate only manifests changed from a specific base commit
 REGISTRY_BASE_SHA=<base-sha> ./scripts/registry-preflight.sh
 ```
 
-### Bounded Runtime Strategy (CI)
-
-To keep PR feedback fast while preserving coverage:
-
-- Validation runs once in preflight.
-- Smoke-install runs in a 2-runner OS matrix (`ubuntu-latest`, `macos-latest`) and only for manifests changed in the PR diff.
-- Matrix uses capped concurrency (`max-parallel: 2`).
-- Each smoke check downloads exactly one artifact per changed manifest for the current runner target.
-- If no manifests changed for a matrix runner, that runner exits early.
-- macOS also runs a tiny local app-bundle canary (`Neovide.app/Contents/MacOS/neovide`) with no network fetch.
-
 ## Maintainer Scaffolding Workflow
 
-Use the scaffold command to create a new package entry with required fields and placeholder metadata sections:
+Use scaffold to create package/release placeholders for one-off/manual entries:
 
 ```bash
 scripts/registry-scaffold-entry.sh \
@@ -134,18 +107,14 @@ scripts/registry-scaffold-entry.sh \
 
 Behavior:
 
-1. Renders deterministic TOML output at `index/<name>/<version>.toml`.
-2. Auto-populates placeholder metadata for artifact checksum (`sha256`) and source provenance/signature (`[source]` with `url`, `checksum`, `signature` placeholders).
-3. Validates the generated manifest before write via `scripts/registry-validate-entry.py`.
-4. Aborts without writing if validation fails.
+1. Renders package template output at `packages/<name>.toml` (creates when missing, preserves by default when present).
+2. Renders release output at `releases/<name>/<version>.toml`.
+3. Validates generated package/release docs before writing.
+4. Refuses to overwrite existing release docs unless `--force` is set.
 
 Optional flags:
 
-- `--output-root <dir>` to scaffold outside `index/` (useful for tests/dry runs)
+- `--output-root <dir>` to scaffold outside repo root (useful for tests/dry-runs)
 - `--license <value>` and `--homepage <url>` to replace defaults
 - `--binary-name <name>` and `--binary-path <path>` to customize executable mapping
-- `--force` to overwrite an existing `<version>.toml` (default is safe no-overwrite)
-
-After scaffolding, replace placeholders with real values and then sign the manifest sidecar (`<version>.toml.sig`) as part of the normal publication flow.
-
-Validator runtime note: Python 3.11+ works out of the box (`tomllib`). On Python 3.10, install `tomli` so validation can parse TOML.
+- `--force` to overwrite existing output files

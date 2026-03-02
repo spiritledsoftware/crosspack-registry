@@ -25,7 +25,7 @@ class RegistryGenerateManifestTests(unittest.TestCase):
     def setUp(self) -> None:
         self.generator = load_module()
 
-    def test_generates_manifest_with_downloaded_sha(self) -> None:
+    def test_generates_release_manifest_with_downloaded_sha(self) -> None:
         with tempfile.TemporaryDirectory(prefix="manifest-gen-") as tmp:
             tmp_path = Path(tmp)
             config_path = tmp_path / "ripgrep.toml"
@@ -71,7 +71,7 @@ class RegistryGenerateManifestTests(unittest.TestCase):
             def fake_download(_url: str, dest: Path) -> None:
                 dest.write_bytes(payload)
 
-            rendered = self.generator.generate_manifest_text(
+            rendered = self.generator.generate_release_text(
                 config_path=config_path,
                 version="15.1.0",
                 release=release,
@@ -85,6 +85,8 @@ class RegistryGenerateManifestTests(unittest.TestCase):
                 rendered,
             )
             self.assertIn(f'sha256 = "{expected_sha}"', rendered)
+            self.assertNotIn("license =", rendered)
+            self.assertNotIn("homepage =", rendered)
 
 
 if __name__ == "__main__":

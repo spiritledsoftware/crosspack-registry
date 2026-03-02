@@ -1,0 +1,73 @@
+name = "uv"
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/astral-sh/uv"
+
+[source]
+provider = "github"
+repo = "astral-sh/uv"
+include_prereleases = false
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "uv-x86_64-unknown-linux-gnu.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "uv"
+path = "uv"
+[[artifacts.binaries]]
+name = "uvx"
+path = "uvx"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "uv-aarch64-unknown-linux-gnu.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "uv"
+path = "uv"
+[[artifacts.binaries]]
+name = "uvx"
+path = "uvx"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "uv-x86_64-apple-darwin.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "uv"
+path = "uv"
+[[artifacts.binaries]]
+name = "uvx"
+path = "uvx"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "uv-aarch64-apple-darwin.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "uv"
+path = "uv"
+[[artifacts.binaries]]
+name = "uvx"
+path = "uvx"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "uv-x86_64-pc-windows-msvc.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "uv"
+path = "uv.exe"
+[[artifacts.binaries]]
+name = "uvx"
+path = "uvx.exe"

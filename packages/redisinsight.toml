@@ -1,0 +1,68 @@
+name = "redisinsight"
+license = "SSPL-1.0"
+homepage = "https://redis.io/insight/"
+
+[source]
+provider = "github"
+repo = "redis/RedisInsight"
+include_prereleases = false
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "Redis-Insight-linux-x86_64.AppImage"
+
+[[artifacts.binaries]]
+name = "redisinsight"
+path = "redisinsight"
+
+[[artifacts.gui_apps]]
+app_id = "org.RedisLabs.RedisInsight-V2"
+display_name = "Redis Insight"
+exec = "redisinsight"
+categories = ["Development", "Database"]
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "Redis-Insight-mac-arm64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "redisinsight"
+path = "Redis Insight.app/Contents/MacOS/Redis Insight"
+
+[[artifacts.gui_apps]]
+app_id = "org.RedisLabs.RedisInsight-V2"
+display_name = "Redis Insight"
+exec = "Redis Insight.app"
+categories = ["Development", "Database"]
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "Redis-Insight-mac-x64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "redisinsight"
+path = "Redis Insight.app/Contents/MacOS/Redis Insight"
+
+[[artifacts.gui_apps]]
+app_id = "org.RedisLabs.RedisInsight-V2"
+display_name = "Redis Insight"
+exec = "Redis Insight.app"
+categories = ["Development", "Database"]
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "Redis-Insight-win-installer.exe"
+
+[[artifacts.binaries]]
+name = "redisinsight"
+path = "redisinsight.exe"
+
+[[artifacts.gui_apps]]
+app_id = "org.RedisLabs.RedisInsight-V2"
+display_name = "Redis Insight"
+exec = "redisinsight.exe"
+categories = ["Development", "Database"]

@@ -24,7 +24,7 @@ class SignChangedManifestsTests(unittest.TestCase):
         )
         self.script_path.chmod(0o755)
 
-        self.manifest_path = self.repo_root / "index" / "demo" / "1.0.0.toml"
+        self.manifest_path = self.repo_root / "releases" / "demo" / "1.0.0.toml"
         self.manifest_path.parent.mkdir(parents=True, exist_ok=True)
         self.manifest_path.write_text(
             """name = \"demo\"\nversion = \"1.0.0\"\nlicense = \"MIT\"\nhomepage = \"https://example.com\"\n""",
@@ -124,7 +124,7 @@ class SignChangedManifestsTests(unittest.TestCase):
             self.signature_path.exists(),
             "expected deleted sidecar to be regenerated for changed manifest",
         )
-        self.assertIn("signed index/demo/1.0.0.toml", result.stdout)
+        self.assertIn("signed releases/demo/1.0.0.toml", result.stdout)
 
 
 if __name__ == "__main__":

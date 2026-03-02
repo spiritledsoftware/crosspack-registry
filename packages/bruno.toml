@@ -1,0 +1,99 @@
+name = "bruno"
+license = "MIT"
+homepage = "https://github.com/usebruno/bruno"
+
+[source]
+provider = "github"
+repo = "usebruno/bruno"
+tag_prefix = "v"
+include_prereleases = false
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "bruno_{version}_x86_64_linux.AppImage"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "bruno"
+path = "bruno"
+
+[[artifacts.gui_apps]]
+app_id = "com.usebruno.app"
+display_name = "Bruno"
+exec = "bruno"
+categories = ["Development"]
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "bruno_{version}_arm64_linux.AppImage"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "bruno"
+path = "bruno"
+
+[[artifacts.gui_apps]]
+app_id = "com.usebruno.app"
+display_name = "Bruno"
+exec = "bruno"
+categories = ["Development"]
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "bruno_{version}_x64_mac.dmg"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "bruno"
+path = "Bruno.app/Contents/MacOS/Bruno"
+
+[[artifacts.gui_apps]]
+app_id = "com.usebruno.app"
+display_name = "Bruno"
+exec = "Bruno.app"
+categories = ["Development"]
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "bruno_{version}_arm64_mac.dmg"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "bruno"
+path = "Bruno.app/Contents/MacOS/Bruno"
+
+[[artifacts.gui_apps]]
+app_id = "com.usebruno.app"
+display_name = "Bruno"
+exec = "Bruno.app"
+categories = ["Development"]
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "bruno_{version}_x64_win.exe"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "bruno"
+path = "bruno.exe"
+
+[[artifacts.gui_apps]]
+app_id = "com.usebruno.app"
+display_name = "Bruno"
+exec = "bruno.exe"
+categories = ["Development"]
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+asset = "bruno_{version}_arm64_win.exe"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "bruno"
+path = "bruno.exe"
+
+[[artifacts.gui_apps]]
+app_id = "com.usebruno.app"
+display_name = "Bruno"
+exec = "bruno.exe"
+categories = ["Development"]
