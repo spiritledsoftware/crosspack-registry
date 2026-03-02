@@ -2,7 +2,7 @@ name: Upstream Release Bot
 
 on:
   schedule:
-    - cron: '17 * * * *'
+    - cron: "17 * * * *"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -11,7 +11,7 @@ on:
         default: false
         type: boolean
       package:
-        description: 'Optional package filter'
+        description: "Optional package filter"
         required: false
         type: string
 
@@ -27,23 +27,40 @@ jobs:
   update-registry-metadata:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
         with:
+          app-id: ${{ vars.CROSSPACK_BOT_APP_ID }}
+          private-key: ${{ secrets.CROSSPACK_BOT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Validate source configuration
         run: python3 scripts/registry-validate-source.py --require-package-coverage registry/sources/*.toml
 
+      - name: Configure git author
+        if: github.event_name != 'workflow_dispatch' || !inputs.dry_run
+        run: |
+          set -euo pipefail
+          git config user.name "crosspack-bot"
+          git config user.email "crosspack-bot@users.noreply.github.com"
+
       - name: Run release bot (dry run)
         if: github.event_name == 'workflow_dispatch' && inputs.dry_run
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           PACKAGE_INPUT: ${{ inputs.package }}
         run: |
           set -euo pipefail
@@ -56,7 +73,7 @@ jobs:
       - name: Run release bot (create PRs)
         if: github.event_name != 'workflow_dispatch' || !inputs.dry_run
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           PACKAGE_INPUT: ${{ inputs.package }}
         run: |
           set -euo pipefail
