@@ -53,6 +53,33 @@ If a published package update must be rolled back:
 - Configure repository secret `CROSSPACK_REGISTRY_SIGNING_PRIVATE_KEY_PEM` (Ed25519 private key PEM).
 - Ensure workflow permissions allow `contents: write` so generated `.sig` files can be committed back to `main`.
 
+## Upstream Release Bot
+
+Manifest updates no longer need to be hand-authored for configured packages.
+
+- Source-of-truth config lives in `registry/sources/*.toml`.
+- Workflow `.github/workflows/upstream-release-bot.yml` checks upstream releases on a schedule and opens PRs for new versions.
+- Generated manifests still flow through `.github/workflows/registry-quality-gate.yml` and are signed after merge by `.github/workflows/sign-manifests-on-merge.yml`.
+
+Useful commands:
+
+```bash
+# Validate source configs
+python3 scripts/registry-validate-source.py registry/sources/*.toml
+
+# Dry-run release detection and generation planning
+python3 scripts/upstream-release-bot.py --dry-run
+
+# Limit to a single package
+python3 scripts/upstream-release-bot.py --dry-run --package ripgrep
+```
+
+Emergency/manual override remains available:
+
+- Use `scripts/registry-scaffold-entry.sh` for one-off hotfix manifests.
+- Open a normal PR with `index/<package>/<version>.toml` changes.
+- Allow post-merge signature automation to generate/update `.sig` sidecars.
+
 ## Registry Preflight (Local + CI)
 
 CI enforces a registry quality gate that validates changed manifests and runs smoke-install checks.

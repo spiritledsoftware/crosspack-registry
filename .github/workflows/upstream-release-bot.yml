@@ -1,0 +1,67 @@
+name: Upstream Release Bot
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run without writing manifests or opening PRs'
+        required: false
+        default: false
+        type: boolean
+      package:
+        description: 'Optional package filter'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: upstream-release-bot
+  cancel-in-progress: false
+
+jobs:
+  update-registry-manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate source configuration
+        run: python3 scripts/registry-validate-source.py registry/sources/*.toml
+
+      - name: Run release bot (dry run)
+        if: github.event_name == 'workflow_dispatch' && inputs.dry_run
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGE_INPUT: ${{ inputs.package }}
+        run: |
+          set -euo pipefail
+          args=(--dry-run)
+          if [ -n "$PACKAGE_INPUT" ]; then
+            args+=(--package "$PACKAGE_INPUT")
+          fi
+          python3 scripts/upstream-release-bot.py "${args[@]}"
+
+      - name: Run release bot (create PRs)
+        if: github.event_name != 'workflow_dispatch' || !inputs.dry_run
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGE_INPUT: ${{ inputs.package }}
+        run: |
+          set -euo pipefail
+          args=(--create-prs)
+          if [ -n "$PACKAGE_INPUT" ]; then
+            args+=(--package "$PACKAGE_INPUT")
+          fi
+          python3 scripts/upstream-release-bot.py "${args[@]}"

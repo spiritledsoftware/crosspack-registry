@@ -1,3 +1,4 @@
 .secrets/
 logs/*.log
 artifacts/
+**/__pycache__/
