@@ -131,6 +131,47 @@ def _run(cmd: list[str], *, cwd: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(cmd, cwd=cwd, check=True, text=True, capture_output=True)
 
 
+def _stash_paths_for_branch_switch(*, repo_root: Path, paths: list[Path]) -> str | None:
+    if not paths:
+        return None
+
+    result = subprocess.run(
+        [
+            "git",
+            "stash",
+            "push",
+            "--include-untracked",
+            "--message",
+            "upstream-release-bot branch switch",
+            "--",
+            *(str(path) for path in paths),
+        ],
+        cwd=repo_root,
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+    output = f"{result.stdout}\n{result.stderr}"
+    if "No local changes to save" in output:
+        return None
+
+    return "stash@{0}"
+
+
+def _restore_stashed_paths(*, repo_root: Path, stash_ref: str, paths: list[Path]) -> None:
+    for path in paths:
+        untracked_entry = subprocess.run(
+            ["git", "cat-file", "-e", f"{stash_ref}^3:{path}"],
+            cwd=repo_root,
+            check=False,
+            text=True,
+            capture_output=True,
+        )
+        source = f"{stash_ref}^3" if untracked_entry.returncode == 0 else stash_ref
+        _run(["git", "checkout", source, "--", str(path)], cwd=repo_root)
+    _run(["git", "stash", "drop", stash_ref], cwd=repo_root)
+
+
 def _open_or_update_pr(
     *,
     repo_root: Path,
@@ -153,11 +194,23 @@ def _open_or_update_pr(
         ["git", "ls-remote", "--heads", "origin", branch_name],
         cwd=repo_root,
     )
+    stash_ref: str | None = None
     if remote_branch.stdout.strip():
+        stash_ref = _stash_paths_for_branch_switch(
+            repo_root=repo_root,
+            paths=staged_paths,
+        )
         _run(["git", "fetch", "origin", branch_name], cwd=repo_root)
         _run(
-            ["git", "switch", "-C", branch_name, f"origin/{branch_name}"], cwd=repo_root
+            ["git", "switch", "-C", branch_name, f"origin/{branch_name}"],
+            cwd=repo_root,
         )
+        if stash_ref is not None:
+            _restore_stashed_paths(
+                repo_root=repo_root,
+                stash_ref=stash_ref,
+                paths=staged_paths,
+            )
     else:
         _run(["git", "switch", "-C", branch_name, base_branch], cwd=repo_root)
     if staged_paths:

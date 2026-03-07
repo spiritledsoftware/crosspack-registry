@@ -1,4 +1,6 @@
 import importlib.util
+import os
+import subprocess
 import tempfile
 import textwrap
 import unittest
@@ -21,6 +23,17 @@ def load_module():
 class UpstreamReleaseBotTests(unittest.TestCase):
     def setUp(self) -> None:
         self.bot = load_module()
+
+    def _git(self, repo: Path, *args: str, env: dict[str, str] | None = None) -> str:
+        completed = subprocess.run(
+            ["git", *args],
+            cwd=repo,
+            check=True,
+            text=True,
+            capture_output=True,
+            env=env,
+        )
+        return completed.stdout.strip()
 
     def test_plan_updates_only_considers_latest_release(self) -> None:
         with tempfile.TemporaryDirectory(prefix="release-bot-") as tmp:
@@ -120,6 +133,84 @@ class UpstreamReleaseBotTests(unittest.TestCase):
             )
 
         self.assertEqual(planned, [])
+
+    def test_open_or_update_pr_handles_generated_file_that_conflicts_with_remote_branch(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="release-bot-git-") as tmp:
+            tmp_path = Path(tmp)
+            remote = tmp_path / "remote.git"
+            repo = tmp_path / "repo"
+            subprocess.run(["git", "init", "--bare", remote], check=True)
+            subprocess.run(["git", "init", "-b", "main", repo], check=True)
+
+            self._git(repo, "config", "user.name", "Test User")
+            self._git(repo, "config", "user.email", "test@example.com")
+            self._git(repo, "remote", "add", "origin", str(remote))
+
+            (repo / "README.md").write_text("base\n", encoding="utf-8")
+            self._git(repo, "add", "README.md")
+            self._git(repo, "commit", "-m", "base")
+            self._git(repo, "push", "-u", "origin", "main")
+
+            branch_name = "upstream-release/beekeeper-studio/5.6.0"
+            self._git(repo, "switch", "-c", branch_name)
+            release_path = repo / "releases" / "beekeeper-studio" / "5.6.0.toml"
+            release_path.parent.mkdir(parents=True, exist_ok=True)
+            release_path.write_text('version = "old"\n', encoding="utf-8")
+            self._git(repo, "add", str(release_path.relative_to(repo)))
+            self._git(repo, "commit", "-m", "existing release branch")
+            self._git(repo, "push", "-u", "origin", branch_name)
+
+            self._git(repo, "switch", "main")
+            release_path.parent.mkdir(parents=True, exist_ok=True)
+            release_path.write_text('version = "new"\n', encoding="utf-8")
+
+            fake_bin = tmp_path / "bin"
+            fake_bin.mkdir()
+            gh = fake_bin / "gh"
+            gh.write_text(
+                textwrap.dedent(
+                    """
+                    #!/usr/bin/env python3
+                    import sys
+
+                    if sys.argv[1:4] == ["pr", "list", "--head"]:
+                        print("[]")
+                    elif sys.argv[1:3] == ["pr", "create"]:
+                        print("created")
+                    else:
+                        raise SystemExit(f"unexpected gh args: {sys.argv[1:]}")
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+            gh.chmod(0o755)
+            env = os.environ.copy()
+            env["PATH"] = f"{fake_bin}:{env['PATH']}"
+
+            previous_path = os.environ.get("PATH", "")
+            os.environ["PATH"] = env["PATH"]
+            try:
+                self.bot._open_or_update_pr(
+                    repo_root=repo,
+                    staged_paths=[release_path.relative_to(repo)],
+                    package="beekeeper-studio",
+                    version="5.6.0",
+                    base_branch="main",
+                    branch_prefix="upstream-release",
+                )
+            finally:
+                os.environ["PATH"] = previous_path
+
+            self.assertEqual(self._git(repo, "branch", "--show-current"), branch_name)
+            self.assertEqual(
+                release_path.read_text(encoding="utf-8"),
+                'version = "new"\n',
+            )
+            self.assertIn(
+                "chore(registry): add beekeeper-studio 5.6.0",
+                self._git(repo, "log", "-1", "--pretty=%s"),
+            )
 
 
 if __name__ == "__main__":
