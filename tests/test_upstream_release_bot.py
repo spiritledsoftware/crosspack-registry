@@ -1,10 +1,13 @@
+import contextlib
 import importlib.util
+import io
 import os
 import subprocess
 import tempfile
 import textwrap
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -15,6 +18,18 @@ def load_module():
     spec = importlib.util.spec_from_file_location("upstream_release_bot", SCRIPT_PATH)
     if spec is None or spec.loader is None:
         raise RuntimeError(f"Unable to load script module from {SCRIPT_PATH}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def load_generator_module():
+    generator_path = REPO_ROOT / "scripts" / "registry-generate-manifest.py"
+    spec = importlib.util.spec_from_file_location(
+        "registry_generate_manifest", generator_path
+    )
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Unable to load script module from {generator_path}")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -133,6 +148,81 @@ class UpstreamReleaseBotTests(unittest.TestCase):
             )
 
         self.assertEqual(planned, [])
+
+    def test_skips_incomplete_release_instead_of_failing(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="release-bot-") as tmp:
+            tmp_path = Path(tmp)
+            sources_dir = tmp_path / "registry" / "sources"
+            sources_dir.mkdir(parents=True)
+            config_path = sources_dir / "fd.toml"
+            config_path.write_text(
+                textwrap.dedent(
+                    """
+                    name = "fd"
+                    license = "Apache-2.0 OR MIT"
+                    homepage = "https://github.com/sharkdp/fd"
+
+                    [source]
+                    provider = "github"
+                    repo = "sharkdp/fd"
+                    tag_prefix = "v"
+
+                    [[artifacts]]
+                    target = "x86_64-apple-darwin"
+                    asset = "fd-v{version}-x86_64-apple-darwin.tar.gz"
+                    archive = "tar.gz"
+                    strip_components = 1
+
+                    [[artifacts.binaries]]
+                    name = "fd"
+                    path = "fd"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            generator = load_generator_module()
+            previous_cwd = Path.cwd()
+            os.chdir(tmp_path)
+            try:
+                with (
+                    mock.patch.object(
+                        self.bot,
+                        "_load_generator_module",
+                        return_value=generator,
+                    ),
+                    mock.patch.object(
+                        self.bot,
+                        "fetch_github_releases",
+                        return_value=[
+                            {
+                                "tag_name": "v10.4.1",
+                                "draft": False,
+                                "prerelease": False,
+                                "assets": [
+                                    {
+                                        "name": "fd-v10.4.1-aarch64-apple-darwin.tar.gz",
+                                        "browser_download_url": "https://example.invalid/fd-aarch64.tar.gz",
+                                    }
+                                ],
+                            }
+                        ],
+                    ),
+                    contextlib.redirect_stdout(stdout),
+                    contextlib.redirect_stderr(stderr),
+                ):
+                    result = self.bot.main(["--package", "fd"])
+            finally:
+                os.chdir(previous_cwd)
+
+            self.assertEqual(result, 0)
+            self.assertFalse((tmp_path / "releases" / "fd" / "10.4.1.toml").exists())
+            self.assertIn("Skipping fd 10.4.1: incomplete upstream release", stderr.getvalue())
+            self.assertIn("skipped 1 incomplete update(s)", stdout.getvalue())
+            self.assertIn("wrote 0 release manifest(s)", stdout.getvalue())
 
     def test_open_or_update_pr_handles_generated_file_that_conflicts_with_remote_branch(self) -> None:
         with tempfile.TemporaryDirectory(prefix="release-bot-git-") as tmp:

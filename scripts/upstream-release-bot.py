@@ -332,10 +332,26 @@ def main(argv: list[str]) -> int:
 
     created_releases = 0
     written_packages = 0
+    skipped_updates = 0
     for update in planned:
         package_path = args.packages_root / f"{update.package}.toml"
         release_path = args.releases_root / update.package / f"{update.version}.toml"
         if release_path.exists():
+            continue
+
+        try:
+            release_text = generator.generate_release_text(
+                config_path=update.config_path,
+                version=update.version,
+                release=update.release,
+            )
+        except generator.GenerateError as exc:
+            skipped_updates += 1
+            print(
+                "Skipping "
+                f"{update.package} {update.version}: incomplete upstream release ({exc})",
+                file=sys.stderr,
+            )
             continue
 
         package_text = generator.generate_package_text(config_path=update.config_path)
@@ -357,11 +373,6 @@ def main(argv: list[str]) -> int:
             written_packages += 1
             staged_paths.append(package_path)
 
-        release_text = generator.generate_release_text(
-            config_path=update.config_path,
-            version=update.version,
-            release=update.release,
-        )
         release_path.parent.mkdir(parents=True, exist_ok=True)
         release_path.write_text(release_text, encoding="utf-8")
         print(f"Generated {release_path}")
@@ -381,7 +392,7 @@ def main(argv: list[str]) -> int:
     print(
         "Planned "
         f"{len(planned)} update(s), wrote {created_releases} release manifest(s), "
-        f"updated {written_packages} package template(s)"
+        f"updated {written_packages} package template(s), skipped {skipped_updates} incomplete update(s)"
     )
     return 0
 
