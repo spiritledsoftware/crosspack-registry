@@ -7,6 +7,8 @@ import json
 import re
 import subprocess
 import sys
+import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -46,9 +48,27 @@ def _http_get_json(url: str, token: str | None = None) -> object:
     }
     if token:
         headers["Authorization"] = f"Bearer {token}"
-    request = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310
-        return json.loads(response.read().decode("utf-8"))
+
+    last_error: Exception | None = None
+    for attempt in range(3):
+        request = urllib.request.Request(url, headers=headers)
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310
+                return json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as error:
+            if error.code < 500 or attempt == 2:
+                raise
+            last_error = error
+        except urllib.error.URLError as error:
+            if attempt == 2:
+                raise
+            last_error = error
+
+        time.sleep(2**attempt)
+
+    if last_error is not None:
+        raise last_error
+    raise RuntimeError(f"Failed to fetch JSON from {url}")
 
 
 def fetch_github_releases(repo: str, token: str | None = None) -> list[dict]:
