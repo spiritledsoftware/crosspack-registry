@@ -1,0 +1,27 @@
+name = "gh"
+version = "2.89.0"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/cli/cli/releases/download/v2.89.0/gh_2.89.0_linux_amd64.tar.gz"
+sha256 = "d0422caade520530e76c1c558da47daebaa8e1203d6b7ff10ad7d6faba3490d8"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/cli/cli/releases/download/v2.89.0/gh_2.89.0_linux_arm64.tar.gz"
+sha256 = "9e64a623dfc242990aa5d9b3f507111149c4282f66b68eaad1dc79eeb13b9ce5"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/cli/cli/releases/download/v2.89.0/gh_2.89.0_macOS_amd64.zip"
+sha256 = "862e21cac6a71f81e7cd6e5127e3cd344f8537441ad2db94cd208319dd17b6e9"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/cli/cli/releases/download/v2.89.0/gh_2.89.0_macOS_arm64.zip"
+sha256 = "2423d02ec0a2094898c378703a1b28a5846c08700f87461363857cb8cb3fda94"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/cli/cli/releases/download/v2.89.0/gh_2.89.0_windows_amd64.zip"
+sha256 = "f3326f6406c98c99701b257d77e2b040eedf83d0176c2c2e9809aa339ceb467e"
