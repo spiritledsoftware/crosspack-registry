@@ -1,0 +1,22 @@
+name = "insomnia"
+version = "12.5.0"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/Kong/insomnia/releases/download/core%4012.5.0/Insomnia.Core-12.5.0.AppImage"
+sha256 = "458373397f5644fa8f50c85b1bf01be08a76e629ae74d1a51d7d643cbcee43e5"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/Kong/insomnia/releases/download/core%4012.5.0/Insomnia.Core-12.5.0.dmg"
+sha256 = "ebe2ff850eab58d56e11ea53a99ce048cb716c1292fcb3d8ab2be8a4e4673d04"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/Kong/insomnia/releases/download/core%4012.5.0/Insomnia.Core-12.5.0.dmg"
+sha256 = "ebe2ff850eab58d56e11ea53a99ce048cb716c1292fcb3d8ab2be8a4e4673d04"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/Kong/insomnia/releases/download/core%4012.5.0/Insomnia.Core-12.5.0.exe"
+sha256 = "75308e99d7549c450e438b7552c288fe1c580815fcee9bf546ce5ea275984a5c"
