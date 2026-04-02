@@ -78,9 +78,15 @@ class RegistryValidateSourceTests(unittest.TestCase):
                     license = "MIT OR Unlicense"
                     homepage = "https://github.com/BurntSushi/ripgrep"
 
-                    [source]
-                    provider = "github"
+                    [source.release]
+                    kind = "github_releases"
                     repo = "BurntSushi/ripgrep"
+
+                    [source.checksum]
+                    kind = "download_sha256"
+
+                    [source.asset]
+                    kind = "release_asset_url"
 
                     [[artifacts]]
                     target = "x86_64-unknown-linux-gnu"
@@ -145,9 +151,15 @@ class RegistryValidateSourceTests(unittest.TestCase):
                     license = "MIT OR Unlicense"
                     homepage = "https://github.com/BurntSushi/ripgrep"
 
-                    [source]
-                    provider = "github"
+                    [source.release]
+                    kind = "github_releases"
                     repo = "BurntSushi/ripgrep"
+
+                    [source.checksum]
+                    kind = "download_sha256"
+
+                    [source.asset]
+                    kind = "release_asset_url"
 
                     [[artifacts]]
                     target = "x86_64-unknown-linux-gnu"
@@ -184,10 +196,18 @@ class RegistryValidateSourceTests(unittest.TestCase):
                     license = "MIT"
                     homepage = "https://nodejs.org/"
 
-                    [source]
-                    provider = "nodejs-dist"
+                    [source.release]
+                    kind = "node_dist_index"
                     major = 22
                     include_prereleases = false
+
+                    [source.checksum]
+                    kind = "shasums256"
+                    url_template = "https://nodejs.org/dist/latest-v22.x/SHASUMS256.txt"
+
+                    [source.asset]
+                    kind = "templated"
+                    base_url = "https://nodejs.org/dist/latest-v22.x"
 
                     [[artifacts]]
                     target = "x86_64-unknown-linux-gnu"

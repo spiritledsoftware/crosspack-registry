@@ -13,6 +13,9 @@ SIG_RE = re.compile(r"^[0-9a-fA-F]{128}$")
 TARGET_RE = re.compile(r"^[A-Za-z0-9._-]+$")
 REPO_RE = re.compile(r"^[^/\s]+/[^/\s]+$")
 ARCHIVE_VALUES = {"tar.gz", "zip", "tar.xz", "tgz", "bin"}
+RELEASE_KIND_VALUES = {"github_releases", "node_dist_index"}
+CHECKSUM_KIND_VALUES = {"download_sha256", "shasums256"}
+ASSET_KIND_VALUES = {"release_asset_url", "templated"}
 
 
 def err(errors: list[str], path: Path, message: str) -> None:
@@ -77,30 +80,102 @@ def validate_package_manifest(path: Path, doc: dict, errors: list[str]) -> None:
     if not isinstance(source, dict):
         err(errors, path, "missing or invalid `source` (must be a table)")
     else:
-        provider_ok = expect_nonempty_str(
-            source.get("provider"), "source.provider", errors, path
-        )
-        provider = source.get("provider") if provider_ok else None
-        if provider == "github":
-            repo_ok = expect_nonempty_str(source.get("repo"), "source.repo", errors, path)
-            if repo_ok and not REPO_RE.fullmatch(str(source["repo"])):
-                err(errors, path, "source.repo must look like owner/name")
-        elif provider == "nodejs-dist":
-            major = source.get("major")
-            if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
-                err(errors, path, "source.major must be an integer > 0")
-        elif provider_ok:
-            err(errors, path, "source.provider must be 'github' or 'nodejs-dist'")
+        release = source.get("release")
+        checksum = source.get("checksum")
+        asset = source.get("asset")
+        if isinstance(release, dict) and isinstance(checksum, dict) and isinstance(asset, dict):
+            release_kind_ok = expect_nonempty_str(
+                release.get("kind"), "source.release.kind", errors, path
+            )
+            release_kind = release.get("kind") if release_kind_ok else None
+            if release_kind_ok and release_kind not in RELEASE_KIND_VALUES:
+                err(
+                    errors,
+                    path,
+                    "source.release.kind must be 'github_releases' or 'node_dist_index'",
+                )
+            elif release_kind == "github_releases":
+                repo_ok = expect_nonempty_str(
+                    release.get("repo"), "source.release.repo", errors, path
+                )
+                if repo_ok and not REPO_RE.fullmatch(str(release["repo"])):
+                    err(errors, path, "source.release.repo must look like owner/name")
+            elif release_kind == "node_dist_index":
+                major = release.get("major")
+                if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
+                    err(errors, path, "source.release.major must be an integer > 0")
 
-        include_prereleases = source.get("include_prereleases")
-        if include_prereleases is not None and not isinstance(
-            include_prereleases, bool
-        ):
-            err(errors, path, "source.include_prereleases must be a boolean")
+            include_prereleases = release.get("include_prereleases")
+            if include_prereleases is not None and not isinstance(
+                include_prereleases, bool
+            ):
+                err(errors, path, "source.release.include_prereleases must be a boolean")
 
-        tag_prefix = source.get("tag_prefix")
-        if tag_prefix is not None and not isinstance(tag_prefix, str):
-            err(errors, path, "source.tag_prefix must be a string")
+            tag_prefix = release.get("tag_prefix")
+            if tag_prefix is not None and not isinstance(tag_prefix, str):
+                err(errors, path, "source.release.tag_prefix must be a string")
+
+            checksum_kind_ok = expect_nonempty_str(
+                checksum.get("kind"), "source.checksum.kind", errors, path
+            )
+            checksum_kind = checksum.get("kind") if checksum_kind_ok else None
+            if checksum_kind_ok and checksum_kind not in CHECKSUM_KIND_VALUES:
+                err(
+                    errors,
+                    path,
+                    "source.checksum.kind must be 'download_sha256' or 'shasums256'",
+                )
+            elif checksum_kind == "shasums256":
+                checksum_url_ok = expect_nonempty_str(
+                    checksum.get("url_template"),
+                    "source.checksum.url_template",
+                    errors,
+                    path,
+                )
+                if checksum_url_ok and not str(checksum["url_template"]).startswith("https://"):
+                    err(errors, path, "source.checksum.url_template must start with https://")
+
+            asset_kind_ok = expect_nonempty_str(
+                asset.get("kind"), "source.asset.kind", errors, path
+            )
+            asset_kind = asset.get("kind") if asset_kind_ok else None
+            if asset_kind_ok and asset_kind not in ASSET_KIND_VALUES:
+                err(
+                    errors,
+                    path,
+                    "source.asset.kind must be 'release_asset_url' or 'templated'",
+                )
+            elif asset_kind == "templated":
+                base_url_ok = expect_nonempty_str(
+                    asset.get("base_url"), "source.asset.base_url", errors, path
+                )
+                if base_url_ok and not str(asset["base_url"]).startswith("https://"):
+                    err(errors, path, "source.asset.base_url must start with https://")
+        else:
+            provider_ok = expect_nonempty_str(
+                source.get("provider"), "source.provider", errors, path
+            )
+            provider = source.get("provider") if provider_ok else None
+            if provider == "github":
+                repo_ok = expect_nonempty_str(source.get("repo"), "source.repo", errors, path)
+                if repo_ok and not REPO_RE.fullmatch(str(source["repo"])):
+                    err(errors, path, "source.repo must look like owner/name")
+            elif provider == "nodejs-dist":
+                major = source.get("major")
+                if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
+                    err(errors, path, "source.major must be an integer > 0")
+            elif provider_ok:
+                err(errors, path, "source.provider must be 'github' or 'nodejs-dist'")
+
+            include_prereleases = source.get("include_prereleases")
+            if include_prereleases is not None and not isinstance(
+                include_prereleases, bool
+            ):
+                err(errors, path, "source.include_prereleases must be a boolean")
+
+            tag_prefix = source.get("tag_prefix")
+            if tag_prefix is not None and not isinstance(tag_prefix, str):
+                err(errors, path, "source.tag_prefix must be a string")
 
     if len(path.parts) < 2 or path.parts[-2] != "packages":
         err(errors, path, "package manifest must live under packages/<name>.toml")

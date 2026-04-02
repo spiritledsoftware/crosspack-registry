@@ -100,9 +100,15 @@ class RegistryGenerateManifestTests(unittest.TestCase):
                     license = "MIT OR Unlicense"
                     homepage = "https://github.com/BurntSushi/ripgrep"
 
-                    [source]
-                    provider = "github"
+                    [source.release]
+                    kind = "github_releases"
                     repo = "BurntSushi/ripgrep"
+
+                    [source.checksum]
+                    kind = "download_sha256"
+
+                    [source.asset]
+                    kind = "release_asset_url"
 
                     [[artifacts]]
                     target = "x86_64-unknown-linux-gnu"
@@ -250,10 +256,18 @@ class RegistryGenerateManifestTests(unittest.TestCase):
                     license = "MIT"
                     homepage = "https://nodejs.org/"
 
-                    [source]
-                    provider = "nodejs-dist"
+                    [source.release]
+                    kind = "node_dist_index"
                     major = 22
                     include_prereleases = false
+
+                    [source.checksum]
+                    kind = "shasums256"
+                    url_template = "https://nodejs.org/dist/latest-v22.x/SHASUMS256.txt"
+
+                    [source.asset]
+                    kind = "templated"
+                    base_url = "https://nodejs.org/dist/latest-v22.x"
 
                     [[artifacts]]
                     target = "x86_64-unknown-linux-gnu"
@@ -326,10 +340,18 @@ class RegistryGenerateManifestTests(unittest.TestCase):
                     license = "MIT"
                     homepage = "https://nodejs.org/"
 
-                    [source]
-                    provider = "nodejs-dist"
+                    [source.release]
+                    kind = "node_dist_index"
                     major = 22
                     include_prereleases = false
+
+                    [source.checksum]
+                    kind = "shasums256"
+                    url_template = "https://nodejs.org/dist/latest-v22.x/SHASUMS256.txt"
+
+                    [source.asset]
+                    kind = "templated"
+                    base_url = "https://nodejs.org/dist/latest-v22.x"
 
                     [[artifacts]]
                     target = "x86_64-unknown-linux-gnu"
@@ -348,8 +370,10 @@ class RegistryGenerateManifestTests(unittest.TestCase):
 
             rendered = self.generator.generate_package_text(config_path=config_path)
 
-            self.assertIn('provider = "nodejs-dist"', rendered)
+            self.assertIn('[source.release]', rendered)
+            self.assertIn('kind = "node_dist_index"', rendered)
             self.assertIn('major = 22', rendered)
+            self.assertIn('[source.asset]', rendered)
             self.assertNotIn('repo =', rendered)
 
 

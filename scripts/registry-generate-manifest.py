@@ -27,6 +27,9 @@ class DownloadError(Exception):
 
 NODE_DIST_VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
 DOWNLOAD_ATTEMPTS = 3
+RELEASE_KIND_VALUES = {"github_releases", "node_dist_index"}
+CHECKSUM_KIND_VALUES = {"download_sha256", "shasums256"}
+ASSET_KIND_VALUES = {"release_asset_url", "templated"}
 
 
 def _escape(value: str) -> str:
@@ -88,17 +91,7 @@ def render_package_text(doc: dict) -> str:
 
     source = doc.get("source")
     if isinstance(source, dict):
-        chunks.append("[source]")
-        chunks.append(_line("provider", source["provider"]))
-        if "repo" in source:
-            chunks.append(_line("repo", source["repo"]))
-        if "major" in source:
-            chunks.append(_line("major", source["major"]))
-        if "tag_prefix" in source:
-            chunks.append(_line("tag_prefix", source["tag_prefix"]))
-        if "include_prereleases" in source:
-            chunks.append(_line("include_prereleases", source["include_prereleases"]))
-        chunks.append("")
+        render_source_text(chunks, source)
 
     artifacts = doc.get("artifacts")
     if not isinstance(artifacts, list) or not artifacts:
@@ -197,6 +190,81 @@ def _build_nodejs_dist_base_url(*, major: int) -> str:
     return f"https://nodejs.org/dist/latest-v{major}.x"
 
 
+def normalize_source(source: dict) -> dict:
+    release = source.get("release")
+    checksum = source.get("checksum")
+    asset = source.get("asset")
+    if isinstance(release, dict) and isinstance(checksum, dict) and isinstance(asset, dict):
+        return {"release": release, "checksum": checksum, "asset": asset}
+
+    provider = source.get("provider")
+    if provider == "github":
+        repo = source.get("repo")
+        if not isinstance(repo, str) or not repo:
+            raise GenerateError("github source config requires source.repo")
+        normalized_release = {
+            "kind": "github_releases",
+            "repo": repo,
+            "include_prereleases": bool(source.get("include_prereleases", False)),
+        }
+        tag_prefix = source.get("tag_prefix")
+        if isinstance(tag_prefix, str) and tag_prefix:
+            normalized_release["tag_prefix"] = tag_prefix
+        return {
+            "release": normalized_release,
+            "checksum": {"kind": "download_sha256"},
+            "asset": {"kind": "release_asset_url"},
+        }
+
+    if provider == "nodejs-dist":
+        major = source.get("major")
+        if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
+            raise GenerateError("nodejs-dist source config requires source.major > 0")
+        base_url = _build_nodejs_dist_base_url(major=major)
+        return {
+            "release": {
+                "kind": "node_dist_index",
+                "major": major,
+                "include_prereleases": bool(source.get("include_prereleases", False)),
+            },
+            "checksum": {
+                "kind": "shasums256",
+                "url_template": f"{base_url}/SHASUMS256.txt",
+            },
+            "asset": {"kind": "templated", "base_url": base_url},
+        }
+
+    raise GenerateError(
+        "source config must define either release/checksum/asset tables or a supported legacy provider"
+    )
+
+
+def render_source_text(chunks: list[str], source: dict) -> None:
+    normalized = normalize_source(source)
+    release = normalized["release"]
+    checksum = normalized["checksum"]
+    asset = normalized["asset"]
+
+    chunks.append("[source.release]")
+    chunks.append(_line("kind", release["kind"]))
+    for key in ("repo", "tag_prefix", "include_prereleases", "major"):
+        if key in release:
+            chunks.append(_line(key, release[key]))
+    chunks.append("")
+
+    chunks.append("[source.checksum]")
+    chunks.append(_line("kind", checksum["kind"]))
+    if "url_template" in checksum:
+        chunks.append(_line("url_template", checksum["url_template"]))
+    chunks.append("")
+
+    chunks.append("[source.asset]")
+    chunks.append(_line("kind", asset["kind"]))
+    if "base_url" in asset:
+        chunks.append(_line("base_url", asset["base_url"]))
+    chunks.append("")
+
+
 def _build_nodejs_dist_release_artifacts(
     *,
     config: dict,
@@ -205,16 +273,21 @@ def _build_nodejs_dist_release_artifacts(
 ) -> list[dict]:
     source = config.get("source")
     if not isinstance(source, dict):
-        raise GenerateError("nodejs-dist source config requires a source table")
-    major = source.get("major")
+        raise GenerateError("source config requires a source table")
+    normalized = normalize_source(source)
+    release = normalized["release"]
+    asset = normalized["asset"]
+    major = release.get("major")
     if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
-        raise GenerateError("nodejs-dist source config requires source.major > 0")
+        raise GenerateError("node dist release config requires release.major > 0")
     if not NODE_DIST_VERSION_RE.fullmatch(version):
-        raise GenerateError("nodejs-dist releases require a normalized semver version")
+        raise GenerateError("node dist releases require a normalized semver version")
     if shasums_by_name is None:
-        raise GenerateError("nodejs-dist generation requires shasums_by_name")
+        raise GenerateError("node dist generation requires shasums_by_name")
 
-    base_url = _build_nodejs_dist_base_url(major=major)
+    base_url = asset.get("base_url")
+    if not isinstance(base_url, str) or not base_url.startswith("https://"):
+        raise GenerateError("templated asset config requires source.asset.base_url")
     release_artifacts: list[dict] = []
     for artifact in config.get("artifacts", []):
         target = artifact["target"]
@@ -251,8 +324,9 @@ def generate_release_text(
     source = config.get("source")
     if not isinstance(source, dict):
         raise GenerateError("source config root requires a source table")
+    normalized = normalize_source(source)
 
-    if source.get("provider") == "nodejs-dist":
+    if normalized["release"].get("kind") == "node_dist_index":
         release_artifacts = _build_nodejs_dist_release_artifacts(
             config=config,
             version=version,
