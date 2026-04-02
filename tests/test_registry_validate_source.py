@@ -10,6 +10,51 @@ SCRIPT = REPO_ROOT / "scripts" / "registry-validate-source.py"
 
 
 class RegistryValidateSourceTests(unittest.TestCase):
+    def test_valid_zoxide_style_source_config_passes(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="source-config-") as tmp:
+            config = Path(tmp) / "zoxide.toml"
+            config.write_text(
+                textwrap.dedent(
+                    """
+                    name = "zoxide"
+                    license = "MIT"
+                    homepage = "https://github.com/ajeetdsouza/zoxide"
+
+                    [source]
+                    provider = "github"
+                    repo = "ajeetdsouza/zoxide"
+                    tag_prefix = "v"
+                    include_prereleases = false
+
+                    [[artifacts]]
+                    target = "x86_64-unknown-linux-gnu"
+                    asset = "zoxide-{version}-x86_64-unknown-linux-musl.tar.gz"
+                    archive = "tar.gz"
+                    strip_components = 0
+
+                    [[artifacts.binaries]]
+                    name = "zoxide"
+                    path = "zoxide"
+
+                    [[artifacts.completions]]
+                    shell = "bash"
+                    path = "completions/zoxide.bash"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+
+            result = subprocess.run(
+                ["python3", str(SCRIPT), str(config)],
+                cwd=REPO_ROOT,
+                text=True,
+                capture_output=True,
+            )
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("Validation passed", result.stdout)
+
     def test_every_packaged_package_has_source_config(self) -> None:
         packages_root = REPO_ROOT / "packages"
         sources_root = REPO_ROOT / "registry" / "sources"
