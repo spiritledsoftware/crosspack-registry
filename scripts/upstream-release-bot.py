@@ -79,6 +79,35 @@ def fetch_github_releases(repo: str, token: str | None = None) -> list[dict]:
     return [item for item in payload if isinstance(item, dict)]
 
 
+def fetch_nodejs_dist_releases(major: int) -> list[dict]:
+    payload = _http_get_json("https://nodejs.org/dist/index.json")
+    if not isinstance(payload, list):
+        raise RuntimeError("Unexpected Node.js dist index response")
+    major_prefix = f"v{major}."
+    return [
+        item
+        for item in payload
+        if isinstance(item, dict)
+        and isinstance(item.get("version"), str)
+        and item["version"].startswith(major_prefix)
+    ]
+
+
+def fetch_nodejs_dist_shasums(*, major: int) -> dict[str, str]:
+    request = urllib.request.Request(
+        f"https://nodejs.org/dist/latest-v{major}.x/SHASUMS256.txt",
+        headers={"User-Agent": "crosspack-registry-upstream-bot"},
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310
+        payload = response.read().decode("utf-8")
+    shasums: dict[str, str] = {}
+    for line in payload.splitlines():
+        parts = line.strip().split()
+        if len(parts) == 2:
+            shasums[parts[1]] = parts[0]
+    return shasums
+
+
 def normalize_tag_to_version(tag: str, tag_prefix: str | None = None) -> str | None:
     if not tag:
         return None
@@ -110,6 +139,33 @@ def plan_updates_for_config(
     source = config.get("source", {})
     if not isinstance(source, dict):
         raise RuntimeError(f"source must be a table in {config_path}")
+
+    if source.get("provider") == "nodejs-dist":
+        major = source.get("major")
+        if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
+            raise RuntimeError(f"nodejs-dist source.major must be an integer > 0 in {config_path}")
+
+        existing_versions = {
+            p.stem for p in (releases_root / package).glob("*.toml") if p.is_file()
+        }
+        for release in releases:
+            version_tag = release.get("version")
+            if not isinstance(version_tag, str) or not version_tag.startswith(f"v{major}."):
+                continue
+            version = normalize_tag_to_version(version_tag)
+            if version is None:
+                continue
+            if version in existing_versions:
+                return []
+            return [
+                PlannedUpdate(
+                    package=package,
+                    version=version,
+                    config_path=config_path,
+                    release=release,
+                )
+            ]
+        return []
 
     include_prereleases = bool(source.get("include_prereleases", False))
     tag_prefix = source.get("tag_prefix")
@@ -333,11 +389,16 @@ def main(argv: list[str]) -> int:
         source = config.get("source")
         if not isinstance(source, dict):
             raise RuntimeError(f"Missing source table in {config_path}")
-        repo = source.get("repo")
-        if not isinstance(repo, str):
-            raise RuntimeError(f"Missing source.repo in {config_path}")
-
-        releases = fetch_github_releases(repo, token=github_token)
+        if source.get("provider") == "nodejs-dist":
+            major = source.get("major")
+            if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
+                raise RuntimeError(f"Missing or invalid source.major in {config_path}")
+            releases = fetch_nodejs_dist_releases(major)
+        else:
+            repo = source.get("repo")
+            if not isinstance(repo, str):
+                raise RuntimeError(f"Missing source.repo in {config_path}")
+            releases = fetch_github_releases(repo, token=github_token)
         planned.extend(
             plan_updates_for_config(
                 config_path=config_path,
@@ -359,11 +420,21 @@ def main(argv: list[str]) -> int:
         if release_path.exists():
             continue
 
+        config = load_config(update.config_path)
+        source = config.get("source")
+        shasums_by_name = None
+        if isinstance(source, dict) and source.get("provider") == "nodejs-dist":
+            major = source.get("major")
+            if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
+                raise RuntimeError(f"Missing or invalid source.major in {update.config_path}")
+            shasums_by_name = fetch_nodejs_dist_shasums(major=major)
+
         try:
             release_text = generator.generate_release_text(
                 config_path=update.config_path,
                 version=update.version,
                 release=update.release,
+                shasums_by_name=shasums_by_name,
             )
         except generator.GenerateError as exc:
             skipped_updates += 1

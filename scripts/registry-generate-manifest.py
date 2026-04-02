@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import tempfile
 import urllib.request
 from pathlib import Path
@@ -16,6 +17,9 @@ except ModuleNotFoundError:
 
 class GenerateError(Exception):
     pass
+
+
+NODE_DIST_VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
 
 
 def _escape(value: str) -> str:
@@ -79,7 +83,10 @@ def render_package_text(doc: dict) -> str:
     if isinstance(source, dict):
         chunks.append("[source]")
         chunks.append(_line("provider", source["provider"]))
-        chunks.append(_line("repo", source["repo"]))
+        if "repo" in source:
+            chunks.append(_line("repo", source["repo"]))
+        if "major" in source:
+            chunks.append(_line("major", source["major"]))
         if "tag_prefix" in source:
             chunks.append(_line("tag_prefix", source["tag_prefix"]))
         if "include_prereleases" in source:
@@ -154,6 +161,48 @@ def load_source_config(config_path: Path) -> dict:
     return config
 
 
+def _build_nodejs_dist_base_url(*, major: int) -> str:
+    return f"https://nodejs.org/dist/latest-v{major}.x"
+
+
+def _build_nodejs_dist_release_artifacts(
+    *,
+    config: dict,
+    version: str,
+    shasums_by_name: dict[str, str] | None,
+) -> list[dict]:
+    source = config.get("source")
+    if not isinstance(source, dict):
+        raise GenerateError("nodejs-dist source config requires a source table")
+    major = source.get("major")
+    if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
+        raise GenerateError("nodejs-dist source config requires source.major > 0")
+    if not NODE_DIST_VERSION_RE.fullmatch(version):
+        raise GenerateError("nodejs-dist releases require a normalized semver version")
+    if shasums_by_name is None:
+        raise GenerateError("nodejs-dist generation requires shasums_by_name")
+
+    base_url = _build_nodejs_dist_base_url(major=major)
+    release_artifacts: list[dict] = []
+    for artifact in config.get("artifacts", []):
+        target = artifact["target"]
+        asset_name = artifact["asset"].format(version=version)
+        sha256 = shasums_by_name.get(asset_name)
+        if sha256 is None:
+            raise GenerateError(
+                f"missing SHASUMS256 entry '{asset_name}' for target '{target}'"
+            )
+        release_artifacts.append(
+            {
+                "target": target,
+                "url": f"{base_url}/{asset_name}",
+                "sha256": sha256,
+            }
+        )
+
+    return release_artifacts
+
+
 def generate_package_text(*, config_path: Path) -> str:
     return render_package_text(load_source_config(config_path))
 
@@ -164,36 +213,48 @@ def generate_release_text(
     version: str,
     release: dict,
     downloader=download,
+    shasums_by_name: dict[str, str] | None = None,
 ) -> str:
     config = load_source_config(config_path)
-    assets = _asset_map(release)
-    release_artifacts: list[dict] = []
+    source = config.get("source")
+    if not isinstance(source, dict):
+        raise GenerateError("source config root requires a source table")
 
-    for artifact in config.get("artifacts", []):
-        target = artifact["target"]
-        asset_name = artifact["asset"].format(version=version)
-        release_asset = assets.get(asset_name)
-        if release_asset is None:
-            raise GenerateError(
-                f"missing release asset '{asset_name}' for target '{target}'"
-            )
-
-        url = release_asset.get("browser_download_url")
-        if not isinstance(url, str) or not url.startswith("https://"):
-            raise GenerateError(f"invalid download URL for asset '{asset_name}'")
-
-        with tempfile.TemporaryDirectory(prefix="manifest-gen-") as tmp:
-            artifact_path = Path(tmp) / asset_name
-            downloader(url, artifact_path)
-            checksum = sha256_file(artifact_path)
-
-        release_artifacts.append(
-            {
-                "target": target,
-                "url": url,
-                "sha256": checksum,
-            }
+    if source.get("provider") == "nodejs-dist":
+        release_artifacts = _build_nodejs_dist_release_artifacts(
+            config=config,
+            version=version,
+            shasums_by_name=shasums_by_name,
         )
+    else:
+        assets = _asset_map(release)
+        release_artifacts: list[dict] = []
+
+        for artifact in config.get("artifacts", []):
+            target = artifact["target"]
+            asset_name = artifact["asset"].format(version=version)
+            release_asset = assets.get(asset_name)
+            if release_asset is None:
+                raise GenerateError(
+                    f"missing release asset '{asset_name}' for target '{target}'"
+                )
+
+            url = release_asset.get("browser_download_url")
+            if not isinstance(url, str) or not url.startswith("https://"):
+                raise GenerateError(f"invalid download URL for asset '{asset_name}'")
+
+            with tempfile.TemporaryDirectory(prefix="manifest-gen-") as tmp:
+                artifact_path = Path(tmp) / asset_name
+                downloader(url, artifact_path)
+                checksum = sha256_file(artifact_path)
+
+            release_artifacts.append(
+                {
+                    "target": target,
+                    "url": url,
+                    "sha256": checksum,
+                }
+            )
 
     document = {
         "name": config["name"],

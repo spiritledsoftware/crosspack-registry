@@ -80,12 +80,17 @@ def validate_package_manifest(path: Path, doc: dict, errors: list[str]) -> None:
         provider_ok = expect_nonempty_str(
             source.get("provider"), "source.provider", errors, path
         )
-        if provider_ok and source["provider"] != "github":
-            err(errors, path, "source.provider must be 'github'")
-
-        repo_ok = expect_nonempty_str(source.get("repo"), "source.repo", errors, path)
-        if repo_ok and not REPO_RE.fullmatch(str(source["repo"])):
-            err(errors, path, "source.repo must look like owner/name")
+        provider = source.get("provider") if provider_ok else None
+        if provider == "github":
+            repo_ok = expect_nonempty_str(source.get("repo"), "source.repo", errors, path)
+            if repo_ok and not REPO_RE.fullmatch(str(source["repo"])):
+                err(errors, path, "source.repo must look like owner/name")
+        elif provider == "nodejs-dist":
+            major = source.get("major")
+            if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
+                err(errors, path, "source.major must be an integer > 0")
+        elif provider_ok:
+            err(errors, path, "source.provider must be 'github' or 'nodejs-dist'")
 
         include_prereleases = source.get("include_prereleases")
         if include_prereleases is not None and not isinstance(

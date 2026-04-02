@@ -1,0 +1,32 @@
+name = "node"
+version = "22.22.2"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://nodejs.org/dist/latest-v22.x/node-v22.22.2-linux-x64.tar.xz"
+sha256 = "88fd1ce767091fd8d4a99fdb2356e98c819f93f3b1f8663853a2dee9b438068a"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://nodejs.org/dist/latest-v22.x/node-v22.22.2-linux-arm64.tar.xz"
+sha256 = "e9e1930fd321a470e29bb68f30318bf58e3ecb4acb4f1533fb19c58328a091fe"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://nodejs.org/dist/latest-v22.x/node-v22.22.2-darwin-x64.tar.xz"
+sha256 = "b6a384bba1a7ec585e5a91a452b63f676b940584ff57b5c9cf0541c8db60023e"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://nodejs.org/dist/latest-v22.x/node-v22.22.2-darwin-arm64.tar.xz"
+sha256 = "f8655beb4b86ff6588ed7e02c37f8574b58557bd3e880012814b1a4956fd9d88"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://nodejs.org/dist/latest-v22.x/node-v22.22.2-win-x64.zip"
+sha256 = "7c93e9d92bf68c07182b471aa187e35ee6cd08ef0f24ab060dfff605fcc1c57c"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+url = "https://nodejs.org/dist/latest-v22.x/node-v22.22.2-win-arm64.zip"
+sha256 = "380d375cf650c5a7f2ef3ce29ac6ea9a1c9d2ec8ea8e8391e1a34fd543886ab3"

@@ -48,12 +48,16 @@ def validate_source_config(doc: dict) -> None:
         raise ValidationError("manifest.source must be a table")
 
     provider = _expect_non_empty_str(source, "provider", "manifest.source")
-    if provider != "github":
-        raise ValidationError("manifest.source.provider must be 'github'")
-
-    repo = _expect_non_empty_str(source, "repo", "manifest.source")
-    if not REPO_RE.fullmatch(repo):
-        raise ValidationError("manifest.source.repo must look like owner/name")
+    if provider == "github":
+        repo = _expect_non_empty_str(source, "repo", "manifest.source")
+        if not REPO_RE.fullmatch(repo):
+            raise ValidationError("manifest.source.repo must look like owner/name")
+    elif provider == "nodejs-dist":
+        major = source.get("major")
+        if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
+            raise ValidationError("manifest.source.major must be an integer > 0")
+    else:
+        raise ValidationError("manifest.source.provider must be 'github' or 'nodejs-dist'")
 
     include_prereleases = source.get("include_prereleases")
     if include_prereleases is not None and not isinstance(include_prereleases, bool):

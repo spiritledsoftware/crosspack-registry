@@ -88,6 +88,119 @@ class RegistryGenerateManifestTests(unittest.TestCase):
             self.assertNotIn("license =", rendered)
             self.assertNotIn("homepage =", rendered)
 
+    def test_generates_nodejs_dist_release_manifest_from_shasums(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="manifest-gen-") as tmp:
+            tmp_path = Path(tmp)
+            config_path = tmp_path / "node.toml"
+            config_path.write_text(
+                textwrap.dedent(
+                    """
+                    name = "node"
+                    license = "MIT"
+                    homepage = "https://nodejs.org/"
+
+                    [source]
+                    provider = "nodejs-dist"
+                    major = 22
+                    include_prereleases = false
+
+                    [[artifacts]]
+                    target = "x86_64-unknown-linux-gnu"
+                    asset = "node-v{version}-linux-x64.tar.xz"
+                    archive = "tar.xz"
+                    strip_components = 1
+
+                    [[artifacts.binaries]]
+                    name = "node"
+                    path = "bin/node"
+
+                    [[artifacts]]
+                    target = "aarch64-unknown-linux-gnu"
+                    asset = "node-v{version}-linux-arm64.tar.xz"
+                    archive = "tar.xz"
+                    strip_components = 1
+
+                    [[artifacts.binaries]]
+                    name = "node"
+                    path = "bin/node"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+
+            release = {
+                "version": "v22.22.2",
+                "files": ["linux-x64", "linux-arm64"],
+            }
+            shasums_by_name = {
+                "node-v22.22.2-linux-x64.tar.xz": "88fd1ce767091fd8d4a99fdb2356e98c819f93f3b1f8663853a2dee9b438068a",
+                "node-v22.22.2-linux-arm64.tar.xz": "e9e1930fd321a470e29bb68f30318bf58e3ecb4acb4f1533fb19c58328a091fe",
+            }
+
+            rendered = self.generator.generate_release_text(
+                config_path=config_path,
+                version="22.22.2",
+                release=release,
+                shasums_by_name=shasums_by_name,
+            )
+
+            self.assertIn('name = "node"', rendered)
+            self.assertIn('version = "22.22.2"', rendered)
+            self.assertIn(
+                'url = "https://nodejs.org/dist/latest-v22.x/node-v22.22.2-linux-x64.tar.xz"',
+                rendered,
+            )
+            self.assertIn(
+                'sha256 = "88fd1ce767091fd8d4a99fdb2356e98c819f93f3b1f8663853a2dee9b438068a"',
+                rendered,
+            )
+            self.assertIn(
+                'url = "https://nodejs.org/dist/latest-v22.x/node-v22.22.2-linux-arm64.tar.xz"',
+                rendered,
+            )
+            self.assertIn(
+                'sha256 = "e9e1930fd321a470e29bb68f30318bf58e3ecb4acb4f1533fb19c58328a091fe"',
+                rendered,
+            )
+
+    def test_generates_nodejs_dist_package_text_without_repo(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="manifest-gen-") as tmp:
+            tmp_path = Path(tmp)
+            config_path = tmp_path / "node.toml"
+            config_path.write_text(
+                textwrap.dedent(
+                    """
+                    name = "node"
+                    license = "MIT"
+                    homepage = "https://nodejs.org/"
+
+                    [source]
+                    provider = "nodejs-dist"
+                    major = 22
+                    include_prereleases = false
+
+                    [[artifacts]]
+                    target = "x86_64-unknown-linux-gnu"
+                    asset = "node-v{version}-linux-x64.tar.xz"
+                    archive = "tar.xz"
+                    strip_components = 1
+
+                    [[artifacts.binaries]]
+                    name = "node"
+                    path = "bin/node"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+
+            rendered = self.generator.generate_package_text(config_path=config_path)
+
+            self.assertIn('provider = "nodejs-dist"', rendered)
+            self.assertIn('major = 22', rendered)
+            self.assertNotIn('repo =', rendered)
+
 
 if __name__ == "__main__":
     unittest.main()
