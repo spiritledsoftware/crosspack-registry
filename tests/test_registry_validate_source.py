@@ -129,6 +129,50 @@ class RegistryValidateSourceTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("strip_components", result.stderr)
 
+    def test_valid_nodejs_dist_source_config_passes(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="source-config-") as tmp:
+            config = Path(tmp) / "node.toml"
+            config.write_text(
+                textwrap.dedent(
+                    """
+                    name = "node"
+                    license = "MIT"
+                    homepage = "https://nodejs.org/"
+
+                    [source]
+                    provider = "nodejs-dist"
+                    major = 22
+                    include_prereleases = false
+
+                    [[artifacts]]
+                    target = "x86_64-unknown-linux-gnu"
+                    asset = "node-v{version}-linux-x64.tar.xz"
+                    archive = "tar.xz"
+                    strip_components = 1
+
+                    [[artifacts.binaries]]
+                    name = "node"
+                    path = "bin/node"
+
+                    [[artifacts.binaries]]
+                    name = "npm"
+                    path = "bin/npm"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+
+            result = subprocess.run(
+                ["python3", str(SCRIPT), str(config)],
+                cwd=REPO_ROOT,
+                text=True,
+                capture_output=True,
+            )
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("Validation passed", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

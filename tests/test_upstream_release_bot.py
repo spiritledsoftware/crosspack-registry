@@ -302,6 +302,54 @@ class UpstreamReleaseBotTests(unittest.TestCase):
                 self._git(repo, "log", "-1", "--pretty=%s"),
             )
 
+    def test_plan_updates_for_nodejs_dist_major_channel(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="release-bot-") as tmp:
+            tmp_path = Path(tmp)
+            sources_dir = tmp_path / "registry" / "sources"
+            sources_dir.mkdir(parents=True)
+            config_path = sources_dir / "node.toml"
+            config_path.write_text(
+                textwrap.dedent(
+                    """
+                    name = "node"
+                    license = "MIT"
+                    homepage = "https://nodejs.org/"
+
+                    [source]
+                    provider = "nodejs-dist"
+                    major = 22
+                    include_prereleases = false
+
+                    [[artifacts]]
+                    target = "x86_64-unknown-linux-gnu"
+                    asset = "node-v{version}-linux-x64.tar.xz"
+                    archive = "tar.xz"
+                    strip_components = 1
+
+                    [[artifacts.binaries]]
+                    name = "node"
+                    path = "bin/node"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+
+            releases = [
+                {"version": "v22.22.2", "files": ["linux-x64"]},
+                {"version": "v22.21.0", "files": ["linux-x64"]},
+            ]
+
+            planned = self.bot.plan_updates_for_config(
+                config_path=config_path,
+                releases_root=tmp_path / "releases",
+                releases=releases,
+            )
+
+        self.assertEqual(len(planned), 1)
+        self.assertEqual(planned[0].package, "node")
+        self.assertEqual(planned[0].version, "22.22.2")
+
 
 if __name__ == "__main__":
     unittest.main()
