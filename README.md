@@ -54,8 +54,11 @@ Manifest updates do not need to be hand-authored for configured packages.
 Useful commands:
 
 ```bash
+# Validate seed definitions + coverage
+python3 scripts/registry-validate-seed-definitions.py registry/seed-definitions.toml
+
 # Validate source configs
-python3 scripts/registry-validate-source.py registry/sources/*.toml
+python3 scripts/registry-validate-source.py --require-package-coverage registry/sources/*.toml
 
 # Dry-run release detection and generation planning
 python3 scripts/upstream-release-bot.py --dry-run
@@ -63,6 +66,8 @@ python3 scripts/upstream-release-bot.py --dry-run
 # Limit to a single package
 python3 scripts/upstream-release-bot.py --dry-run --package ripgrep
 ```
+
+For operator review/update steps, see `scripts/registry-seed-runbook.md`.
 
 ## Registry Preflight (Local + CI)
 
