@@ -1,0 +1,27 @@
+name = "starship"
+version = "1.25.0"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/starship/starship/releases/download/v1.25.0/starship-x86_64-unknown-linux-gnu.tar.gz"
+sha256 = "025a6540717a20d2545410c0108caf216a6a14ab2cce91a473d91ed42762bc6b"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-musl"
+url = "https://github.com/starship/starship/releases/download/v1.25.0/starship-aarch64-unknown-linux-musl.tar.gz"
+sha256 = "68ffcb75582e5ed336b43598bb4d8ecc4ec994ea26eac7955d3d378f1375da34"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/starship/starship/releases/download/v1.25.0/starship-x86_64-apple-darwin.tar.gz"
+sha256 = "05421bfc05ed00394ec4a7ea20213bd9920b2858713cbe1ddf257ebcebf5da88"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/starship/starship/releases/download/v1.25.0/starship-aarch64-apple-darwin.tar.gz"
+sha256 = "365301b5f4938322a9f378764b4bc640048bca7d6ac28eaabd406cadd6fc703a"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/starship/starship/releases/download/v1.25.0/starship-x86_64-pc-windows-msvc.zip"
+sha256 = "6c21422d1b786ed49937adcb3f23bebd169d32fef9b72ae8e77dc1bdb4c2acf1"
