@@ -9,8 +9,8 @@ if ! command -v openssl >/dev/null 2>&1; then
   echo "openssl is required" >&2
   exit 1
 fi
-if ! command -v xxd >/dev/null 2>&1; then
-  echo "xxd is required" >&2
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "python3 is required" >&2
   exit 1
 fi
 
@@ -22,13 +22,17 @@ if [ -z "${BEFORE_SHA}" ] || [ "${BEFORE_SHA}" = "000000000000000000000000000000
   fi
 fi
 
-mapfile -t changed_manifests < <(
+mapfile -t changed_manifests < <({
   git diff --name-only "${BEFORE_SHA}" "${AFTER_SHA}" -- 'packages/*.toml' 'packages/*.toml.sig' 'releases/**/*.toml' 'releases/**/*.toml.sig' \
     | while IFS= read -r file; do
         manifest_path="${file%.sig}"
         [ -f "$manifest_path" ] && printf '%s\n' "$manifest_path"
-      done | sort -u
-)
+      done
+  find packages releases -type f -name '*.toml' ! -name '*.toml.sig' \
+    | while IFS= read -r manifest_path; do
+        [ -f "${manifest_path}.sig" ] || printf '%s\n' "$manifest_path"
+      done
+} | sort -u)
 
 if [ "${#changed_manifests[@]}" -eq 0 ]; then
   echo "no changed manifest files detected"
@@ -43,7 +47,7 @@ chmod 600 "$key_file"
 for manifest in "${changed_manifests[@]}"; do
   sig_bin="$(mktemp)"
   openssl pkeyutl -sign -rawin -inkey "$key_file" -in "$manifest" -out "$sig_bin"
-  xxd -p -c 9999 "$sig_bin" | tr -d '\n' > "${manifest}.sig"
+  python3 -c 'import pathlib, sys; sys.stdout.write(pathlib.Path(sys.argv[1]).read_bytes().hex())' "$sig_bin" > "${manifest}.sig"
   printf '\n' >> "${manifest}.sig"
   rm -f "$sig_bin"
   echo "signed ${manifest}"
