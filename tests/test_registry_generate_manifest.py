@@ -3,7 +3,9 @@ import importlib.util
 import tempfile
 import textwrap
 import unittest
+import urllib.error
 from pathlib import Path
+from unittest import mock
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -87,6 +89,93 @@ class RegistryGenerateManifestTests(unittest.TestCase):
             self.assertIn(f'sha256 = "{expected_sha}"', rendered)
             self.assertNotIn("license =", rendered)
             self.assertNotIn("homepage =", rendered)
+
+    def test_download_retries_transient_http_error(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="manifest-gen-") as tmp:
+            dest = Path(tmp) / "artifact.tar.gz"
+            payload = b"artifact-payload"
+            failures = [
+                urllib.error.HTTPError(
+                    "https://example.invalid/artifact.tar.gz",
+                    502,
+                    "Bad Gateway",
+                    hdrs=None,
+                    fp=None,
+                )
+            ]
+
+            class FakeResponse:
+                def __enter__(self):
+                    return self
+
+                def __exit__(self, _exc_type, _exc, _traceback):
+                    return False
+
+                def read(self) -> bytes:
+                    return payload
+
+            def fake_urlopen(_req, timeout: int):
+                self.assertEqual(timeout, 30)
+                if failures:
+                    raise failures.pop()
+                return FakeResponse()
+
+            with mock.patch.object(
+                self.generator.urllib.request, "urlopen", side_effect=fake_urlopen
+            ) as urlopen, mock.patch.object(self.generator.time, "sleep") as sleep:
+                self.generator.download("https://example.invalid/artifact.tar.gz", dest)
+
+            self.assertEqual(dest.read_bytes(), payload)
+            self.assertEqual(urlopen.call_count, 2)
+            sleep.assert_called_once_with(1)
+
+    def test_download_fails_fast_for_non_transient_http_error(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="manifest-gen-") as tmp:
+            dest = Path(tmp) / "artifact.tar.gz"
+            error = urllib.error.HTTPError(
+                "https://example.invalid/missing.tar.gz",
+                404,
+                "Not Found",
+                hdrs=None,
+                fp=None,
+            )
+
+            with mock.patch.object(
+                self.generator.urllib.request, "urlopen", side_effect=error
+            ) as urlopen, mock.patch.object(self.generator.time, "sleep") as sleep:
+                with self.assertRaisesRegex(
+                    self.generator.DownloadError,
+                    "https://example.invalid/missing.tar.gz.*HTTP 404 Not Found",
+                ):
+                    self.generator.download("https://example.invalid/missing.tar.gz", dest)
+
+            self.assertFalse(dest.exists())
+            self.assertEqual(urlopen.call_count, 1)
+            sleep.assert_not_called()
+
+    def test_download_reports_url_after_exhausting_transient_errors(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="manifest-gen-") as tmp:
+            dest = Path(tmp) / "artifact.tar.gz"
+            error = urllib.error.HTTPError(
+                "https://example.invalid/flaky.tar.gz",
+                502,
+                "Bad Gateway",
+                hdrs=None,
+                fp=None,
+            )
+
+            with mock.patch.object(
+                self.generator.urllib.request, "urlopen", side_effect=error
+            ) as urlopen, mock.patch.object(self.generator.time, "sleep") as sleep:
+                with self.assertRaisesRegex(
+                    self.generator.DownloadError,
+                    "https://example.invalid/flaky.tar.gz.*3 attempts.*HTTP 502 Bad Gateway",
+                ):
+                    self.generator.download("https://example.invalid/flaky.tar.gz", dest)
+
+            self.assertFalse(dest.exists())
+            self.assertEqual(urlopen.call_count, 3)
+            self.assertEqual([call.args for call in sleep.call_args_list], [(1,), (2,)])
 
     def test_generates_nodejs_dist_release_manifest_from_shasums(self) -> None:
         with tempfile.TemporaryDirectory(prefix="manifest-gen-") as tmp:

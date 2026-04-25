@@ -6,6 +6,8 @@ import hashlib
 import json
 import re
 import tempfile
+import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -19,7 +21,12 @@ class GenerateError(Exception):
     pass
 
 
+class DownloadError(Exception):
+    pass
+
+
 NODE_DIST_VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
+DOWNLOAD_ATTEMPTS = 3
 
 
 def _escape(value: str) -> str:
@@ -118,15 +125,40 @@ def render_release_text(doc: dict) -> str:
 
 
 def download(url: str, dest: Path) -> None:
-    req = urllib.request.Request(
-        url,
-        headers={
-            "Accept": "application/octet-stream",
-            "User-Agent": "crosspack-registry-upstream-bot",
-        },
-    )
-    with urllib.request.urlopen(req, timeout=30) as response:  # noqa: S310
-        dest.write_bytes(response.read())
+    last_error: Exception | None = None
+    for attempt in range(DOWNLOAD_ATTEMPTS):
+        req = urllib.request.Request(
+            url,
+            headers={
+                "Accept": "application/octet-stream",
+                "User-Agent": "crosspack-registry-upstream-bot",
+            },
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=30) as response:  # noqa: S310
+                dest.write_bytes(response.read())
+            return
+        except urllib.error.HTTPError as error:
+            if error.code < 500:
+                raise DownloadError(
+                    f"failed to download {url}: HTTP {error.code} {error.reason}"
+                ) from error
+            last_error = error
+        except urllib.error.URLError as error:
+            last_error = error
+
+        if attempt < DOWNLOAD_ATTEMPTS - 1:
+            time.sleep(2**attempt)
+
+    if isinstance(last_error, urllib.error.HTTPError):
+        raise DownloadError(
+            "failed to download "
+            f"{url} after {DOWNLOAD_ATTEMPTS} attempts: "
+            f"HTTP {last_error.code} {last_error.reason}"
+        ) from last_error
+    raise DownloadError(
+        f"failed to download {url} after {DOWNLOAD_ATTEMPTS} attempts: {last_error}"
+    ) from last_error
 
 
 def sha256_file(path: Path) -> str:
