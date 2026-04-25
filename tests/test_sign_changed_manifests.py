@@ -32,6 +32,14 @@ class SignChangedManifestsTests(unittest.TestCase):
         )
         self.signature_path = self.manifest_path.with_suffix(".toml.sig")
 
+        self.missing_manifest_path = self.repo_root / "packages" / "node.toml"
+        self.missing_manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        self.missing_manifest_path.write_text(
+            """name = \"node\"\nlicense = \"MIT\"\nhomepage = \"https://nodejs.org/\"\n""",
+            encoding="utf-8",
+        )
+        self.missing_signature_path = self.missing_manifest_path.with_suffix(".toml.sig")
+
         self.key_path = self.repo_root / "signing-key.pem"
         subprocess.run(
             ["openssl", "genpkey", "-algorithm", "ed25519", "-out", str(self.key_path)],
@@ -125,6 +133,30 @@ class SignChangedManifestsTests(unittest.TestCase):
             "expected deleted sidecar to be regenerated for changed manifest",
         )
         self.assertIn("signed releases/demo/1.0.0.toml", result.stdout)
+
+    def test_signs_manifest_with_missing_sidecar_outside_changed_range(self) -> None:
+        env = {
+            **os.environ,
+            "SIGNING_PRIVATE_KEY_PEM": self.key_path.read_text(encoding="utf-8"),
+            "BEFORE_SHA": self.before_sha,
+            "AFTER_SHA": self.after_sha,
+            "LC_ALL": "C",
+        }
+
+        result = subprocess.run(
+            [str(self.script_path)],
+            cwd=self.repo_root,
+            text=True,
+            capture_output=True,
+            env=env,
+        )
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertTrue(
+            self.missing_signature_path.exists(),
+            "expected missing sidecar to be generated even when manifest was unchanged",
+        )
+        self.assertIn("signed packages/node.toml", result.stdout)
 
 
 if __name__ == "__main__":
