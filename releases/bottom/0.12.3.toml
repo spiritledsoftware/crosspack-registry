@@ -1,0 +1,27 @@
+name = "bottom"
+version = "0.12.3"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/ClementTsang/bottom/releases/download/0.12.3/bottom_x86_64-unknown-linux-gnu.tar.gz"
+sha256 = "468131d586dee6f4cce23fae597646cfd032103ecf749a478acb9d236adab6d6"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/ClementTsang/bottom/releases/download/0.12.3/bottom_aarch64-unknown-linux-gnu.tar.gz"
+sha256 = "5138f2fab99e267073ad542de0e3da85af842761e8083127161073d4a8ef25b2"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/ClementTsang/bottom/releases/download/0.12.3/bottom_x86_64-apple-darwin.tar.gz"
+sha256 = "5744b5c78db14b85e025c31ded93ba038041e6ff2e8c16ea1d2f9bdb6487316f"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/ClementTsang/bottom/releases/download/0.12.3/bottom_aarch64-apple-darwin.tar.gz"
+sha256 = "106e9493d20192d18dbe46d4c99f680d817c796724103ee258567070fcd16429"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/ClementTsang/bottom/releases/download/0.12.3/bottom_x86_64-pc-windows-msvc.zip"
+sha256 = "567879fd7210f8a692cd2657b41eda43c7713bef74dd025b240247accdda14fb"
