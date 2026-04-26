@@ -1,0 +1,27 @@
+name = "procs"
+version = "0.14.11"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/dalance/procs/releases/download/v0.14.11/procs-v0.14.11-x86_64-linux.zip"
+sha256 = "9c4faecf85a3af4d3d39aae47d04fa31d0a6eb0a239039f68d3f55043f04f974"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/dalance/procs/releases/download/v0.14.11/procs-v0.14.11-aarch64-linux.zip"
+sha256 = "891855dff3143fd3620c06eb68bd63e94114dd2e369107b455d48bf60cc1464c"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/dalance/procs/releases/download/v0.14.11/procs-v0.14.11-x86_64-mac.zip"
+sha256 = "72e45a61660e1c586afff64b3a8a393fed06f3a133df8e716ade68b00190ea87"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/dalance/procs/releases/download/v0.14.11/procs-v0.14.11-aarch64-mac.zip"
+sha256 = "6650e7f354c07d0319d0f771ef8bb898ce8d0c841865a96c23281eebb033cac3"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/dalance/procs/releases/download/v0.14.11/procs-v0.14.11-x86_64-windows.zip"
+sha256 = "1b1fef6dfc46ce2f2fe33a678cf865bea35234febe42c3921b06ab41024cda01"
