@@ -1,0 +1,32 @@
+name = "just"
+version = "1.50.0"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-musl"
+url = "https://github.com/casey/just/releases/download/1.50.0/just-1.50.0-x86_64-unknown-linux-musl.tar.gz"
+sha256 = "27e011cd6328fadd632e59233d2cf5f18460b8a8c4269acd324c1a8669f34db0"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-musl"
+url = "https://github.com/casey/just/releases/download/1.50.0/just-1.50.0-aarch64-unknown-linux-musl.tar.gz"
+sha256 = "3beb4967ce05883cf09ac12d6d128166eb4c6d0b03eff74b61018a6880655d7d"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/casey/just/releases/download/1.50.0/just-1.50.0-x86_64-apple-darwin.tar.gz"
+sha256 = "e4fa28fe63381ca32fad101e86d4a1da7cd2d34d1b080985a37ec9dc951922fe"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/casey/just/releases/download/1.50.0/just-1.50.0-aarch64-apple-darwin.tar.gz"
+sha256 = "891262207663bff1aa422dbe799a76deae4064eaa445f14eb28aef7a388222cd"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/casey/just/releases/download/1.50.0/just-1.50.0-x86_64-pc-windows-msvc.zip"
+sha256 = "5dc713f049e174e22de41fd06292a26c9b90f2d37c1be9390d2082fe6928b376"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+url = "https://github.com/casey/just/releases/download/1.50.0/just-1.50.0-aarch64-pc-windows-msvc.zip"
+sha256 = "91065b94d11beb4b05c8117d8a736e978f41764d73131de35d8134c9ab9dee7a"
