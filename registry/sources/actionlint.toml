@@ -1,0 +1,69 @@
+name = "actionlint"
+license = "MIT"
+homepage = "https://github.com/rhysd/actionlint"
+
+[source]
+provider = "github"
+repo = "rhysd/actionlint"
+tag_prefix = "v"
+include_prereleases = false
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "actionlint_{version}_linux_amd64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "actionlint"
+path = "actionlint"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "actionlint_{version}_linux_arm64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "actionlint"
+path = "actionlint"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "actionlint_{version}_darwin_amd64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "actionlint"
+path = "actionlint"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "actionlint_{version}_darwin_arm64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "actionlint"
+path = "actionlint"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "actionlint_{version}_windows_amd64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "actionlint"
+path = "actionlint.exe"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+asset = "actionlint_{version}_windows_arm64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "actionlint"
+path = "actionlint.exe"

@@ -1,0 +1,27 @@
+name = "bandwhich"
+version = "0.23.1"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/imsnif/bandwhich/releases/download/v0.23.1/bandwhich-v0.23.1-x86_64-unknown-linux-gnu.tar.gz"
+sha256 = "0de12665fcd1ecafbed84c372fb8edc568bb9eaffee95f53710b8c0b4c687637"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/imsnif/bandwhich/releases/download/v0.23.1/bandwhich-v0.23.1-aarch64-unknown-linux-gnu.tar.gz"
+sha256 = "46311a6e2652fc3fc386c1186baa6b986e925c686237434445b656112358ce4d"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/imsnif/bandwhich/releases/download/v0.23.1/bandwhich-v0.23.1-x86_64-apple-darwin.tar.gz"
+sha256 = "d4c8f25b997c3f1ad807f251db1d3a0ac53cfcc4d98757d6932360316789ff29"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/imsnif/bandwhich/releases/download/v0.23.1/bandwhich-v0.23.1-aarch64-apple-darwin.tar.gz"
+sha256 = "3b440e6a48c94c2ca7507d45f769d8e97fe9069bafa6f718b045a185addfad36"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/imsnif/bandwhich/releases/download/v0.23.1/bandwhich-v0.23.1-x86_64-pc-windows-msvc.zip"
+sha256 = "684d87acfd0fa808700500c2d4ced2a60be222dd86adc671035ad7b84c42cda4"

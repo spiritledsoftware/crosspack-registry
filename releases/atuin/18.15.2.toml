@@ -1,0 +1,22 @@
+name = "atuin"
+version = "18.15.2"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/atuinsh/atuin/releases/download/v18.15.2/atuin-x86_64-unknown-linux-gnu.tar.gz"
+sha256 = "97391908ceaf8cd2c74e2175ee01741a80ecf620b45131d34c7fe0f1ae925b91"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/atuinsh/atuin/releases/download/v18.15.2/atuin-aarch64-unknown-linux-gnu.tar.gz"
+sha256 = "857b4918f1019b6e9efe23f16c5231b6a61f09452030e93e027423f862ffd944"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/atuinsh/atuin/releases/download/v18.15.2/atuin-aarch64-apple-darwin.tar.gz"
+sha256 = "d73608ade168b24a29ddfed119896eb95ff7f5addcd01cab3bfff3c93deeeee1"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/atuinsh/atuin/releases/download/v18.15.2/atuin-x86_64-pc-windows-msvc.zip"
+sha256 = "24e0586a5ab477aa7154fb297786c4c9ab4dd1a9d6a873d88692b6e8f981ded7"

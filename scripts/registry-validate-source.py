@@ -16,7 +16,7 @@ class ValidationError(Exception):
     pass
 
 
-ARCHIVE_VALUES = {"tar.gz", "zip", "tar.xz", "tgz", "bin"}
+ARCHIVE_VALUES = {"tar.gz", "zip", "tar.xz", "tgz", "gz", "bin"}
 TARGET_RE = re.compile(r"^[A-Za-z0-9._-]+$")
 REPO_RE = re.compile(r"^[^/\s]+/[^/\s]+$")
 RELEASE_KIND_VALUES = {"github_releases", "node_dist_index"}
