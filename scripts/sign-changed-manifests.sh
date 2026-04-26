@@ -47,8 +47,12 @@ chmod 600 "$key_file"
 for manifest in "${changed_manifests[@]}"; do
   sig_bin="$(mktemp)"
   openssl pkeyutl -sign -rawin -inkey "$key_file" -in "$manifest" -out "$sig_bin"
-  python3 -c 'import pathlib, sys; sys.stdout.write(pathlib.Path(sys.argv[1]).read_bytes().hex())' "$sig_bin" > "${manifest}.sig"
-  printf '\n' >> "${manifest}.sig"
+  python3 - "$sig_bin" "${manifest}.sig" <<'PY'
+from pathlib import Path
+import sys
+
+Path(sys.argv[2]).write_text(Path(sys.argv[1]).read_bytes().hex() + "\n", encoding="utf-8")
+PY
   rm -f "$sig_bin"
   echo "signed ${manifest}"
 done
