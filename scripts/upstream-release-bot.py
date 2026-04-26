@@ -29,6 +29,54 @@ class PlannedUpdate:
         self.release = release
 
 
+def normalize_source(source: dict) -> dict:
+    release = source.get("release")
+    checksum = source.get("checksum")
+    asset = source.get("asset")
+    if isinstance(release, dict) and isinstance(checksum, dict) and isinstance(asset, dict):
+        return {"release": release, "checksum": checksum, "asset": asset}
+
+    provider = source.get("provider")
+    if provider == "github":
+        repo = source.get("repo")
+        if not isinstance(repo, str) or not repo:
+            raise RuntimeError("github source config requires source.repo")
+        normalized_release = {
+            "kind": "github_releases",
+            "repo": repo,
+            "include_prereleases": bool(source.get("include_prereleases", False)),
+        }
+        tag_prefix = source.get("tag_prefix")
+        if isinstance(tag_prefix, str) and tag_prefix:
+            normalized_release["tag_prefix"] = tag_prefix
+        return {
+            "release": normalized_release,
+            "checksum": {"kind": "download_sha256"},
+            "asset": {"kind": "release_asset_url"},
+        }
+
+    if provider == "nodejs-dist":
+        major = source.get("major")
+        if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
+            raise RuntimeError("nodejs-dist source.major must be an integer > 0")
+        return {
+            "release": {
+                "kind": "node_dist_index",
+                "major": major,
+                "include_prereleases": bool(source.get("include_prereleases", False)),
+            },
+            "checksum": {"kind": "shasums256"},
+            "asset": {
+                "kind": "templated",
+                "base_url": f"https://nodejs.org/dist/latest-v{major}.x",
+            },
+        }
+
+    raise RuntimeError(
+        "source config must define either release/checksum/asset tables or a supported legacy provider"
+    )
+
+
 def _load_generator_module(repo_root: Path):
     script_path = repo_root / "scripts" / "registry-generate-manifest.py"
     spec = importlib.util.spec_from_file_location(
@@ -139,11 +187,14 @@ def plan_updates_for_config(
     source = config.get("source", {})
     if not isinstance(source, dict):
         raise RuntimeError(f"source must be a table in {config_path}")
+    normalized = normalize_source(source)
+    release_strategy = normalized["release"]
+    release_kind = release_strategy.get("kind")
 
-    if source.get("provider") == "nodejs-dist":
-        major = source.get("major")
+    if release_kind == "node_dist_index":
+        major = release_strategy.get("major")
         if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
-            raise RuntimeError(f"nodejs-dist source.major must be an integer > 0 in {config_path}")
+            raise RuntimeError(f"node_dist_index release.major must be an integer > 0 in {config_path}")
 
         existing_versions = {
             p.stem for p in (releases_root / package).glob("*.toml") if p.is_file()
@@ -167,10 +218,10 @@ def plan_updates_for_config(
             ]
         return []
 
-    include_prereleases = bool(source.get("include_prereleases", False))
-    tag_prefix = source.get("tag_prefix")
+    include_prereleases = bool(release_strategy.get("include_prereleases", False))
+    tag_prefix = release_strategy.get("tag_prefix")
     if tag_prefix is not None and not isinstance(tag_prefix, str):
-        raise RuntimeError(f"tag_prefix must be a string in {config_path}")
+        raise RuntimeError(f"source.release.tag_prefix must be a string in {config_path}")
 
     existing_versions = {
         p.stem for p in (releases_root / package).glob("*.toml") if p.is_file()
@@ -389,15 +440,17 @@ def main(argv: list[str]) -> int:
         source = config.get("source")
         if not isinstance(source, dict):
             raise RuntimeError(f"Missing source table in {config_path}")
-        if source.get("provider") == "nodejs-dist":
-            major = source.get("major")
+        normalized = normalize_source(source)
+        release_strategy = normalized["release"]
+        if release_strategy.get("kind") == "node_dist_index":
+            major = release_strategy.get("major")
             if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
-                raise RuntimeError(f"Missing or invalid source.major in {config_path}")
+                raise RuntimeError(f"Missing or invalid source.release.major in {config_path}")
             releases = fetch_nodejs_dist_releases(major)
         else:
-            repo = source.get("repo")
+            repo = release_strategy.get("repo")
             if not isinstance(repo, str):
-                raise RuntimeError(f"Missing source.repo in {config_path}")
+                raise RuntimeError(f"Missing source.release.repo in {config_path}")
             releases = fetch_github_releases(repo, token=github_token)
         planned.extend(
             plan_updates_for_config(
@@ -423,11 +476,18 @@ def main(argv: list[str]) -> int:
         config = load_config(update.config_path)
         source = config.get("source")
         shasums_by_name = None
-        if isinstance(source, dict) and source.get("provider") == "nodejs-dist":
-            major = source.get("major")
-            if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
-                raise RuntimeError(f"Missing or invalid source.major in {update.config_path}")
-            shasums_by_name = fetch_nodejs_dist_shasums(major=major)
+        if isinstance(source, dict):
+            normalized = normalize_source(source)
+            release_strategy = normalized["release"]
+            checksum_strategy = normalized["checksum"]
+            if (
+                release_strategy.get("kind") == "node_dist_index"
+                and checksum_strategy.get("kind") == "shasums256"
+            ):
+                major = release_strategy.get("major")
+                if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
+                    raise RuntimeError(f"Missing or invalid source.release.major in {update.config_path}")
+                shasums_by_name = fetch_nodejs_dist_shasums(major=major)
 
         try:
             release_text = generator.generate_release_text(

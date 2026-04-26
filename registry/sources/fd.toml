@@ -2,11 +2,17 @@ name = "fd"
 license = "Apache-2.0 OR MIT"
 homepage = "https://github.com/sharkdp/fd"
 
-[source]
-provider = "github"
+[source.release]
+kind = "github_releases"
 repo = "sharkdp/fd"
 tag_prefix = "v"
 include_prereleases = false
+
+[source.checksum]
+kind = "download_sha256"
+
+[source.asset]
+kind = "release_asset_url"
 
 [[artifacts]]
 target = "x86_64-unknown-linux-gnu"

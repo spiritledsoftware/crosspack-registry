@@ -51,6 +51,24 @@ Manifest updates do not need to be hand-authored for configured packages.
   - package template docs in `packages/`
   - release docs in `releases/<package>/`
 
+### Generalized source model
+
+Source configs now support a generalized schema under `[source.*]` so new upstream patterns can be expressed by composing release discovery, checksum loading, and asset URL behavior instead of adding a new top-level provider enum by default.
+
+Current supported strategies:
+
+- `[source.release]`
+  - `kind = "github_releases"` with `repo` and optional `tag_prefix` / `include_prereleases`
+  - `kind = "node_dist_index"` with `major` and optional `include_prereleases`
+- `[source.checksum]`
+  - `kind = "download_sha256"` for GitHub-style releases where the registry hashes downloaded assets
+  - `kind = "shasums256"` with `url_template` for upstreams that publish a checksum manifest
+- `[source.asset]`
+  - `kind = "release_asset_url"` for direct release asset URLs from the release feed
+  - `kind = "templated"` with `base_url` for deterministic URL construction from artifact templates
+
+Legacy `provider = "github"` and `provider = "nodejs-dist"` source definitions are still normalized by tooling for compatibility during migration, but new configs should prefer the generalized `[source.release]`, `[source.checksum]`, and `[source.asset]` tables.
+
 Useful commands:
 
 ```bash

@@ -19,6 +19,9 @@ class ValidationError(Exception):
 ARCHIVE_VALUES = {"tar.gz", "zip", "tar.xz", "tgz", "bin"}
 TARGET_RE = re.compile(r"^[A-Za-z0-9._-]+$")
 REPO_RE = re.compile(r"^[^/\s]+/[^/\s]+$")
+RELEASE_KIND_VALUES = {"github_releases", "node_dist_index"}
+CHECKSUM_KIND_VALUES = {"download_sha256", "shasums256"}
+ASSET_KIND_VALUES = {"release_asset_url", "templated"}
 
 
 def _expect_non_empty_str(obj: dict, key: str, ctx: str) -> str:
@@ -47,25 +50,76 @@ def validate_source_config(doc: dict) -> None:
     if not isinstance(source, dict):
         raise ValidationError("manifest.source must be a table")
 
-    provider = _expect_non_empty_str(source, "provider", "manifest.source")
-    if provider == "github":
-        repo = _expect_non_empty_str(source, "repo", "manifest.source")
-        if not REPO_RE.fullmatch(repo):
-            raise ValidationError("manifest.source.repo must look like owner/name")
-    elif provider == "nodejs-dist":
-        major = source.get("major")
-        if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
-            raise ValidationError("manifest.source.major must be an integer > 0")
+    release = source.get("release")
+    checksum = source.get("checksum")
+    asset = source.get("asset")
+
+    if isinstance(release, dict) and isinstance(checksum, dict) and isinstance(asset, dict):
+        release_kind = _expect_non_empty_str(release, "kind", "manifest.source.release")
+        if release_kind not in RELEASE_KIND_VALUES:
+            raise ValidationError(
+                "manifest.source.release.kind must be 'github_releases' or 'node_dist_index'"
+            )
+        if release_kind == "github_releases":
+            repo = _expect_non_empty_str(release, "repo", "manifest.source.release")
+            if not REPO_RE.fullmatch(repo):
+                raise ValidationError("manifest.source.release.repo must look like owner/name")
+        else:
+            major = release.get("major")
+            if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
+                raise ValidationError("manifest.source.release.major must be an integer > 0")
+
+        include_prereleases = release.get("include_prereleases")
+        if include_prereleases is not None and not isinstance(include_prereleases, bool):
+            raise ValidationError("manifest.source.release.include_prereleases must be a boolean")
+
+        tag_prefix = release.get("tag_prefix")
+        if tag_prefix is not None and not isinstance(tag_prefix, str):
+            raise ValidationError("manifest.source.release.tag_prefix must be a string")
+
+        checksum_kind = _expect_non_empty_str(checksum, "kind", "manifest.source.checksum")
+        if checksum_kind not in CHECKSUM_KIND_VALUES:
+            raise ValidationError(
+                "manifest.source.checksum.kind must be 'download_sha256' or 'shasums256'"
+            )
+        if checksum_kind == "shasums256":
+            url_template = _expect_non_empty_str(
+                checksum, "url_template", "manifest.source.checksum"
+            )
+            if not url_template.startswith("https://"):
+                raise ValidationError(
+                    "manifest.source.checksum.url_template must start with https://"
+                )
+
+        asset_kind = _expect_non_empty_str(asset, "kind", "manifest.source.asset")
+        if asset_kind not in ASSET_KIND_VALUES:
+            raise ValidationError(
+                "manifest.source.asset.kind must be 'release_asset_url' or 'templated'"
+            )
+        if asset_kind == "templated":
+            base_url = _expect_non_empty_str(asset, "base_url", "manifest.source.asset")
+            if not base_url.startswith("https://"):
+                raise ValidationError("manifest.source.asset.base_url must start with https://")
     else:
-        raise ValidationError("manifest.source.provider must be 'github' or 'nodejs-dist'")
+        provider = _expect_non_empty_str(source, "provider", "manifest.source")
+        if provider == "github":
+            repo = _expect_non_empty_str(source, "repo", "manifest.source")
+            if not REPO_RE.fullmatch(repo):
+                raise ValidationError("manifest.source.repo must look like owner/name")
+        elif provider == "nodejs-dist":
+            major = source.get("major")
+            if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
+                raise ValidationError("manifest.source.major must be an integer > 0")
+        else:
+            raise ValidationError("manifest.source.provider must be 'github' or 'nodejs-dist'")
 
-    include_prereleases = source.get("include_prereleases")
-    if include_prereleases is not None and not isinstance(include_prereleases, bool):
-        raise ValidationError("manifest.source.include_prereleases must be a boolean")
+        include_prereleases = source.get("include_prereleases")
+        if include_prereleases is not None and not isinstance(include_prereleases, bool):
+            raise ValidationError("manifest.source.include_prereleases must be a boolean")
 
-    tag_prefix = source.get("tag_prefix")
-    if tag_prefix is not None and not isinstance(tag_prefix, str):
-        raise ValidationError("manifest.source.tag_prefix must be a string")
+        tag_prefix = source.get("tag_prefix")
+        if tag_prefix is not None and not isinstance(tag_prefix, str):
+            raise ValidationError("manifest.source.tag_prefix must be a string")
 
     artifacts = doc.get("artifacts")
     if not isinstance(artifacts, list) or not artifacts:
