@@ -1,0 +1,27 @@
+name = "yq"
+version = "4.53.2"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/mikefarah/yq/releases/download/v4.53.2/yq_linux_amd64.tar.gz"
+sha256 = "44c3c6df6c58ef1460d98425954ca5e832926e0e8a1d75c5c8fd261691351510"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/mikefarah/yq/releases/download/v4.53.2/yq_linux_arm64.tar.gz"
+sha256 = "c8180249ff9ff0577f4976c4481d0d0962d170d24ab390d325ef0be608df5706"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/mikefarah/yq/releases/download/v4.53.2/yq_darwin_amd64.tar.gz"
+sha256 = "48bc2dbb33f456efaf639e1e573b8e5a654701c2e92ef231e691c3971d5d4a5e"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/mikefarah/yq/releases/download/v4.53.2/yq_darwin_arm64.tar.gz"
+sha256 = "f135c0c60edd5ded11bc418d12711c259795b17501112e843e93e7a3959a3d41"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/mikefarah/yq/releases/download/v4.53.2/yq_windows_amd64.zip"
+sha256 = "63e24aac0a75b760a491002b4bbeb7078f5ec1a0c868ec60fa0f525abecd6037"

@@ -1,0 +1,139 @@
+name = "sd"
+license = "MIT"
+homepage = "https://github.com/chmln/sd"
+
+[source]
+provider = "github"
+repo = "chmln/sd"
+tag_prefix = "v"
+include_prereleases = false
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "sd-v{version}-x86_64-unknown-linux-gnu.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "sd"
+path = "sd"
+
+[[artifacts.completions]]
+shell = "bash"
+path = "completions/sd.bash"
+
+[[artifacts.completions]]
+shell = "zsh"
+path = "completions/_sd"
+
+[[artifacts.completions]]
+shell = "fish"
+path = "completions/sd.fish"
+
+[[artifacts.completions]]
+shell = "powershell"
+path = "completions/_sd.ps1"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "sd-v{version}-aarch64-unknown-linux-musl.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "sd"
+path = "sd"
+
+[[artifacts.completions]]
+shell = "bash"
+path = "completions/sd.bash"
+
+[[artifacts.completions]]
+shell = "zsh"
+path = "completions/_sd"
+
+[[artifacts.completions]]
+shell = "fish"
+path = "completions/sd.fish"
+
+[[artifacts.completions]]
+shell = "powershell"
+path = "completions/_sd.ps1"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "sd-v{version}-x86_64-apple-darwin.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "sd"
+path = "sd"
+
+[[artifacts.completions]]
+shell = "bash"
+path = "completions/sd.bash"
+
+[[artifacts.completions]]
+shell = "zsh"
+path = "completions/_sd"
+
+[[artifacts.completions]]
+shell = "fish"
+path = "completions/sd.fish"
+
+[[artifacts.completions]]
+shell = "powershell"
+path = "completions/_sd.ps1"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "sd-v{version}-aarch64-apple-darwin.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "sd"
+path = "sd"
+
+[[artifacts.completions]]
+shell = "bash"
+path = "completions/sd.bash"
+
+[[artifacts.completions]]
+shell = "zsh"
+path = "completions/_sd"
+
+[[artifacts.completions]]
+shell = "fish"
+path = "completions/sd.fish"
+
+[[artifacts.completions]]
+shell = "powershell"
+path = "completions/_sd.ps1"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "sd-v{version}-x86_64-pc-windows-msvc.zip"
+archive = "zip"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "sd"
+path = "sd.exe"
+
+[[artifacts.completions]]
+shell = "bash"
+path = "completions/sd.bash"
+
+[[artifacts.completions]]
+shell = "zsh"
+path = "completions/_sd"
+
+[[artifacts.completions]]
+shell = "fish"
+path = "completions/sd.fish"
+
+[[artifacts.completions]]
+shell = "powershell"
+path = "completions/_sd.ps1"
