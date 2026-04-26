@@ -1,0 +1,27 @@
+name = "lazygit"
+version = "0.61.0"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/jesseduffield/lazygit/releases/download/v0.61.0/lazygit_0.61.0_linux_x86_64.tar.gz"
+sha256 = "4a9702b346283a23a6919c9424617e14788ac00e9cd3c9be266bac48cc6de8eb"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/jesseduffield/lazygit/releases/download/v0.61.0/lazygit_0.61.0_linux_arm64.tar.gz"
+sha256 = "7c3b1594fbb5ca29c17f875c0240849dd924f29bdeaf819ef26ae2107ccad84c"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/jesseduffield/lazygit/releases/download/v0.61.0/lazygit_0.61.0_darwin_x86_64.tar.gz"
+sha256 = "196232de7647094bb51681afb3fc3076d5b4eb70ae99b9cec145462b13aab54f"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/jesseduffield/lazygit/releases/download/v0.61.0/lazygit_0.61.0_darwin_arm64.tar.gz"
+sha256 = "7dc684c3c40812de72f7852222d415fecb1c4dae2058b23e5a3c4a5341dc6e9f"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/jesseduffield/lazygit/releases/download/v0.61.0/lazygit_0.61.0_windows_x86_64.zip"
+sha256 = "26bb374ee7f3c6e52627262c7f8cc96ab23f96dfd3ef95b3d485d2ef9b842764"
