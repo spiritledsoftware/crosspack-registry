@@ -9,7 +9,11 @@ on:
       - 'releases/**/*.toml.sig'
       - 'scripts/**'
       - '.github/workflows/registry-quality-gate.yml'
-  push:
+  workflow_run:
+    workflows:
+      - Sign Manifests On Merge
+    types:
+      - completed
     branches:
       - main
   workflow_dispatch:
