@@ -1,0 +1,32 @@
+name = "bruno"
+version = "3.2.2"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/usebruno/bruno/releases/download/v3.2.2/bruno_3.2.2_x86_64_linux.AppImage"
+sha256 = "e0847a23259980115db284734e25160b004ebe4665ba7c1f64db5288812f9ca4"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/usebruno/bruno/releases/download/v3.2.2/bruno_3.2.2_arm64_linux.AppImage"
+sha256 = "66d649c01cdac8726b9caf3bb53fd8d1ea4774a76e3cff05c62de962df035ca5"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/usebruno/bruno/releases/download/v3.2.2/bruno_3.2.2_x64_mac.dmg"
+sha256 = "1e8735cefc34e319ad8a21df8f361f221fad0faccc3262130adc4a007473e86a"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/usebruno/bruno/releases/download/v3.2.2/bruno_3.2.2_arm64_mac.dmg"
+sha256 = "41cd666f32b75b7b12c8873ad4429ca8a1b3fdc95eecf09e306c356984a99f50"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/usebruno/bruno/releases/download/v3.2.2/bruno_3.2.2_x64_win.exe"
+sha256 = "40e3e755c4ece397a8339d0e47e5ce5198685a89e28350433e21659394813bc1"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+url = "https://github.com/usebruno/bruno/releases/download/v3.2.2/bruno_3.2.2_arm64_win.exe"
+sha256 = "e0ea4704e57f2768f8d4ef7e4a7be3954421b2cdec2a299ef6f14d915272198c"
