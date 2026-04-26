@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import platform
 import shutil
@@ -156,6 +157,12 @@ def extract_archive(src: Path, dest: Path, archive: str, strip_components: int) 
                 target.parent.mkdir(parents=True, exist_ok=True)
                 with zf.open(member, "r") as zsrc, target.open("wb") as out:
                     shutil.copyfileobj(zsrc, out)
+    elif archive == "gz":
+        target = dest / "payload"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with gzip.open(src, "rb") as zsrc, target.open("wb") as out:
+            shutil.copyfileobj(zsrc, out)
+        target.chmod(target.stat().st_mode | 0o755)
     elif archive == "bin":
         target = dest / "payload.bin"
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -228,6 +235,23 @@ def smoke_manifest(
 
         if archive in {"tar.gz", "tgz", "tar.xz", "zip"}:
             extract_archive(payload, install_root, archive, strip_components)
+        elif archive == "gz":
+            if len(binaries) != 1:
+                return (
+                    False,
+                    failure_message(
+                        path,
+                        package_id,
+                        "gzip single-binary artifacts must define exactly one binary",
+                        hint="use one artifacts[].binaries entry for archive='gz' artifacts",
+                    ),
+                )
+            binary_path = Path(binaries[0]["path"])
+            dest = install_root / binary_path
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            with gzip.open(payload, "rb") as zsrc, dest.open("wb") as out:
+                shutil.copyfileobj(zsrc, out)
+            dest.chmod(dest.stat().st_mode | 0o755)
         elif archive == "bin":
             for binary in binaries:
                 binary_path = Path(binary["path"])

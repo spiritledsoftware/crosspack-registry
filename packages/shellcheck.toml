@@ -1,0 +1,65 @@
+name = "shellcheck"
+license = "GPL-3.0-only"
+homepage = "https://github.com/koalaman/shellcheck"
+
+[source.release]
+kind = "github_releases"
+repo = "koalaman/shellcheck"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.checksum]
+kind = "download_sha256"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "shellcheck-v{version}.linux.x86_64.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "shellcheck"
+path = "shellcheck"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "shellcheck-v{version}.linux.aarch64.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "shellcheck"
+path = "shellcheck"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "shellcheck-v{version}.darwin.x86_64.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "shellcheck"
+path = "shellcheck"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "shellcheck-v{version}.darwin.aarch64.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "shellcheck"
+path = "shellcheck"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "shellcheck-v{version}.zip"
+archive = "zip"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "shellcheck"
+path = "shellcheck.exe"

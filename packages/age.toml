@@ -1,0 +1,80 @@
+name = "age"
+license = "BSD-3-Clause"
+homepage = "https://github.com/FiloSottile/age"
+
+[source.release]
+kind = "github_releases"
+repo = "FiloSottile/age"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.checksum]
+kind = "download_sha256"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "age-v{version}-linux-amd64.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "age"
+path = "age/age"
+[[artifacts.binaries]]
+name = "age-keygen"
+path = "age/age-keygen"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "age-v{version}-linux-arm64.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "age"
+path = "age/age"
+[[artifacts.binaries]]
+name = "age-keygen"
+path = "age/age-keygen"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "age-v{version}-darwin-amd64.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "age"
+path = "age/age"
+[[artifacts.binaries]]
+name = "age-keygen"
+path = "age/age-keygen"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "age-v{version}-darwin-arm64.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "age"
+path = "age/age"
+[[artifacts.binaries]]
+name = "age-keygen"
+path = "age/age-keygen"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "age-v{version}-windows-amd64.zip"
+archive = "zip"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "age"
+path = "age/age.exe"
+[[artifacts.binaries]]
+name = "age-keygen"
+path = "age/age-keygen.exe"

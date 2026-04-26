@@ -1,0 +1,32 @@
+name = "ruff"
+version = "0.15.12"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/astral-sh/ruff/releases/download/0.15.12/ruff-x86_64-unknown-linux-gnu.tar.gz"
+sha256 = "5e26a7811f7db364864ace00cced53003556a37b63f3c987e340b18207776f1c"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/astral-sh/ruff/releases/download/0.15.12/ruff-aarch64-unknown-linux-gnu.tar.gz"
+sha256 = "4dcd4cd8beb525d04294eeab67d84d199cce2c44b66858978ca729b694fe29ff"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/astral-sh/ruff/releases/download/0.15.12/ruff-x86_64-apple-darwin.tar.gz"
+sha256 = "f88b6ad8338ad7acf83497e4bc2f2b5d3cac46c3e71363b7263c1bb9027c9b37"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/astral-sh/ruff/releases/download/0.15.12/ruff-aarch64-apple-darwin.tar.gz"
+sha256 = "bd59107e125f9c9f64a75be13b6ff21bf7cbc61c4b9529bbb75c8184e3dd6c3c"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/astral-sh/ruff/releases/download/0.15.12/ruff-x86_64-pc-windows-msvc.zip"
+sha256 = "d378033392042377491ef2541457af47cc4652c4e984639c95413b0c4876b0f1"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+url = "https://github.com/astral-sh/ruff/releases/download/0.15.12/ruff-aarch64-pc-windows-msvc.zip"
+sha256 = "310a94d0c708691905d7614385732a2cbdede0979b93b81c01d55ab9de7ae754"

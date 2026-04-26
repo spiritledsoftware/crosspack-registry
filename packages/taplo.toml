@@ -1,0 +1,74 @@
+name = "taplo"
+license = "MIT"
+homepage = "https://github.com/tamasfe/taplo"
+
+[source.release]
+kind = "github_releases"
+repo = "tamasfe/taplo"
+include_prereleases = false
+
+[source.checksum]
+kind = "download_sha256"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "taplo-linux-x86_64.gz"
+archive = "gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "taplo"
+path = "taplo"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "taplo-linux-aarch64.gz"
+archive = "gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "taplo"
+path = "taplo"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "taplo-darwin-x86_64.gz"
+archive = "gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "taplo"
+path = "taplo"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "taplo-darwin-aarch64.gz"
+archive = "gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "taplo"
+path = "taplo"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "taplo-windows-x86_64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "taplo"
+path = "taplo.exe"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+asset = "taplo-windows-aarch64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "taplo"
+path = "taplo.exe"

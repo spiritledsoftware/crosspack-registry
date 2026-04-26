@@ -1,0 +1,69 @@
+name = "gitleaks"
+license = "MIT"
+homepage = "https://github.com/gitleaks/gitleaks"
+
+[source]
+provider = "github"
+repo = "gitleaks/gitleaks"
+tag_prefix = "v"
+include_prereleases = false
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "gitleaks_{version}_linux_x64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "gitleaks"
+path = "gitleaks"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "gitleaks_{version}_linux_arm64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "gitleaks"
+path = "gitleaks"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "gitleaks_{version}_darwin_x64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "gitleaks"
+path = "gitleaks"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "gitleaks_{version}_darwin_arm64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "gitleaks"
+path = "gitleaks"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "gitleaks_{version}_windows_x64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "gitleaks"
+path = "gitleaks.exe"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+asset = "gitleaks_{version}_windows_arm64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "gitleaks"
+path = "gitleaks.exe"
