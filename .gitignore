@@ -2,3 +2,4 @@
 logs/*.log
 artifacts/
 **/__pycache__/
+.opencode/package-lock.json
