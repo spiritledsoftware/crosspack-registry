@@ -1,0 +1,67 @@
+name = "helix"
+license = "MPL-2.0"
+homepage = "https://github.com/helix-editor/helix"
+
+[source.release]
+kind = "github_releases"
+repo = "helix-editor/helix"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "asset_digest"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "helix-{version}-x86_64-linux.tar.xz"
+archive = "tar.xz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "hx"
+path = "hx"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "helix-{version}-aarch64-linux.tar.xz"
+archive = "tar.xz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "hx"
+path = "hx"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "helix-{version}-x86_64-macos.tar.xz"
+archive = "tar.xz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "hx"
+path = "hx"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "helix-{version}-aarch64-macos.tar.xz"
+archive = "tar.xz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "hx"
+path = "hx"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "helix-{version}-x86_64-windows.zip"
+archive = "zip"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "hx"
+path = "hx.exe"

@@ -1,0 +1,78 @@
+name = "lazydocker"
+license = "MIT"
+homepage = "https://github.com/jesseduffield/lazydocker"
+
+[source.release]
+kind = "github_releases"
+repo = "jesseduffield/lazydocker"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "asset_digest"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "lazydocker_{version}_Linux_x86_64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "lazydocker"
+path = "lazydocker"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "lazydocker_{version}_Linux_arm64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "lazydocker"
+path = "lazydocker"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "lazydocker_{version}_Darwin_x86_64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "lazydocker"
+path = "lazydocker"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "lazydocker_{version}_Darwin_arm64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "lazydocker"
+path = "lazydocker"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "lazydocker_{version}_Windows_x86_64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "lazydocker"
+path = "lazydocker.exe"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+asset = "lazydocker_{version}_Windows_arm64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "lazydocker"
+path = "lazydocker.exe"
