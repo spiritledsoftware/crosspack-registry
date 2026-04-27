@@ -152,9 +152,13 @@ def _http_error_body(error: urllib.error.HTTPError) -> str:
         return ""
 
 
-def _is_rate_limit_error(error: urllib.error.HTTPError) -> bool:
+def _is_skippable_release_fetch_error(
+    *, error: urllib.error.HTTPError, release_kind: object
+) -> bool:
     if error.code != 403:
         return False
+    if release_kind == "github_releases":
+        return True
     reason = str(error.reason).lower()
     if "rate limit" in reason:
         return True
@@ -585,7 +589,9 @@ def main(argv: list[str]) -> int:
             else:
                 raise RuntimeError(f"Unsupported source.release.kind in {config_path}")
         except urllib.error.HTTPError as error:
-            if not _is_rate_limit_error(error):
+            if not _is_skippable_release_fetch_error(
+                error=error, release_kind=release_kind
+            ):
                 raise
             skipped_fetches += 1
             print(
