@@ -1,0 +1,27 @@
+name = "minikube"
+version = "1.38.1"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/kubernetes/minikube/releases/download/v1.38.1/minikube-linux-amd64"
+sha256 = "099477eaf248bcb5bcea8ce78a2898e93ac01461c35189da1848c3de82ecd22e"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/kubernetes/minikube/releases/download/v1.38.1/minikube-linux-arm64"
+sha256 = "a0b8a1ebfc8c07a247271d8df98ac0ddd7c8c855b601d402463e2e50c08c6bab"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/kubernetes/minikube/releases/download/v1.38.1/minikube-darwin-amd64"
+sha256 = "db11dffba835609988e4e98c3a91a38653ce66ddfa8ea3aaea92d87c54a0a348"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/kubernetes/minikube/releases/download/v1.38.1/minikube-darwin-arm64"
+sha256 = "f9b0c70bb7daf38c683c0b6e46dc1b612600247ae826bf74576807746a919ee8"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/kubernetes/minikube/releases/download/v1.38.1/minikube-windows-amd64.exe"
+sha256 = "04215bec5632a976b48eb632856b50f1eaaa183b9c2a5904e11d1bacc4961ff7"

@@ -1,0 +1,32 @@
+name = "sops"
+version = "3.12.2"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/getsops/sops/releases/download/v3.12.2/sops-v3.12.2.linux.amd64"
+sha256 = "14e2e1ba3bef31e74b70cf0b674f6443c80f6c5f3df15d05ffc57c34851b4998"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/getsops/sops/releases/download/v3.12.2/sops-v3.12.2.linux.arm64"
+sha256 = "f66de6f528dca946e910d74fa36a62a7714c11d0db16bd3c9bd8acf73b66704b"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/getsops/sops/releases/download/v3.12.2/sops-v3.12.2.darwin.amd64"
+sha256 = "767c0dcb42e052fd6f2ac17d4473eca6f5fc4910e2b70127f1308d86c606c022"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/getsops/sops/releases/download/v3.12.2/sops-v3.12.2.darwin.arm64"
+sha256 = "284edc64acf91ca249f227ffa2b444632656e4e1ac02baa26bed7051a7d51ce5"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/getsops/sops/releases/download/v3.12.2/sops-v3.12.2.amd64.exe"
+sha256 = "5e777b1854ab2a6271d8f66375970e1fe3eea838251c309de151d16a2bdf13a2"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+url = "https://github.com/getsops/sops/releases/download/v3.12.2/sops-v3.12.2.arm64.exe"
+sha256 = "bfc95ce0426e78a9dd13a8ef32db61b0587f45660530cb00adcdd374ba84fd9e"

@@ -1,0 +1,32 @@
+name = "kubecolor"
+version = "0.6.0"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/kubecolor/kubecolor/releases/download/v0.6.0/kubecolor_0.6.0_linux_amd64.tar.gz"
+sha256 = "ded167eb2d94145cc46e4ccb52db24e85a865858353014514a85cb59c649d2fe"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/kubecolor/kubecolor/releases/download/v0.6.0/kubecolor_0.6.0_linux_arm64.tar.gz"
+sha256 = "aa56015817bdfe8a8944169e5b18108235fb5bca671f89fa52613b4379bf1f66"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/kubecolor/kubecolor/releases/download/v0.6.0/kubecolor_0.6.0_darwin_amd64.tar.gz"
+sha256 = "8edea5adc6bdb121ec907014790ca780c97aac3766e0c27327227ccc0748c7e4"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/kubecolor/kubecolor/releases/download/v0.6.0/kubecolor_0.6.0_darwin_arm64.tar.gz"
+sha256 = "22f08853f8925613f1792dd5acaaf0661284bb647d69ff50ad9552027b0d456a"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/kubecolor/kubecolor/releases/download/v0.6.0/kubecolor_0.6.0_windows_amd64.zip"
+sha256 = "00828c48ddd123a5cade6da6c13d3a6e5499ed9ba49645aa59ec9b0ac6fe6150"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+url = "https://github.com/kubecolor/kubecolor/releases/download/v0.6.0/kubecolor_0.6.0_windows_arm64.zip"
+sha256 = "4b88981e9dad7679bbb32d971389ea45ae0ad3a0738f78211fb4923ac73f76a4"

@@ -1,0 +1,27 @@
+name = "kind"
+version = "0.31.0"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/kubernetes-sigs/kind/releases/download/v0.31.0/kind-linux-amd64"
+sha256 = "eb244cbafcc157dff60cf68693c14c9a75c4e6e6fedaf9cd71c58117cb93e3fa"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/kubernetes-sigs/kind/releases/download/v0.31.0/kind-linux-arm64"
+sha256 = "8e1014e87c34901cc422a1445866835d1e666f2a61301c27e722bdeab5a1f7e4"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/kubernetes-sigs/kind/releases/download/v0.31.0/kind-darwin-amd64"
+sha256 = "a8b3cf77b2ad77aec5bf710d1a2589d9117576132af812885cad41e9dede4d4e"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/kubernetes-sigs/kind/releases/download/v0.31.0/kind-darwin-arm64"
+sha256 = "88bf554fe9da6311c9f8c2d082613c002911a476f6b5090e9420b35d84e70c5c"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/kubernetes-sigs/kind/releases/download/v0.31.0/kind-windows-amd64"
+sha256 = "2c3a9ff954de16244380778683cf99e271bfc2fac9c6c4e797e4623c45e59d9d"
