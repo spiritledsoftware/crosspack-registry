@@ -19,9 +19,16 @@ class ValidationError(Exception):
 ARCHIVE_VALUES = {"tar.gz", "zip", "tar.xz", "tgz", "gz", "bin"}
 TARGET_RE = re.compile(r"^[A-Za-z0-9._-]+$")
 REPO_RE = re.compile(r"^[^/\s]+/[^/\s]+$")
-RELEASE_KIND_VALUES = {"github_releases", "node_dist_index"}
-CHECKSUM_KIND_VALUES = {"download_sha256", "shasums256"}
-ASSET_KIND_VALUES = {"release_asset_url", "templated"}
+RELEASE_KIND_VALUES = {
+    "github_releases",
+    "go_dist_index",
+    "node_dist_index",
+    "python_build_standalone",
+    "rustup_static",
+    "zig_download_index",
+}
+CHECKSUM_KIND_VALUES = {"download_sha256", "download_index", "shasums256", "url_sha256"}
+ASSET_KIND_VALUES = {"download_index", "release_asset_url", "templated"}
 
 
 def _expect_non_empty_str(obj: dict, key: str, ctx: str) -> str:
@@ -58,13 +65,24 @@ def validate_source_config(doc: dict) -> None:
         release_kind = _expect_non_empty_str(release, "kind", "manifest.source.release")
         if release_kind not in RELEASE_KIND_VALUES:
             raise ValidationError(
-                "manifest.source.release.kind must be 'github_releases' or 'node_dist_index'"
+                "manifest.source.release.kind must be a supported release strategy"
             )
         if release_kind == "github_releases":
             repo = _expect_non_empty_str(release, "repo", "manifest.source.release")
             if not REPO_RE.fullmatch(repo):
                 raise ValidationError("manifest.source.release.repo must look like owner/name")
-        else:
+        elif release_kind == "python_build_standalone":
+            repo = _expect_non_empty_str(release, "repo", "manifest.source.release")
+            if not REPO_RE.fullmatch(repo):
+                raise ValidationError("manifest.source.release.repo must look like owner/name")
+            python_major_minor = _expect_non_empty_str(
+                release, "python_major_minor", "manifest.source.release"
+            )
+            if not re.fullmatch(r"\d+\.\d+", python_major_minor):
+                raise ValidationError(
+                    "manifest.source.release.python_major_minor must look like MAJOR.MINOR"
+                )
+        elif release_kind == "node_dist_index":
             major = release.get("major")
             if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
                 raise ValidationError("manifest.source.release.major must be an integer > 0")
@@ -80,7 +98,7 @@ def validate_source_config(doc: dict) -> None:
         checksum_kind = _expect_non_empty_str(checksum, "kind", "manifest.source.checksum")
         if checksum_kind not in CHECKSUM_KIND_VALUES:
             raise ValidationError(
-                "manifest.source.checksum.kind must be 'download_sha256' or 'shasums256'"
+                "manifest.source.checksum.kind must be a supported checksum strategy"
             )
         if checksum_kind == "shasums256":
             url_template = _expect_non_empty_str(
@@ -94,7 +112,7 @@ def validate_source_config(doc: dict) -> None:
         asset_kind = _expect_non_empty_str(asset, "kind", "manifest.source.asset")
         if asset_kind not in ASSET_KIND_VALUES:
             raise ValidationError(
-                "manifest.source.asset.kind must be 'release_asset_url' or 'templated'"
+                "manifest.source.asset.kind must be a supported asset strategy"
             )
         if asset_kind == "templated":
             base_url = _expect_non_empty_str(asset, "base_url", "manifest.source.asset")

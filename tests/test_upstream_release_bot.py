@@ -161,6 +161,57 @@ class UpstreamReleaseBotTests(unittest.TestCase):
 
         self.assertEqual(planned, [])
 
+    def test_plan_updates_python_build_standalone_from_asset_version(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="release-bot-") as tmp:
+            tmp_path = Path(tmp)
+            sources_dir = tmp_path / "registry" / "sources"
+            sources_dir.mkdir(parents=True)
+            config_path = sources_dir / "python.toml"
+            config_path.write_text(
+                textwrap.dedent(
+                    """
+                    name = "python"
+                    license = "Python-2.0"
+                    homepage = "https://github.com/astral-sh/python-build-standalone"
+
+                    [source.release]
+                    kind = "python_build_standalone"
+                    repo = "astral-sh/python-build-standalone"
+                    python_major_minor = "3.14"
+
+                    [source.checksum]
+                    kind = "download_sha256"
+
+                    [source.asset]
+                    kind = "release_asset_url"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+
+            releases = [
+                {
+                    "tag_name": "20260414",
+                    "draft": False,
+                    "prerelease": False,
+                    "assets": [
+                        {
+                            "name": "cpython-3.14.4+20260414-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
+                        }
+                    ],
+                }
+            ]
+
+            planned = self.bot.plan_updates_for_config(
+                config_path=config_path,
+                releases_root=tmp_path / "releases",
+                releases=releases,
+            )
+
+        self.assertEqual(len(planned), 1)
+        self.assertEqual(planned[0].version, "3.14.4+20260414")
+
     def test_skips_incomplete_release_instead_of_failing(self) -> None:
         with tempfile.TemporaryDirectory(prefix="release-bot-") as tmp:
             tmp_path = Path(tmp)

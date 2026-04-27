@@ -238,6 +238,126 @@ class RegistryValidateSourceTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         self.assertIn("Validation passed", result.stdout)
 
+    def test_valid_language_runtime_source_strategies_pass(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="source-config-") as tmp:
+            tmp_path = Path(tmp)
+            configs = {
+                "go.toml": """
+                    name = "go"
+                    license = "BSD-3-Clause"
+                    homepage = "https://go.dev/"
+
+                    [source.release]
+                    kind = "go_dist_index"
+
+                    [source.checksum]
+                    kind = "download_index"
+
+                    [source.asset]
+                    kind = "templated"
+                    base_url = "https://go.dev/dl"
+
+                    [[artifacts]]
+                    target = "x86_64-unknown-linux-gnu"
+                    asset = "go{version}.linux-amd64.tar.gz"
+                    archive = "tar.gz"
+                    strip_components = 1
+
+                    [[artifacts.binaries]]
+                    name = "go"
+                    path = "bin/go"
+                """,
+                "python.toml": """
+                    name = "python"
+                    license = "Python-2.0"
+                    homepage = "https://github.com/astral-sh/python-build-standalone"
+
+                    [source.release]
+                    kind = "python_build_standalone"
+                    repo = "astral-sh/python-build-standalone"
+                    python_major_minor = "3.14"
+
+                    [source.checksum]
+                    kind = "download_sha256"
+
+                    [source.asset]
+                    kind = "release_asset_url"
+
+                    [[artifacts]]
+                    target = "x86_64-unknown-linux-gnu"
+                    asset = "cpython-{version}-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
+                    archive = "tar.gz"
+                    strip_components = 1
+
+                    [[artifacts.binaries]]
+                    name = "python"
+                    path = "bin/python3"
+                """,
+                "rustup-init.toml": """
+                    name = "rustup-init"
+                    license = "MIT OR Apache-2.0"
+                    homepage = "https://rustup.rs/"
+
+                    [source.release]
+                    kind = "rustup_static"
+
+                    [source.checksum]
+                    kind = "url_sha256"
+
+                    [source.asset]
+                    kind = "templated"
+                    base_url = "https://static.rust-lang.org/rustup/archive/{version}"
+
+                    [[artifacts]]
+                    target = "x86_64-unknown-linux-gnu"
+                    asset = "{target}/rustup-init"
+                    archive = "bin"
+
+                    [[artifacts.binaries]]
+                    name = "rustup-init"
+                    path = "rustup-init"
+                """,
+                "zig.toml": """
+                    name = "zig"
+                    license = "MIT"
+                    homepage = "https://ziglang.org/"
+
+                    [source.release]
+                    kind = "zig_download_index"
+
+                    [source.checksum]
+                    kind = "download_index"
+
+                    [source.asset]
+                    kind = "download_index"
+
+                    [[artifacts]]
+                    target = "x86_64-unknown-linux-gnu"
+                    asset = "x86_64-linux"
+                    archive = "tar.xz"
+                    strip_components = 1
+
+                    [[artifacts.binaries]]
+                    name = "zig"
+                    path = "zig"
+                """,
+            }
+            paths = []
+            for filename, body in configs.items():
+                path = tmp_path / filename
+                path.write_text(textwrap.dedent(body).strip() + "\n", encoding="utf-8")
+                paths.append(str(path))
+
+            result = subprocess.run(
+                ["python3", str(SCRIPT), *paths],
+                cwd=REPO_ROOT,
+                text=True,
+                capture_output=True,
+            )
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("Validation passed", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

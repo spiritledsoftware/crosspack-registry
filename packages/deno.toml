@@ -1,0 +1,75 @@
+name = "deno"
+license = "MIT"
+homepage = "https://deno.com/"
+
+[source.release]
+kind = "github_releases"
+repo = "denoland/deno"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.checksum]
+kind = "download_sha256"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "deno-x86_64-unknown-linux-gnu.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "deno"
+path = "deno"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "deno-aarch64-unknown-linux-gnu.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "deno"
+path = "deno"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "deno-x86_64-apple-darwin.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "deno"
+path = "deno"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "deno-aarch64-apple-darwin.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "deno"
+path = "deno"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "deno-x86_64-pc-windows-msvc.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "deno"
+path = "deno.exe"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+asset = "deno-aarch64-pc-windows-msvc.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "deno"
+path = "deno.exe"

@@ -27,9 +27,16 @@ class DownloadError(Exception):
 
 NODE_DIST_VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
 DOWNLOAD_ATTEMPTS = 3
-RELEASE_KIND_VALUES = {"github_releases", "node_dist_index"}
-CHECKSUM_KIND_VALUES = {"download_sha256", "shasums256"}
-ASSET_KIND_VALUES = {"release_asset_url", "templated"}
+RELEASE_KIND_VALUES = {
+    "github_releases",
+    "go_dist_index",
+    "node_dist_index",
+    "python_build_standalone",
+    "rustup_static",
+    "zig_download_index",
+}
+CHECKSUM_KIND_VALUES = {"download_sha256", "download_index", "shasums256", "url_sha256"}
+ASSET_KIND_VALUES = {"download_index", "release_asset_url", "templated"}
 
 
 def _escape(value: str) -> str:
@@ -247,7 +254,7 @@ def render_source_text(chunks: list[str], source: dict) -> None:
 
     chunks.append("[source.release]")
     chunks.append(_line("kind", release["kind"]))
-    for key in ("repo", "tag_prefix", "include_prereleases", "major"):
+    for key in ("repo", "tag_prefix", "include_prereleases", "major", "python_major_minor"):
         if key in release:
             chunks.append(_line(key, release[key]))
     chunks.append("")
@@ -291,7 +298,7 @@ def _build_nodejs_dist_release_artifacts(
     release_artifacts: list[dict] = []
     for artifact in config.get("artifacts", []):
         target = artifact["target"]
-        asset_name = artifact["asset"].format(version=version)
+        asset_name = artifact["asset"].format(version=version, target=target)
         sha256 = shasums_by_name.get(asset_name)
         if sha256 is None:
             raise GenerateError(
@@ -305,6 +312,89 @@ def _build_nodejs_dist_release_artifacts(
             }
         )
 
+    return release_artifacts
+
+
+def _build_go_dist_release_artifacts(*, config: dict, release: dict, version: str) -> list[dict]:
+    files = release.get("files")
+    if not isinstance(files, list):
+        raise GenerateError("go dist release requires files")
+    shasums_by_name = {
+        file["filename"]: file["sha256"]
+        for file in files
+        if isinstance(file, dict)
+        and isinstance(file.get("filename"), str)
+        and isinstance(file.get("sha256"), str)
+    }
+    release_artifacts: list[dict] = []
+    for artifact in config.get("artifacts", []):
+        target = artifact["target"]
+        asset_name = artifact["asset"].format(version=version, target=target)
+        sha256 = shasums_by_name.get(asset_name)
+        if sha256 is None:
+            raise GenerateError(f"missing Go dist checksum '{asset_name}' for target '{target}'")
+        release_artifacts.append(
+            {"target": target, "url": f"https://go.dev/dl/{asset_name}", "sha256": sha256}
+        )
+    return release_artifacts
+
+
+def _build_rustup_static_release_artifacts(*, config: dict, version: str) -> list[dict]:
+    release_artifacts: list[dict] = []
+    for artifact in config.get("artifacts", []):
+        target = artifact["target"]
+        asset_name = artifact["asset"].format(version=version, target=target)
+        url = f"https://static.rust-lang.org/rustup/archive/{version}/{asset_name}"
+        with tempfile.TemporaryDirectory(prefix="manifest-gen-") as tmp:
+            checksum_path = Path(tmp) / "rustup.sha256"
+            download(f"{url}.sha256", checksum_path)
+            checksum_parts = checksum_path.read_text(encoding="utf-8").split()
+        if not checksum_parts:
+            raise GenerateError(f"missing rustup checksum for target '{target}'")
+        release_artifacts.append({"target": target, "url": url, "sha256": checksum_parts[0]})
+    return release_artifacts
+
+
+def _build_zig_download_release_artifacts(*, config: dict, release: dict) -> list[dict]:
+    release_artifacts: list[dict] = []
+    for artifact in config.get("artifacts", []):
+        target = artifact["target"]
+        asset_key = artifact["asset"].format(version=release["version"], target=target)
+        asset = release.get(asset_key)
+        if not isinstance(asset, dict):
+            raise GenerateError(f"missing Zig download index asset '{asset_key}' for target '{target}'")
+        url = asset.get("tarball")
+        sha256 = asset.get("shasum")
+        if not isinstance(url, str) or not url.startswith("https://"):
+            raise GenerateError(f"missing Zig download URL for target '{target}'")
+        if not isinstance(sha256, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", sha256):
+            raise GenerateError(f"missing Zig checksum for target '{target}'")
+        release_artifacts.append({"target": target, "url": url, "sha256": sha256})
+    return release_artifacts
+
+
+def _build_python_standalone_release_artifacts(
+    *, config: dict, release: dict, version: str
+) -> list[dict]:
+    assets = _asset_map(release)
+    release_artifacts: list[dict] = []
+    for artifact in config.get("artifacts", []):
+        target = artifact["target"]
+        asset_name = artifact["asset"].format(version=version, target=target)
+        release_asset = assets.get(asset_name)
+        if release_asset is None:
+            raise GenerateError(
+                f"missing python-build-standalone asset '{asset_name}' for target '{target}'"
+            )
+        url = release_asset.get("browser_download_url")
+        digest = release_asset.get("digest")
+        if not isinstance(url, str) or not url.startswith("https://"):
+            raise GenerateError(f"invalid download URL for asset '{asset_name}'")
+        if not isinstance(digest, str) or not digest.startswith("sha256:"):
+            raise GenerateError(f"missing GitHub sha256 digest for asset '{asset_name}'")
+        release_artifacts.append(
+            {"target": target, "url": url, "sha256": digest.removeprefix("sha256:")}
+        )
     return release_artifacts
 
 
@@ -325,12 +415,24 @@ def generate_release_text(
     if not isinstance(source, dict):
         raise GenerateError("source config root requires a source table")
     normalized = normalize_source(source)
-
-    if normalized["release"].get("kind") == "node_dist_index":
+    release_kind = normalized["release"].get("kind")
+    if release_kind == "node_dist_index":
         release_artifacts = _build_nodejs_dist_release_artifacts(
             config=config,
             version=version,
             shasums_by_name=shasums_by_name,
+        )
+    elif release_kind == "go_dist_index":
+        release_artifacts = _build_go_dist_release_artifacts(
+            config=config, release=release, version=version
+        )
+    elif release_kind == "rustup_static":
+        release_artifacts = _build_rustup_static_release_artifacts(config=config, version=version)
+    elif release_kind == "zig_download_index":
+        release_artifacts = _build_zig_download_release_artifacts(config=config, release=release)
+    elif release_kind == "python_build_standalone":
+        release_artifacts = _build_python_standalone_release_artifacts(
+            config=config, release=release, version=version
         )
     else:
         assets = _asset_map(release)
@@ -338,7 +440,7 @@ def generate_release_text(
 
         for artifact in config.get("artifacts", []):
             target = artifact["target"]
-            asset_name = artifact["asset"].format(version=version)
+            asset_name = artifact["asset"].format(version=version, target=target)
             release_asset = assets.get(asset_name)
             if release_asset is None:
                 raise GenerateError(

@@ -141,6 +141,41 @@ def fetch_nodejs_dist_releases(major: int) -> list[dict]:
     ]
 
 
+def fetch_go_dist_releases() -> list[dict]:
+    payload = _http_get_json("https://go.dev/dl/?mode=json")
+    if not isinstance(payload, list):
+        raise RuntimeError("Unexpected Go dist index response")
+    return [item for item in payload if isinstance(item, dict) and item.get("stable") is True]
+
+
+def fetch_rustup_static_releases() -> list[dict]:
+    request = urllib.request.Request(
+        "https://static.rust-lang.org/rustup/release-stable.toml",
+        headers={"User-Agent": "crosspack-registry-upstream-bot"},
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310
+        payload = response.read().decode("utf-8")
+    match = re.search(r"^version\s*=\s*'([^']+)'", payload, re.MULTILINE)
+    if match is None:
+        raise RuntimeError("Unexpected rustup release-stable.toml response")
+    return [{"version": match.group(1)}]
+
+
+def fetch_zig_download_index_releases() -> list[dict]:
+    payload = _http_get_json("https://ziglang.org/download/index.json")
+    if not isinstance(payload, dict):
+        raise RuntimeError("Unexpected Zig download index response")
+    releases = []
+    for key, value in payload.items():
+        if key == "master" or not SEMVER_RE.fullmatch(key) or not isinstance(value, dict):
+            continue
+        release = dict(value)
+        release.setdefault("version", key)
+        releases.append(release)
+    releases.sort(key=lambda item: tuple(int(part) for part in item["version"].split(".")), reverse=True)
+    return releases
+
+
 def fetch_nodejs_dist_shasums(*, major: int) -> dict[str, str]:
     request = urllib.request.Request(
         f"https://nodejs.org/dist/latest-v{major}.x/SHASUMS256.txt",
@@ -172,6 +207,30 @@ def normalize_tag_to_version(tag: str, tag_prefix: str | None = None) -> str | N
     return None
 
 
+def python_standalone_version(release: dict, python_major_minor: str) -> str | None:
+    tag_name = release.get("tag_name")
+    assets = release.get("assets")
+    if not isinstance(tag_name, str) or not isinstance(assets, list):
+        return None
+    prefix = f"cpython-{python_major_minor}."
+    versions: list[tuple[tuple[int, int, int], str]] = []
+    for asset in assets:
+        if not isinstance(asset, dict):
+            continue
+        name = asset.get("name")
+        if not isinstance(name, str) or not name.startswith(prefix):
+            continue
+        match = re.match(r"^cpython-(\d+)\.(\d+)\.(\d+)\+", name)
+        if match is None:
+            continue
+        version = f"{match.group(1)}.{match.group(2)}.{match.group(3)}+{tag_name}"
+        versions.append((tuple(int(part) for part in match.groups()), version))
+    if not versions:
+        return None
+    versions.sort(reverse=True)
+    return versions[0][1]
+
+
 def load_config(path: Path) -> dict:
     data = tomllib.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
@@ -191,14 +250,63 @@ def plan_updates_for_config(
     release_strategy = normalized["release"]
     release_kind = release_strategy.get("kind")
 
+    existing_versions = {
+        p.stem for p in (releases_root / package).glob("*.toml") if p.is_file()
+    }
+
+    if release_kind == "go_dist_index":
+        for release in releases:
+            version_tag = release.get("version")
+            if not isinstance(version_tag, str) or not version_tag.startswith("go"):
+                continue
+            version = version_tag.removeprefix("go")
+            if not SEMVER_RE.fullmatch(version):
+                continue
+            if version in existing_versions:
+                return []
+            return [PlannedUpdate(package, version, config_path, release)]
+        return []
+
+    if release_kind == "rustup_static":
+        for release in releases:
+            version = release.get("version")
+            if not isinstance(version, str) or not SEMVER_RE.fullmatch(version):
+                continue
+            if version in existing_versions:
+                return []
+            return [PlannedUpdate(package, version, config_path, release)]
+        return []
+
+    if release_kind == "zig_download_index":
+        for release in releases:
+            version = release.get("version")
+            if not isinstance(version, str) or not SEMVER_RE.fullmatch(version):
+                continue
+            if version in existing_versions:
+                return []
+            return [PlannedUpdate(package, version, config_path, release)]
+        return []
+
+    if release_kind == "python_build_standalone":
+        python_major_minor = release_strategy.get("python_major_minor")
+        if not isinstance(python_major_minor, str):
+            raise RuntimeError(f"python_build_standalone release.python_major_minor must be set in {config_path}")
+        for release in releases:
+            if release.get("draft") is True or release.get("prerelease") is True:
+                continue
+            version = python_standalone_version(release, python_major_minor)
+            if version is None:
+                continue
+            if version in existing_versions:
+                return []
+            return [PlannedUpdate(package, version, config_path, release)]
+        return []
+
     if release_kind == "node_dist_index":
         major = release_strategy.get("major")
         if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
             raise RuntimeError(f"node_dist_index release.major must be an integer > 0 in {config_path}")
 
-        existing_versions = {
-            p.stem for p in (releases_root / package).glob("*.toml") if p.is_file()
-        }
         for release in releases:
             version_tag = release.get("version")
             if not isinstance(version_tag, str) or not version_tag.startswith(f"v{major}."):
@@ -222,10 +330,6 @@ def plan_updates_for_config(
     tag_prefix = release_strategy.get("tag_prefix")
     if tag_prefix is not None and not isinstance(tag_prefix, str):
         raise RuntimeError(f"source.release.tag_prefix must be a string in {config_path}")
-
-    existing_versions = {
-        p.stem for p in (releases_root / package).glob("*.toml") if p.is_file()
-    }
 
     for release in releases:
         if release.get("draft") is True:
@@ -442,11 +546,18 @@ def main(argv: list[str]) -> int:
             raise RuntimeError(f"Missing source table in {config_path}")
         normalized = normalize_source(source)
         release_strategy = normalized["release"]
-        if release_strategy.get("kind") == "node_dist_index":
+        release_kind = release_strategy.get("kind")
+        if release_kind == "node_dist_index":
             major = release_strategy.get("major")
             if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
                 raise RuntimeError(f"Missing or invalid source.release.major in {config_path}")
             releases = fetch_nodejs_dist_releases(major)
+        elif release_kind == "go_dist_index":
+            releases = fetch_go_dist_releases()
+        elif release_kind == "rustup_static":
+            releases = fetch_rustup_static_releases()
+        elif release_kind == "zig_download_index":
+            releases = fetch_zig_download_index_releases()
         else:
             repo = release_strategy.get("repo")
             if not isinstance(repo, str):

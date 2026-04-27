@@ -99,3 +99,39 @@ package = "uv"
 category = "developer-tool"
 rationale = "Fast-moving flagship Python tooling package that keeps source validation paths exercised."
 review_notes = "Review version churn frequently and ensure per-target archives still match generated manifests."
+
+[[seeds]]
+package = "bun"
+category = "runtime"
+rationale = "Common JavaScript runtime and package-manager tool distributed as portable release archives."
+review_notes = "Prefer non-profile release archives and verify zip root directories before exposing bun binaries."
+
+[[seeds]]
+package = "deno"
+category = "runtime"
+rationale = "Common JavaScript and TypeScript runtime with deterministic single-binary release zips."
+review_notes = "Keep deno assets scoped to runtime zips and avoid denort runtime assets unless modeled separately."
+
+[[seeds]]
+package = "go"
+category = "runtime"
+rationale = "Major language toolchain with official portable archives for supported Crosspack targets."
+review_notes = "Use archive downloads only; avoid pkg/msi installers and keep go/gofmt binary paths stable."
+
+[[seeds]]
+package = "python"
+category = "runtime"
+rationale = "Major language runtime covered through python-build-standalone archives instead of native installers."
+review_notes = "Use install_only_stripped archives and validate exposed binary paths for each platform before release bumps."
+
+[[seeds]]
+package = "rustup-init"
+category = "runtime"
+rationale = "Rust bootstrapper distributed as static per-target binaries without requiring install scripts in Crosspack."
+review_notes = "Package rustup-init as a managed binary only; do not execute it as a post-install step."
+
+[[seeds]]
+package = "zig"
+category = "runtime"
+rationale = "Common systems language toolchain distributed as official portable compiler archives."
+review_notes = "Prefer stable ziglang.org download assets and keep strip_components aligned with archive roots."

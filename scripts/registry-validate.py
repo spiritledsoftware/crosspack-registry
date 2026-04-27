@@ -13,9 +13,16 @@ SIG_RE = re.compile(r"^[0-9a-fA-F]{128}$")
 TARGET_RE = re.compile(r"^[A-Za-z0-9._-]+$")
 REPO_RE = re.compile(r"^[^/\s]+/[^/\s]+$")
 ARCHIVE_VALUES = {"tar.gz", "zip", "tar.xz", "tgz", "gz", "bin"}
-RELEASE_KIND_VALUES = {"github_releases", "node_dist_index"}
-CHECKSUM_KIND_VALUES = {"download_sha256", "shasums256"}
-ASSET_KIND_VALUES = {"release_asset_url", "templated"}
+RELEASE_KIND_VALUES = {
+    "github_releases",
+    "go_dist_index",
+    "node_dist_index",
+    "python_build_standalone",
+    "rustup_static",
+    "zig_download_index",
+}
+CHECKSUM_KIND_VALUES = {"download_sha256", "download_index", "shasums256", "url_sha256"}
+ASSET_KIND_VALUES = {"download_index", "release_asset_url", "templated"}
 
 
 def err(errors: list[str], path: Path, message: str) -> None:
@@ -92,7 +99,7 @@ def validate_package_manifest(path: Path, doc: dict, errors: list[str]) -> None:
                 err(
                     errors,
                     path,
-                    "source.release.kind must be 'github_releases' or 'node_dist_index'",
+                    "source.release.kind must be a supported release strategy",
                 )
             elif release_kind == "github_releases":
                 repo_ok = expect_nonempty_str(
@@ -100,6 +107,26 @@ def validate_package_manifest(path: Path, doc: dict, errors: list[str]) -> None:
                 )
                 if repo_ok and not REPO_RE.fullmatch(str(release["repo"])):
                     err(errors, path, "source.release.repo must look like owner/name")
+            elif release_kind == "python_build_standalone":
+                repo_ok = expect_nonempty_str(
+                    release.get("repo"), "source.release.repo", errors, path
+                )
+                if repo_ok and not REPO_RE.fullmatch(str(release["repo"])):
+                    err(errors, path, "source.release.repo must look like owner/name")
+                python_major_minor_ok = expect_nonempty_str(
+                    release.get("python_major_minor"),
+                    "source.release.python_major_minor",
+                    errors,
+                    path,
+                )
+                if python_major_minor_ok and not re.fullmatch(
+                    r"\d+\.\d+", str(release["python_major_minor"])
+                ):
+                    err(
+                        errors,
+                        path,
+                        "source.release.python_major_minor must look like MAJOR.MINOR",
+                    )
             elif release_kind == "node_dist_index":
                 major = release.get("major")
                 if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
@@ -123,7 +150,7 @@ def validate_package_manifest(path: Path, doc: dict, errors: list[str]) -> None:
                 err(
                     errors,
                     path,
-                    "source.checksum.kind must be 'download_sha256' or 'shasums256'",
+                    "source.checksum.kind must be a supported checksum strategy",
                 )
             elif checksum_kind == "shasums256":
                 checksum_url_ok = expect_nonempty_str(
@@ -143,7 +170,7 @@ def validate_package_manifest(path: Path, doc: dict, errors: list[str]) -> None:
                 err(
                     errors,
                     path,
-                    "source.asset.kind must be 'release_asset_url' or 'templated'",
+                    "source.asset.kind must be a supported asset strategy",
                 )
             elif asset_kind == "templated":
                 base_url_ok = expect_nonempty_str(

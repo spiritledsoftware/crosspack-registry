@@ -1,0 +1,32 @@
+name = "python"
+version = "3.14.4+20260414"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20260414/cpython-3.14.4%2B20260414-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
+sha256 = "fe9a9c32d13870af632cbac3dfc7528ae53597e94472aa4c7d6a42e8166136cd"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20260414/cpython-3.14.4%2B20260414-aarch64-unknown-linux-gnu-install_only_stripped.tar.gz"
+sha256 = "b8b597fdb2f8dccdc502c11947b60a4b65eb6bce79cfa60c7ccf9b6e8352c60a"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20260414/cpython-3.14.4%2B20260414-x86_64-apple-darwin-install_only_stripped.tar.gz"
+sha256 = "d51250a32fa5d9f0799c7bcb71720c27b10a3afd4a7de288120f96085d508a5a"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20260414/cpython-3.14.4%2B20260414-aarch64-apple-darwin-install_only_stripped.tar.gz"
+sha256 = "6f304f4ec30854611f23316578302235fb517cd970519ecdd11a8c4db87fd843"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20260414/cpython-3.14.4%2B20260414-x86_64-pc-windows-msvc-install_only_stripped.tar.gz"
+sha256 = "a976991dcd085c1bb5d9a8084823a6bc8b7f9b079d8c432574a6ddd68c3a6fe1"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20260414/cpython-3.14.4%2B20260414-aarch64-pc-windows-msvc-install_only_stripped.tar.gz"
+sha256 = "d0cf4212d08a34ecdd614bc655d6502afcf61ce16cf5f566fca6c63884a9d1df"
