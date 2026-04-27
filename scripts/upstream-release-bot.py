@@ -137,6 +137,34 @@ def fetch_github_releases(repo: str, token: str | None = None) -> list[dict]:
     return [item for item in payload if isinstance(item, dict)]
 
 
+def _format_fetch_error(error: urllib.error.HTTPError | urllib.error.URLError) -> str:
+    if isinstance(error, urllib.error.HTTPError):
+        return f"HTTP {error.code} {error.reason}"
+    return str(error.reason)
+
+
+def _http_error_body(error: urllib.error.HTTPError) -> str:
+    if error.fp is None:
+        return ""
+    try:
+        return error.fp.read().decode("utf-8", errors="replace")
+    except OSError:
+        return ""
+
+
+def _is_rate_limit_error(error: urllib.error.HTTPError) -> bool:
+    if error.code != 403:
+        return False
+    reason = str(error.reason).lower()
+    if "rate limit" in reason:
+        return True
+    remaining = error.headers.get("x-ratelimit-remaining") if error.headers else None
+    if remaining == "0":
+        return True
+    body = _http_error_body(error).lower()
+    return "rate limit" in body
+
+
 def fetch_json_index_releases(release_strategy: dict) -> list[dict]:
     url = release_strategy.get("url")
     if not isinstance(url, str) or not url.startswith("https://"):
@@ -535,6 +563,7 @@ def main(argv: list[str]) -> int:
 
     github_token = __import__("os").environ.get("GITHUB_TOKEN")
     planned: list[PlannedUpdate] = []
+    skipped_fetches = 0
     for config_path in config_paths:
         config = load_config(config_path)
         source = config.get("source")
@@ -543,17 +572,28 @@ def main(argv: list[str]) -> int:
         normalized = normalize_source(source)
         release_strategy = normalized["release"]
         release_kind = release_strategy.get("kind")
-        if release_kind == "json_index":
-            releases = fetch_json_index_releases(release_strategy)
-        elif release_kind == "text_endpoint":
-            releases = fetch_text_endpoint_releases(release_strategy)
-        elif release_kind == "github_releases":
-            repo = release_strategy.get("repo")
-            if not isinstance(repo, str):
-                raise RuntimeError(f"Missing source.release.repo in {config_path}")
-            releases = fetch_github_releases(repo, token=github_token)
-        else:
-            raise RuntimeError(f"Unsupported source.release.kind in {config_path}")
+        try:
+            if release_kind == "json_index":
+                releases = fetch_json_index_releases(release_strategy)
+            elif release_kind == "text_endpoint":
+                releases = fetch_text_endpoint_releases(release_strategy)
+            elif release_kind == "github_releases":
+                repo = release_strategy.get("repo")
+                if not isinstance(repo, str):
+                    raise RuntimeError(f"Missing source.release.repo in {config_path}")
+                releases = fetch_github_releases(repo, token=github_token)
+            else:
+                raise RuntimeError(f"Unsupported source.release.kind in {config_path}")
+        except urllib.error.HTTPError as error:
+            if not _is_rate_limit_error(error):
+                raise
+            skipped_fetches += 1
+            print(
+                f"Skipping {config_path.stem}: failed to fetch upstream releases "
+                f"({_format_fetch_error(error)})",
+                file=sys.stderr,
+            )
+            continue
         planned.extend(
             plan_updates_for_config(
                 config_path=config_path,
@@ -563,7 +603,10 @@ def main(argv: list[str]) -> int:
         )
 
     if not planned:
-        print("No new releases detected")
+        print(
+            "No new releases detected; "
+            f"skipped {skipped_fetches} release fetch(es)"
+        )
         return 0
 
     created_releases = 0
@@ -642,7 +685,9 @@ def main(argv: list[str]) -> int:
     print(
         "Planned "
         f"{len(planned)} update(s), wrote {created_releases} release manifest(s), "
-        f"updated {written_packages} package template(s), skipped {skipped_updates} incomplete update(s)"
+        f"updated {written_packages} package template(s), "
+        f"skipped {skipped_updates} incomplete update(s), "
+        f"skipped {skipped_fetches} release fetch(es)"
     )
     return 0
 

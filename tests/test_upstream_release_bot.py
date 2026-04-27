@@ -5,6 +5,8 @@ import os
 import subprocess
 import tempfile
 import textwrap
+import urllib.error
+from email.message import Message
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -295,6 +297,128 @@ class UpstreamReleaseBotTests(unittest.TestCase):
             self.assertIn("Skipping fd 10.4.1: incomplete upstream release", stderr.getvalue())
             self.assertIn("skipped 1 incomplete update(s)", stdout.getvalue())
             self.assertIn("wrote 0 release manifest(s)", stdout.getvalue())
+
+    def test_skips_release_fetch_http_error_instead_of_failing(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="release-bot-") as tmp:
+            tmp_path = Path(tmp)
+            packages_dir = tmp_path / "packages"
+            packages_dir.mkdir(parents=True)
+            (packages_dir / "trivy.toml").write_text(
+                textwrap.dedent(
+                    """
+                    name = "trivy"
+                    license = "Apache-2.0"
+                    homepage = "https://github.com/aquasecurity/trivy"
+
+                    [source.release]
+                    kind = "github_releases"
+                    repo = "aquasecurity/trivy"
+
+                    [source.checksum]
+                    kind = "asset_digest"
+
+                    [source.asset]
+                    kind = "release_asset_url"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            generator = load_generator_module()
+            headers = Message()
+            headers["x-ratelimit-remaining"] = "0"
+            previous_cwd = Path.cwd()
+            os.chdir(tmp_path)
+            try:
+                with (
+                    mock.patch.object(
+                        self.bot,
+                        "_load_generator_module",
+                        return_value=generator,
+                    ),
+                    mock.patch.object(
+                        self.bot,
+                        "fetch_github_releases",
+                        side_effect=urllib.error.HTTPError(
+                            "https://api.github.com/repos/aquasecurity/trivy/releases?per_page=20",
+                            403,
+                            "Forbidden",
+                            headers,
+                            None,
+                        ),
+                    ),
+                    contextlib.redirect_stdout(stdout),
+                    contextlib.redirect_stderr(stderr),
+                ):
+                    result = self.bot.main(["--package", "trivy"])
+            finally:
+                os.chdir(previous_cwd)
+
+            self.assertEqual(result, 0)
+            self.assertFalse((tmp_path / "releases" / "trivy").exists())
+            self.assertIn(
+                "Skipping trivy: failed to fetch upstream releases (HTTP 403 Forbidden)",
+                stderr.getvalue(),
+            )
+            self.assertIn("skipped 1 release fetch(es)", stdout.getvalue())
+            self.assertIn("No new releases detected", stdout.getvalue())
+
+    def test_release_fetch_non_rate_http_error_still_fails(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="release-bot-") as tmp:
+            tmp_path = Path(tmp)
+            packages_dir = tmp_path / "packages"
+            packages_dir.mkdir(parents=True)
+            (packages_dir / "badrepo.toml").write_text(
+                textwrap.dedent(
+                    """
+                    name = "badrepo"
+                    license = "MIT"
+                    homepage = "https://github.com/example/missing"
+
+                    [source.release]
+                    kind = "github_releases"
+                    repo = "example/missing"
+
+                    [source.checksum]
+                    kind = "asset_digest"
+
+                    [source.asset]
+                    kind = "release_asset_url"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+
+            generator = load_generator_module()
+            previous_cwd = Path.cwd()
+            os.chdir(tmp_path)
+            try:
+                with (
+                    mock.patch.object(
+                        self.bot,
+                        "_load_generator_module",
+                        return_value=generator,
+                    ),
+                    mock.patch.object(
+                        self.bot,
+                        "fetch_github_releases",
+                        side_effect=urllib.error.HTTPError(
+                            "https://api.github.com/repos/example/missing/releases?per_page=20",
+                            404,
+                            "Not Found",
+                            Message(),
+                            None,
+                        ),
+                    ),
+                ):
+                    with self.assertRaises(urllib.error.HTTPError):
+                        self.bot.main(["--package", "badrepo"])
+            finally:
+                os.chdir(previous_cwd)
 
     def test_open_or_update_pr_handles_generated_file_that_conflicts_with_remote_branch(self) -> None:
         with tempfile.TemporaryDirectory(prefix="release-bot-git-") as tmp:
