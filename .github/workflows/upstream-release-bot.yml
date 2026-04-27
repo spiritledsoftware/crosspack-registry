@@ -48,7 +48,7 @@ jobs:
           python-version: "3.11"
 
       - name: Validate source configuration
-        run: python3 scripts/registry-validate-source.py --require-package-coverage registry/sources/*.toml
+        run: python3 scripts/registry-validate-source.py packages/*.toml
 
       - name: Configure git author
         if: github.event_name != 'workflow_dispatch' || !inputs.dry_run

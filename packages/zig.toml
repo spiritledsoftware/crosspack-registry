@@ -1,0 +1,83 @@
+name = "zig"
+license = "MIT"
+homepage = "https://ziglang.org/"
+
+[source.release]
+kind = "json_index"
+url = "https://ziglang.org/download/index.json"
+entries = "object_values"
+version_from_key = true
+skip_keys = ["master"]
+sort_semver_field = "version"
+
+[source.version]
+kind = "semver_field"
+field = "version"
+
+[source.checksum]
+kind = "download_index"
+
+[source.asset]
+kind = "json_index_asset"
+url_field = "tarball"
+checksum_field = "shasum"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "x86_64-linux"
+archive = "tar.xz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "zig"
+path = "zig"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "aarch64-linux"
+archive = "tar.xz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "zig"
+path = "zig"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "x86_64-macos"
+archive = "tar.xz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "zig"
+path = "zig"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "aarch64-macos"
+archive = "tar.xz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "zig"
+path = "zig"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "x86_64-windows"
+archive = "zip"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "zig"
+path = "zig.exe"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+asset = "aarch64-windows"
+archive = "zip"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "zig"
+path = "zig.exe"

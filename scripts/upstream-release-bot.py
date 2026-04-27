@@ -33,8 +33,12 @@ def normalize_source(source: dict) -> dict:
     release = source.get("release")
     checksum = source.get("checksum")
     asset = source.get("asset")
+    version = source.get("version")
     if isinstance(release, dict) and isinstance(checksum, dict) and isinstance(asset, dict):
-        return {"release": release, "checksum": checksum, "asset": asset}
+        normalized = {"release": release, "checksum": checksum, "asset": asset}
+        if isinstance(version, dict):
+            normalized["version"] = version
+        return normalized
 
     provider = source.get("provider")
     if provider == "github":
@@ -51,6 +55,7 @@ def normalize_source(source: dict) -> dict:
             normalized_release["tag_prefix"] = tag_prefix
         return {
             "release": normalized_release,
+            "version": {"kind": "github_tag"},
             "checksum": {"kind": "download_sha256"},
             "asset": {"kind": "release_asset_url"},
         }
@@ -61,9 +66,14 @@ def normalize_source(source: dict) -> dict:
             raise RuntimeError("nodejs-dist source.major must be an integer > 0")
         return {
             "release": {
-                "kind": "node_dist_index",
-                "major": major,
-                "include_prereleases": bool(source.get("include_prereleases", False)),
+                "kind": "json_index",
+                "url": "https://nodejs.org/dist/index.json",
+            },
+            "version": {
+                "kind": "prefixed_semver_field",
+                "field": "version",
+                "prefix": "v",
+                "require_prefix": f"v{major}.",
             },
             "checksum": {"kind": "shasums256"},
             "asset": {
@@ -127,23 +137,77 @@ def fetch_github_releases(repo: str, token: str | None = None) -> list[dict]:
     return [item for item in payload if isinstance(item, dict)]
 
 
-def fetch_nodejs_dist_releases(major: int) -> list[dict]:
-    payload = _http_get_json("https://nodejs.org/dist/index.json")
-    if not isinstance(payload, list):
-        raise RuntimeError("Unexpected Node.js dist index response")
-    major_prefix = f"v{major}."
-    return [
-        item
-        for item in payload
-        if isinstance(item, dict)
-        and isinstance(item.get("version"), str)
-        and item["version"].startswith(major_prefix)
-    ]
+def fetch_json_index_releases(release_strategy: dict) -> list[dict]:
+    url = release_strategy.get("url")
+    if not isinstance(url, str) or not url.startswith("https://"):
+        raise RuntimeError("json_index release.url must start with https://")
+    payload = _http_get_json(url)
+    entries = release_strategy.get("entries", "array")
+    if entries == "array":
+        if not isinstance(payload, list):
+            raise RuntimeError(f"Unexpected JSON index array response from {url}")
+        releases = [item for item in payload if isinstance(item, dict)]
+    elif entries == "object_values":
+        if not isinstance(payload, dict):
+            raise RuntimeError(f"Unexpected JSON index object response from {url}")
+        skip_keys = release_strategy.get("skip_keys", [])
+        if not isinstance(skip_keys, list) or not all(isinstance(item, str) for item in skip_keys):
+            raise RuntimeError("json_index release.skip_keys must be a string array")
+        skipped = set(skip_keys)
+        releases = []
+        for key, value in payload.items():
+            if key in skipped or not isinstance(value, dict):
+                continue
+            release = dict(value)
+            if release_strategy.get("version_from_key") is True:
+                release.setdefault("version", key)
+            releases.append(release)
+    else:
+        raise RuntimeError("json_index release.entries must be 'array' or 'object_values'")
+
+    stable_field = release_strategy.get("stable_field")
+    if stable_field is not None:
+        if not isinstance(stable_field, str) or not stable_field:
+            raise RuntimeError("json_index release.stable_field must be a non-empty string")
+        releases = [release for release in releases if release.get(stable_field) is True]
+    sort_field = release_strategy.get("sort_semver_field")
+    if sort_field is not None:
+        if not isinstance(sort_field, str) or not sort_field:
+            raise RuntimeError("json_index release.sort_semver_field must be a non-empty string")
+        releases = [
+            release
+            for release in releases
+            if isinstance(release.get(sort_field), str) and SEMVER_RE.fullmatch(release[sort_field])
+        ]
+        releases.sort(
+            key=lambda release: tuple(int(part) for part in release[sort_field].split(".")),
+            reverse=True,
+        )
+    return releases
 
 
-def fetch_nodejs_dist_shasums(*, major: int) -> dict[str, str]:
+def fetch_text_endpoint_releases(release_strategy: dict) -> list[dict]:
+    url = release_strategy.get("url")
+    if not isinstance(url, str) or not url.startswith("https://"):
+        raise RuntimeError("text_endpoint release.url must start with https://")
+    pattern = release_strategy.get("version_regex")
+    if not isinstance(pattern, str) or not pattern:
+        raise RuntimeError("text_endpoint release.version_regex must be a non-empty string")
     request = urllib.request.Request(
-        f"https://nodejs.org/dist/latest-v{major}.x/SHASUMS256.txt",
+        url,
+        headers={"User-Agent": "crosspack-registry-upstream-bot"},
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310
+        payload = response.read().decode("utf-8")
+    match = re.search(pattern, payload, re.MULTILINE)
+    if match is None:
+        raise RuntimeError(f"Unexpected text endpoint response from {url}")
+    return [{"content": payload, "version": match.group(1)}]
+
+
+def fetch_shasums(url: str) -> dict[str, str]:
+    request = urllib.request.Request(
+        url,
         headers={"User-Agent": "crosspack-registry-upstream-bot"},
     )
     with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310
@@ -172,6 +236,80 @@ def normalize_tag_to_version(tag: str, tag_prefix: str | None = None) -> str | N
     return None
 
 
+def version_from_strategy(release: dict, strategy: dict, release_strategy: dict) -> str | None:
+    kind = strategy.get("kind")
+    if kind == "github_tag":
+        tag_name = release.get("tag_name")
+        tag_prefix = release_strategy.get("tag_prefix")
+        if tag_prefix is not None and not isinstance(tag_prefix, str):
+            raise RuntimeError("source.release.tag_prefix must be a string")
+        return normalize_tag_to_version(tag_name, tag_prefix) if isinstance(tag_name, str) else None
+
+    if kind == "semver_field":
+        field = strategy.get("field")
+        if not isinstance(field, str) or not field:
+            raise RuntimeError("source.version.field must be a non-empty string")
+        value = release.get(field)
+        return value if isinstance(value, str) and SEMVER_RE.fullmatch(value) else None
+
+    if kind == "prefixed_semver_field":
+        field = strategy.get("field")
+        prefix = strategy.get("prefix", "")
+        require_prefix = strategy.get("require_prefix")
+        if not isinstance(field, str) or not field:
+            raise RuntimeError("source.version.field must be a non-empty string")
+        if not isinstance(prefix, str):
+            raise RuntimeError("source.version.prefix must be a string")
+        if require_prefix is not None and not isinstance(require_prefix, str):
+            raise RuntimeError("source.version.require_prefix must be a string")
+        value = release.get(field)
+        if not isinstance(value, str):
+            return None
+        if require_prefix is not None and not value.startswith(require_prefix):
+            return None
+        if prefix and not value.startswith(prefix):
+            return None
+        version = value[len(prefix) :] if prefix else value
+        return version if SEMVER_RE.fullmatch(version) else None
+
+    if kind == "asset_name_regex":
+        pattern = strategy.get("pattern")
+        assets = release.get("assets")
+        if not isinstance(pattern, str) or not pattern:
+            raise RuntimeError("source.version.pattern must be a non-empty string")
+        if not isinstance(assets, list):
+            return None
+        rendered_pattern = pattern.format(tag_name=release.get("tag_name", ""))
+        for asset in assets:
+            if not isinstance(asset, dict):
+                continue
+            name = asset.get("name")
+            if not isinstance(name, str):
+                continue
+            match = re.search(rendered_pattern, name)
+            if match and SEMVER_RE.fullmatch(match.group(1)):
+                return match.group(1)
+        return None
+
+    if kind == "regex_capture":
+        field = strategy.get("field")
+        pattern = strategy.get("pattern")
+        if not isinstance(field, str) or not field:
+            raise RuntimeError("source.version.field must be a non-empty string")
+        if not isinstance(pattern, str) or not pattern:
+            raise RuntimeError("source.version.pattern must be a non-empty string")
+        value = release.get(field)
+        if not isinstance(value, str):
+            return None
+        match = re.search(pattern, value, re.MULTILINE)
+        if match is None:
+            return None
+        version = match.group(1)
+        return version if SEMVER_RE.fullmatch(version) else None
+
+    raise RuntimeError("source.version.kind must be a supported version strategy")
+
+
 def load_config(path: Path) -> dict:
     data = tomllib.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
@@ -189,43 +327,15 @@ def plan_updates_for_config(
         raise RuntimeError(f"source must be a table in {config_path}")
     normalized = normalize_source(source)
     release_strategy = normalized["release"]
-    release_kind = release_strategy.get("kind")
-
-    if release_kind == "node_dist_index":
-        major = release_strategy.get("major")
-        if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
-            raise RuntimeError(f"node_dist_index release.major must be an integer > 0 in {config_path}")
-
-        existing_versions = {
-            p.stem for p in (releases_root / package).glob("*.toml") if p.is_file()
-        }
-        for release in releases:
-            version_tag = release.get("version")
-            if not isinstance(version_tag, str) or not version_tag.startswith(f"v{major}."):
-                continue
-            version = normalize_tag_to_version(version_tag)
-            if version is None:
-                continue
-            if version in existing_versions:
-                return []
-            return [
-                PlannedUpdate(
-                    package=package,
-                    version=version,
-                    config_path=config_path,
-                    release=release,
-                )
-            ]
-        return []
-
-    include_prereleases = bool(release_strategy.get("include_prereleases", False))
-    tag_prefix = release_strategy.get("tag_prefix")
-    if tag_prefix is not None and not isinstance(tag_prefix, str):
-        raise RuntimeError(f"source.release.tag_prefix must be a string in {config_path}")
+    version_strategy = normalized.get("version")
+    if not isinstance(version_strategy, dict):
+        version_strategy = {"kind": "github_tag"}
 
     existing_versions = {
         p.stem for p in (releases_root / package).glob("*.toml") if p.is_file()
     }
+
+    include_prereleases = bool(release_strategy.get("include_prereleases", False))
 
     for release in releases:
         if release.get("draft") is True:
@@ -233,11 +343,7 @@ def plan_updates_for_config(
         if release.get("prerelease") is True and not include_prereleases:
             continue
 
-        tag_name = release.get("tag_name")
-        if not isinstance(tag_name, str):
-            continue
-
-        version = normalize_tag_to_version(tag_name, tag_prefix)
+        version = version_from_strategy(release, version_strategy, release_strategy)
         if version is None:
             continue
         if version in existing_versions:
@@ -391,16 +497,10 @@ def main(argv: list[str]) -> int:
         description="Generate/update manifests from upstream releases"
     )
     parser.add_argument(
-        "--sources-root",
-        type=Path,
-        default=Path("registry/sources"),
-        help="Path containing source configs",
-    )
-    parser.add_argument(
         "--packages-root",
         type=Path,
         default=Path("packages"),
-        help="Registry package template directory",
+        help="Registry package template/source directory",
     )
     parser.add_argument(
         "--releases-root",
@@ -425,12 +525,12 @@ def main(argv: list[str]) -> int:
     generator = _load_generator_module(repo_root)
 
     package_filter = set(args.package or [])
-    config_paths = sorted(args.sources_root.glob("*.toml"))
+    config_paths = sorted(args.packages_root.glob("*.toml"))
     if package_filter:
         config_paths = [p for p in config_paths if p.stem in package_filter]
 
     if not config_paths:
-        print("No source configs selected")
+        print("No package configs selected")
         return 0
 
     github_token = __import__("os").environ.get("GITHUB_TOKEN")
@@ -442,16 +542,18 @@ def main(argv: list[str]) -> int:
             raise RuntimeError(f"Missing source table in {config_path}")
         normalized = normalize_source(source)
         release_strategy = normalized["release"]
-        if release_strategy.get("kind") == "node_dist_index":
-            major = release_strategy.get("major")
-            if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
-                raise RuntimeError(f"Missing or invalid source.release.major in {config_path}")
-            releases = fetch_nodejs_dist_releases(major)
-        else:
+        release_kind = release_strategy.get("kind")
+        if release_kind == "json_index":
+            releases = fetch_json_index_releases(release_strategy)
+        elif release_kind == "text_endpoint":
+            releases = fetch_text_endpoint_releases(release_strategy)
+        elif release_kind == "github_releases":
             repo = release_strategy.get("repo")
             if not isinstance(repo, str):
                 raise RuntimeError(f"Missing source.release.repo in {config_path}")
             releases = fetch_github_releases(repo, token=github_token)
+        else:
+            raise RuntimeError(f"Unsupported source.release.kind in {config_path}")
         planned.extend(
             plan_updates_for_config(
                 config_path=config_path,
@@ -480,14 +582,11 @@ def main(argv: list[str]) -> int:
             normalized = normalize_source(source)
             release_strategy = normalized["release"]
             checksum_strategy = normalized["checksum"]
-            if (
-                release_strategy.get("kind") == "node_dist_index"
-                and checksum_strategy.get("kind") == "shasums256"
-            ):
-                major = release_strategy.get("major")
-                if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
-                    raise RuntimeError(f"Missing or invalid source.release.major in {update.config_path}")
-                shasums_by_name = fetch_nodejs_dist_shasums(major=major)
+            if checksum_strategy.get("kind") == "shasums256":
+                checksum_url = checksum_strategy.get("url_template")
+                if not isinstance(checksum_url, str) or not checksum_url.startswith("https://"):
+                    raise RuntimeError(f"Missing source.checksum.url_template in {update.config_path}")
+                shasums_by_name = fetch_shasums(checksum_url)
 
         try:
             release_text = generator.generate_release_text(

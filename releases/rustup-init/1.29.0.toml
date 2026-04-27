@@ -1,0 +1,32 @@
+name = "rustup-init"
+version = "1.29.0"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://static.rust-lang.org/rustup/archive/1.29.0/x86_64-unknown-linux-gnu/rustup-init"
+sha256 = "4acc9acc76d5079515b46346a485974457b5a79893cfb01112423c89aeb5aa10"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://static.rust-lang.org/rustup/archive/1.29.0/aarch64-unknown-linux-gnu/rustup-init"
+sha256 = "9732d6c5e2a098d3521fca8145d826ae0aaa067ef2385ead08e6feac88fa5792"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://static.rust-lang.org/rustup/archive/1.29.0/x86_64-apple-darwin/rustup-init"
+sha256 = "33cf85df9142bc6d29cbc62fa5ca1d4c29622cddb55213a4c1a43c457fb9b2d7"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://static.rust-lang.org/rustup/archive/1.29.0/aarch64-apple-darwin/rustup-init"
+sha256 = "aeb4105778ca1bd3c6b0e75768f581c656633cd51368fa61289b6a71696ac7e1"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://static.rust-lang.org/rustup/archive/1.29.0/x86_64-pc-windows-msvc/rustup-init.exe"
+sha256 = "86478e53f769379d7f0ebfa7c9aa97cb76ca92233f79aa2cc0dbee2efaac73c7"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+url = "https://static.rust-lang.org/rustup/archive/1.29.0/aarch64-pc-windows-msvc/rustup-init.exe"
+sha256 = "3af309e6c3062aa11df0e932954f69d13b734d8a431e593812f3ecd9ff9e6ef6"

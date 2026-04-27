@@ -257,9 +257,14 @@ class RegistryGenerateManifestTests(unittest.TestCase):
                     homepage = "https://nodejs.org/"
 
                     [source.release]
-                    kind = "node_dist_index"
-                    major = 22
-                    include_prereleases = false
+                    kind = "json_index"
+                    url = "https://nodejs.org/dist/index.json"
+
+                    [source.version]
+                    kind = "prefixed_semver_field"
+                    field = "version"
+                    prefix = "v"
+                    require_prefix = "v22."
 
                     [source.checksum]
                     kind = "shasums256"
@@ -341,9 +346,14 @@ class RegistryGenerateManifestTests(unittest.TestCase):
                     homepage = "https://nodejs.org/"
 
                     [source.release]
-                    kind = "node_dist_index"
-                    major = 22
-                    include_prereleases = false
+                    kind = "json_index"
+                    url = "https://nodejs.org/dist/index.json"
+
+                    [source.version]
+                    kind = "prefixed_semver_field"
+                    field = "version"
+                    prefix = "v"
+                    require_prefix = "v22."
 
                     [source.checksum]
                     kind = "shasums256"
@@ -371,10 +381,129 @@ class RegistryGenerateManifestTests(unittest.TestCase):
             rendered = self.generator.generate_package_text(config_path=config_path)
 
             self.assertIn('[source.release]', rendered)
-            self.assertIn('kind = "node_dist_index"', rendered)
-            self.assertIn('major = 22', rendered)
+            self.assertIn('kind = "json_index"', rendered)
+            self.assertIn('url = "https://nodejs.org/dist/index.json"', rendered)
+            self.assertIn('[source.version]', rendered)
+            self.assertIn('require_prefix = "v22."', rendered)
             self.assertIn('[source.asset]', rendered)
             self.assertNotIn('repo =', rendered)
+
+    def test_generates_go_dist_release_manifest_from_index(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="manifest-gen-") as tmp:
+            config_path = Path(tmp) / "go.toml"
+            config_path.write_text(
+                textwrap.dedent(
+                    """
+                    name = "go"
+                    license = "BSD-3-Clause"
+                    homepage = "https://go.dev/"
+
+                    [source.release]
+                    kind = "json_index"
+                    url = "https://go.dev/dl/?mode=json"
+
+                    [source.version]
+                    kind = "prefixed_semver_field"
+                    field = "version"
+                    prefix = "go"
+
+                    [source.checksum]
+                    kind = "download_index"
+
+                    [source.asset]
+                    kind = "json_index_asset"
+                    asset_array_field = "files"
+                    name_field = "filename"
+                    checksum_field = "sha256"
+                    url_template = "https://go.dev/dl/{asset}"
+
+                    [[artifacts]]
+                    target = "x86_64-unknown-linux-gnu"
+                    asset = "go{version}.linux-amd64.tar.gz"
+                    archive = "tar.gz"
+                    strip_components = 1
+
+                    [[artifacts.binaries]]
+                    name = "go"
+                    path = "bin/go"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+
+            rendered = self.generator.generate_release_text(
+                config_path=config_path,
+                version="1.26.2",
+                release={
+                    "version": "go1.26.2",
+                    "files": [
+                        {
+                            "filename": "go1.26.2.linux-amd64.tar.gz",
+                            "sha256": "990e6b4bbba816dc3ee129eaeaf4b42f17c2800b88a2166c265ac1a200262282",
+                        }
+                    ],
+                },
+            )
+
+            self.assertIn('url = "https://go.dev/dl/go1.26.2.linux-amd64.tar.gz"', rendered)
+            self.assertIn('sha256 = "990e6b4bbba816dc3ee129eaeaf4b42f17c2800b88a2166c265ac1a200262282"', rendered)
+
+    def test_generates_python_standalone_release_manifest_from_github_digest(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="manifest-gen-") as tmp:
+            config_path = Path(tmp) / "python.toml"
+            config_path.write_text(
+                textwrap.dedent(
+                    """
+                    name = "python"
+                    license = "Python-2.0"
+                    homepage = "https://github.com/astral-sh/python-build-standalone"
+
+                    [source.release]
+                    kind = "github_releases"
+                    repo = "astral-sh/python-build-standalone"
+
+                    [source.version]
+                    kind = "asset_name_regex"
+                    pattern = '^cpython-(3\\.14\\.\\d+\\+{tag_name})-'
+
+                    [source.checksum]
+                    kind = "asset_digest"
+
+                    [source.asset]
+                    kind = "release_asset_url"
+
+                    [[artifacts]]
+                    target = "x86_64-unknown-linux-gnu"
+                    asset = "cpython-{version}-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
+                    archive = "tar.gz"
+                    strip_components = 1
+
+                    [[artifacts.binaries]]
+                    name = "python"
+                    path = "bin/python3"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+
+            rendered = self.generator.generate_release_text(
+                config_path=config_path,
+                version="3.14.4+20260414",
+                release={
+                    "assets": [
+                        {
+                            "name": "cpython-3.14.4+20260414-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+                            "browser_download_url": "https://example.invalid/python.tar.gz",
+                            "digest": "sha256:fe9a9c32d13870af632cbac3dfc7528ae53597e94472aa4c7d6a42e8166136cd",
+                        }
+                    ]
+                },
+            )
+
+            self.assertIn('url = "https://example.invalid/python.tar.gz"', rendered)
+            self.assertIn('sha256 = "fe9a9c32d13870af632cbac3dfc7528ae53597e94472aa4c7d6a42e8166136cd"', rendered)
 
 
 if __name__ == "__main__":

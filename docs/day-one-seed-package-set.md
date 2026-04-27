@@ -50,7 +50,7 @@ Why it matters
 
 Upstream source
 - GitHub releases: spiritledsoftware/crosspack
-- Source config: `registry/sources/crosspack.toml`
+- Package config: `packages/crosspack.toml`
 
 Version/update strategy
 - automated from GitHub releases with `tag_prefix = "v"`
@@ -63,7 +63,7 @@ Metadata requirements
 - tar.gz + zip only, no GUI handling
 
 Platform caveats
-- current source config covers strong breadth, including linux glibc and musl variants
+- current package config covers strong breadth, including linux glibc and musl variants
 - registry currently trails repo release line in `releases/crosspack/` (latest file present is 0.9.0 while main repo shows v0.10.x tags), so freshness monitoring matters
 
 Decision note
@@ -77,7 +77,7 @@ Why it matters
 
 Upstream source
 - GitHub releases: BurntSushi/ripgrep
-- Source config: `registry/sources/ripgrep.toml`
+- Package config: `packages/ripgrep.toml`
 
 Version/update strategy
 - automated from GitHub releases
@@ -105,7 +105,7 @@ Why it matters
 
 Upstream source
 - GitHub releases: sharkdp/fd
-- Source config: `registry/sources/fd.toml`
+- Package config: `packages/fd.toml`
 
 Version/update strategy
 - automated from GitHub releases with `tag_prefix = "v"`
@@ -131,11 +131,11 @@ Why it matters
 
 Upstream source
 - GitHub releases: astral-sh/uv
-- Source config: `registry/sources/uv.toml`
+- Package config: `packages/uv.toml`
 
 Version/update strategy
 - automated from GitHub releases
-- no tag prefix required in source config
+- no tag prefix required in package source config
 
 Metadata requirements
 - 5 targets across Linux/macOS/Windows
@@ -157,7 +157,7 @@ Why it matters
 
 Upstream source
 - GitHub releases: cli/cli
-- Source config: `registry/sources/gh.toml`
+- Package config: `packages/gh.toml`
 
 Version/update strategy
 - automated from GitHub releases with `tag_prefix = "v"`
@@ -184,7 +184,7 @@ Why it matters
 
 Upstream source
 - GitHub releases: jqlang/jq
-- Source config: `registry/sources/jq.toml`
+- Package config: `packages/jq.toml`
 
 Version/update strategy
 - automated from GitHub releases
@@ -207,7 +207,7 @@ Why it matters
 
 Upstream source
 - GitHub releases: junegunn/fzf
-- Source config: `registry/sources/fzf.toml`
+- Package config: `packages/fzf.toml`
 
 Version/update strategy
 - automated from GitHub releases with `tag_prefix = "v"`
@@ -218,7 +218,7 @@ Metadata requirements
 - binary: `fzf`
 
 Platform caveats
-- no completion metadata in current source config, so the demo story is slightly thinner than fd/ripgrep
+- no completion metadata in current package config, so the demo story is slightly thinner than fd/ripgrep
 
 Why not day one
 - excellent second-wave package, but fd and ripgrep tell a better immediate story
@@ -230,7 +230,7 @@ Why it matters
 
 Upstream source
 - GitHub releases: jesseduffield/lazygit
-- Source config: `registry/sources/lazygit.toml`
+- Package config: `packages/lazygit.toml`
 
 Version/update strategy
 - automated from GitHub releases with `tag_prefix = "v"`
@@ -253,7 +253,7 @@ Why it matters
 
 Upstream source
 - GitHub releases: sharkdp/bat
-- Source config: `registry/sources/bat.toml`
+- Package config: `packages/bat.toml`
 
 Version/update strategy
 - automated from GitHub releases with `tag_prefix = "v"`
@@ -264,7 +264,7 @@ Metadata requirements
 - binary: `bat`
 
 Platform caveats
-- current source config does not capture shell completions, which lowers demo richness versus fd/ripgrep
+- current package config does not capture shell completions, which lowers demo richness versus fd/ripgrep
 
 Why not day one
 - good package, but slightly redundant with fd/ripgrep in the first impression set
@@ -275,7 +275,7 @@ Why it matters
 
 Upstream source
 - GitHub releases: dandavison/delta
-- Source config: `registry/sources/delta.toml`
+- Package config: `packages/delta.toml`
 
 Version/update strategy
 - automated from GitHub releases
@@ -300,7 +300,7 @@ Why it matters
 
 Upstream source
 - GitHub releases: starship/starship
-- Source config: `registry/sources/starship.toml`
+- Package config: `packages/starship.toml`
 
 Version/update strategy
 - automated from GitHub releases with `tag_prefix = "v"`
@@ -323,7 +323,7 @@ Why it matters
 
 Upstream source
 - GitHub releases: usebruno/bruno
-- Source config: `registry/sources/bruno.toml`
+- Package config: `packages/bruno.toml`
 
 Version/update strategy
 - automated from GitHub releases with `tag_prefix = "v"`
@@ -346,7 +346,7 @@ Why it matters
 
 Upstream source
 - GitHub releases: dbeaver/dbeaver
-- Source config: `registry/sources/dbeaver.toml`
+- Package config: `packages/dbeaver.toml`
 
 Version/update strategy
 - automated from GitHub releases
@@ -369,7 +369,7 @@ Why it matters
 
 Upstream source
 - GitHub releases: beekeeper-studio/beekeeper-studio
-- Source config: `registry/sources/beekeeper-studio.toml`
+- Package config: `packages/beekeeper-studio.toml`
 
 Version/update strategy
 - automated from GitHub releases with `tag_prefix = "v"`
@@ -392,7 +392,7 @@ Why it matters
 
 Upstream source
 - GitHub releases: neovide/neovide
-- Source config: `registry/sources/neovide.toml`
+- Package config: `packages/neovide.toml`
 
 Version/update strategy
 - automated from GitHub releases
@@ -419,7 +419,7 @@ Why later
 
 For the recommended day-one set, the common pattern is strong and repeatable:
 - upstream discovery source: GitHub Releases API
-- package template source-of-truth: `registry/sources/<package>.toml`
+- package template source-of-truth: `packages/<package>.toml`
 - generated outputs:
   - `packages/<package>.toml`
   - `releases/<package>/<version>.toml`
@@ -468,7 +468,7 @@ Confidence: medium-high
 
 What is factual here
 - current package/source-config inventory
-- target coverage, archive kinds, binary/completion/gui metadata observed in `registry/sources/*.toml`
+- target coverage, archive kinds, binary/completion/gui metadata observed in `packages/*.toml`
 - current release presence in `releases/*`
 - Crosspack registry structure and automation documented in repo docs and scripts
 

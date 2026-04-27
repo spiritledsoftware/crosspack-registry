@@ -3,9 +3,14 @@ license = "MIT"
 homepage = "https://nodejs.org/"
 
 [source.release]
-kind = "node_dist_index"
-major = 22
-include_prereleases = false
+kind = "json_index"
+url = "https://nodejs.org/dist/index.json"
+
+[source.version]
+kind = "prefixed_semver_field"
+field = "version"
+prefix = "v"
+require_prefix = "v22."
 
 [source.checksum]
 kind = "shasums256"

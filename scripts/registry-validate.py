@@ -13,9 +13,14 @@ SIG_RE = re.compile(r"^[0-9a-fA-F]{128}$")
 TARGET_RE = re.compile(r"^[A-Za-z0-9._-]+$")
 REPO_RE = re.compile(r"^[^/\s]+/[^/\s]+$")
 ARCHIVE_VALUES = {"tar.gz", "zip", "tar.xz", "tgz", "gz", "bin"}
-RELEASE_KIND_VALUES = {"github_releases", "node_dist_index"}
-CHECKSUM_KIND_VALUES = {"download_sha256", "shasums256"}
-ASSET_KIND_VALUES = {"release_asset_url", "templated"}
+RELEASE_KIND_VALUES = {
+    "github_releases",
+    "json_index",
+    "text_endpoint",
+}
+VERSION_KIND_VALUES = {"asset_name_regex", "github_tag", "prefixed_semver_field", "regex_capture", "semver_field"}
+CHECKSUM_KIND_VALUES = {"asset_digest", "download_sha256", "download_index", "shasums256", "url_sha256"}
+ASSET_KIND_VALUES = {"json_index_asset", "release_asset_url", "templated"}
 
 
 def err(errors: list[str], path: Path, message: str) -> None:
@@ -92,7 +97,7 @@ def validate_package_manifest(path: Path, doc: dict, errors: list[str]) -> None:
                 err(
                     errors,
                     path,
-                    "source.release.kind must be 'github_releases' or 'node_dist_index'",
+                    "source.release.kind must be a supported release strategy",
                 )
             elif release_kind == "github_releases":
                 repo_ok = expect_nonempty_str(
@@ -100,10 +105,31 @@ def validate_package_manifest(path: Path, doc: dict, errors: list[str]) -> None:
                 )
                 if repo_ok and not REPO_RE.fullmatch(str(release["repo"])):
                     err(errors, path, "source.release.repo must look like owner/name")
-            elif release_kind == "node_dist_index":
-                major = release.get("major")
-                if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
-                    err(errors, path, "source.release.major must be an integer > 0")
+            elif release_kind in {"json_index", "text_endpoint"}:
+                url_ok = expect_nonempty_str(release.get("url"), "source.release.url", errors, path)
+                if url_ok and not str(release["url"]).startswith("https://"):
+                    err(errors, path, "source.release.url must start with https://")
+                if release_kind == "json_index":
+                    entries = release.get("entries")
+                    if entries is not None and entries not in {"array", "object_values"}:
+                        err(errors, path, "source.release.entries must be 'array' or 'object_values'")
+                    version_from_key = release.get("version_from_key")
+                    if version_from_key is not None and not isinstance(version_from_key, bool):
+                        err(errors, path, "source.release.version_from_key must be a boolean")
+                    skip_keys = release.get("skip_keys")
+                    if skip_keys is not None and (
+                        not isinstance(skip_keys, list)
+                        or not all(isinstance(item, str) and item for item in skip_keys)
+                    ):
+                        err(errors, path, "source.release.skip_keys must be a string array")
+                    stable_field = release.get("stable_field")
+                    if stable_field is not None and not isinstance(stable_field, str):
+                        err(errors, path, "source.release.stable_field must be a string")
+                    sort_semver_field = release.get("sort_semver_field")
+                    if sort_semver_field is not None and not isinstance(sort_semver_field, str):
+                        err(errors, path, "source.release.sort_semver_field must be a string")
+                else:
+                    expect_nonempty_str(release.get("version_regex"), "source.release.version_regex", errors, path)
 
             include_prereleases = release.get("include_prereleases")
             if include_prereleases is not None and not isinstance(
@@ -115,6 +141,22 @@ def validate_package_manifest(path: Path, doc: dict, errors: list[str]) -> None:
             if tag_prefix is not None and not isinstance(tag_prefix, str):
                 err(errors, path, "source.release.tag_prefix must be a string")
 
+            version = source.get("version")
+            if isinstance(version, dict):
+                version_kind_ok = expect_nonempty_str(
+                    version.get("kind"), "source.version.kind", errors, path
+                )
+                version_kind = version.get("kind") if version_kind_ok else None
+                if version_kind_ok and version_kind not in VERSION_KIND_VALUES:
+                    err(errors, path, "source.version.kind must be a supported version strategy")
+                if version_kind in {"prefixed_semver_field", "regex_capture", "semver_field"}:
+                    expect_nonempty_str(version.get("field"), "source.version.field", errors, path)
+                if version_kind in {"asset_name_regex", "regex_capture"}:
+                    expect_nonempty_str(version.get("pattern"), "source.version.pattern", errors, path)
+                for key in ("prefix", "require_prefix"):
+                    if key in version and not isinstance(version[key], str):
+                        err(errors, path, f"source.version.{key} must be a string")
+
             checksum_kind_ok = expect_nonempty_str(
                 checksum.get("kind"), "source.checksum.kind", errors, path
             )
@@ -123,16 +165,20 @@ def validate_package_manifest(path: Path, doc: dict, errors: list[str]) -> None:
                 err(
                     errors,
                     path,
-                    "source.checksum.kind must be 'download_sha256' or 'shasums256'",
+                    "source.checksum.kind must be a supported checksum strategy",
                 )
-            elif checksum_kind == "shasums256":
+            elif checksum_kind in {"shasums256", "url_sha256"}:
                 checksum_url_ok = expect_nonempty_str(
                     checksum.get("url_template"),
                     "source.checksum.url_template",
                     errors,
                     path,
                 )
-                if checksum_url_ok and not str(checksum["url_template"]).startswith("https://"):
+                if (
+                    checksum_kind == "shasums256"
+                    and checksum_url_ok
+                    and not str(checksum["url_template"]).startswith("https://")
+                ):
                     err(errors, path, "source.checksum.url_template must start with https://")
 
             asset_kind_ok = expect_nonempty_str(
@@ -143,14 +189,32 @@ def validate_package_manifest(path: Path, doc: dict, errors: list[str]) -> None:
                 err(
                     errors,
                     path,
-                    "source.asset.kind must be 'release_asset_url' or 'templated'",
+                    "source.asset.kind must be a supported asset strategy",
                 )
             elif asset_kind == "templated":
-                base_url_ok = expect_nonempty_str(
-                    asset.get("base_url"), "source.asset.base_url", errors, path
-                )
-                if base_url_ok and not str(asset["base_url"]).startswith("https://"):
-                    err(errors, path, "source.asset.base_url must start with https://")
+                if "url_template" in asset:
+                    expect_nonempty_str(asset.get("url_template"), "source.asset.url_template", errors, path)
+                else:
+                    base_url_ok = expect_nonempty_str(
+                        asset.get("base_url"), "source.asset.base_url", errors, path
+                    )
+                    if base_url_ok and not str(asset["base_url"]).startswith("https://"):
+                        err(errors, path, "source.asset.base_url must start with https://")
+            elif asset_kind == "json_index_asset":
+                array_field = asset.get("asset_array_field")
+                if array_field is not None:
+                    if not isinstance(array_field, str) or not array_field:
+                        err(errors, path, "source.asset.asset_array_field must be a string")
+                    expect_nonempty_str(asset.get("name_field"), "source.asset.name_field", errors, path)
+                if "url_field" in asset:
+                    expect_nonempty_str(asset.get("url_field"), "source.asset.url_field", errors, path)
+                else:
+                    url_template_ok = expect_nonempty_str(
+                        asset.get("url_template"), "source.asset.url_template", errors, path
+                    )
+                    if url_template_ok and not str(asset["url_template"]).startswith("https://"):
+                        err(errors, path, "source.asset.url_template must start with https://")
+                expect_nonempty_str(asset.get("checksum_field"), "source.asset.checksum_field", errors, path)
         else:
             provider_ok = expect_nonempty_str(
                 source.get("provider"), "source.provider", errors, path

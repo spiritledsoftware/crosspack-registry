@@ -7,7 +7,6 @@ Official Crosspack registry source.
 - `registry.pub` - trusted Ed25519 public key (hex-encoded, 32-byte key as 64 hex chars)
 - `packages/` - package templates (`<package>.toml` + `<package>.toml.sig`)
 - `releases/` - version documents (`<package>/<version>.toml` + `<package>/<version>.toml.sig`)
-- `registry/sources/` - upstream source configuration used by automation
 
 ## Package and Release Contracts
 
@@ -45,7 +44,7 @@ If a published update must be rolled back:
 
 Manifest updates do not need to be hand-authored for configured packages.
 
-- Source-of-truth config lives in `registry/sources/*.toml`.
+- Source-of-truth config lives in `packages/*.toml`.
 - Workflow `.github/workflows/upstream-release-bot.yml` checks upstream releases and opens PRs for new versions.
 - The bot writes:
   - package template docs in `packages/`
@@ -53,30 +52,38 @@ Manifest updates do not need to be hand-authored for configured packages.
 
 ### Generalized source model
 
-Source configs now support a generalized schema under `[source.*]` so new upstream patterns can be expressed by composing release discovery, checksum loading, and asset URL behavior instead of adding a new top-level provider enum by default.
+Package configs use a generalized schema under `[source.*]` so new upstream patterns can be expressed by composing release discovery, version derivation, checksum loading, and asset URL behavior instead of adding package-specific source kinds.
 
 Current supported strategies:
 
 - `[source.release]`
   - `kind = "github_releases"` with `repo` and optional `tag_prefix` / `include_prereleases`
-  - `kind = "node_dist_index"` with `major` and optional `include_prereleases`
+  - `kind = "json_index"` with `url` for array/object JSON indexes such as Node, Go, and Zig
+  - `kind = "text_endpoint"` with `url` and `version_regex` for simple text metadata such as rustup stable metadata
+- `[source.version]`
+  - `kind = "github_tag"` for SemVer release tags
+  - `kind = "semver_field"` for indexes that already expose a SemVer string field
+  - `kind = "prefixed_semver_field"` for fields such as `v22.22.2` or `go1.26.2`
+  - `kind = "asset_name_regex"` for deriving a version from release asset names
+  - `kind = "regex_capture"` for extracting a SemVer value from a release field
 - `[source.checksum]`
+  - `kind = "asset_digest"` for GitHub release assets that expose `sha256:<hex>` digests
+  - `kind = "download_index"` for upstream indexes that already contain SHA-256 values
   - `kind = "download_sha256"` for GitHub-style releases where the registry hashes downloaded assets
   - `kind = "shasums256"` with `url_template` for upstreams that publish a checksum manifest
+  - `kind = "url_sha256"` for per-asset `.sha256` sidecar URLs
 - `[source.asset]`
+  - `kind = "json_index_asset"` for upstream indexes that include resolved asset URLs and checksums
   - `kind = "release_asset_url"` for direct release asset URLs from the release feed
   - `kind = "templated"` with `base_url` for deterministic URL construction from artifact templates
 
-Legacy `provider = "github"` and `provider = "nodejs-dist"` source definitions are still normalized by tooling for compatibility during migration, but new configs should prefer the generalized `[source.release]`, `[source.checksum]`, and `[source.asset]` tables.
+Legacy `provider = "github"` and `provider = "nodejs-dist"` source definitions are still normalized by tooling for compatibility during migration, but new configs should prefer the generalized `[source.release]`, `[source.version]`, `[source.checksum]`, and `[source.asset]` tables.
 
 Useful commands:
 
 ```bash
-# Validate seed definitions + coverage
-python3 scripts/registry-validate-seed-definitions.py registry/seed-definitions.toml
-
-# Validate source configs
-python3 scripts/registry-validate-source.py --require-package-coverage registry/sources/*.toml
+# Validate package source configs
+python3 scripts/registry-validate-source.py packages/*.toml
 
 # Dry-run release detection and generation planning
 python3 scripts/upstream-release-bot.py --dry-run
@@ -85,7 +92,7 @@ python3 scripts/upstream-release-bot.py --dry-run
 python3 scripts/upstream-release-bot.py --dry-run --package ripgrep
 ```
 
-For operator review/update steps, see `scripts/registry-seed-runbook.md`.
+For operator review/update steps, see `scripts/registry-update-runbook.md`.
 
 ## Registry Preflight (Local + CI)
 
