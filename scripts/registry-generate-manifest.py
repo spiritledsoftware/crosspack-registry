@@ -457,7 +457,7 @@ def main(argv: list[str]) -> int:
         description="Generate registry release manifest from source config"
     )
     parser.add_argument(
-        "--config", required=True, type=Path, help="registry/sources/<pkg>.toml"
+        "--config", required=True, type=Path, help="packages/<pkg>.toml"
     )
     parser.add_argument("--version", required=True, help="Release version (semver)")
     parser.add_argument(

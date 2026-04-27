@@ -7,7 +7,6 @@ Official Crosspack registry source.
 - `registry.pub` - trusted Ed25519 public key (hex-encoded, 32-byte key as 64 hex chars)
 - `packages/` - package templates (`<package>.toml` + `<package>.toml.sig`)
 - `releases/` - version documents (`<package>/<version>.toml` + `<package>/<version>.toml.sig`)
-- `registry/sources/` - upstream source configuration used by automation
 
 ## Package and Release Contracts
 
@@ -45,7 +44,7 @@ If a published update must be rolled back:
 
 Manifest updates do not need to be hand-authored for configured packages.
 
-- Source-of-truth config lives in `registry/sources/*.toml`.
+- Source-of-truth config lives in `packages/*.toml`.
 - Workflow `.github/workflows/upstream-release-bot.yml` checks upstream releases and opens PRs for new versions.
 - The bot writes:
   - package template docs in `packages/`
@@ -53,7 +52,7 @@ Manifest updates do not need to be hand-authored for configured packages.
 
 ### Generalized source model
 
-Source configs use a generalized schema under `[source.*]` so new upstream patterns can be expressed by composing release discovery, version derivation, checksum loading, and asset URL behavior instead of adding package-specific source kinds.
+Package configs use a generalized schema under `[source.*]` so new upstream patterns can be expressed by composing release discovery, version derivation, checksum loading, and asset URL behavior instead of adding package-specific source kinds.
 
 Current supported strategies:
 
@@ -83,11 +82,8 @@ Legacy `provider = "github"` and `provider = "nodejs-dist"` source definitions a
 Useful commands:
 
 ```bash
-# Validate seed definitions + coverage
-python3 scripts/registry-validate-seed-definitions.py registry/seed-definitions.toml
-
-# Validate source configs
-python3 scripts/registry-validate-source.py --require-package-coverage registry/sources/*.toml
+# Validate package source configs
+python3 scripts/registry-validate-source.py packages/*.toml
 
 # Dry-run release detection and generation planning
 python3 scripts/upstream-release-bot.py --dry-run
@@ -96,7 +92,7 @@ python3 scripts/upstream-release-bot.py --dry-run
 python3 scripts/upstream-release-bot.py --dry-run --package ripgrep
 ```
 
-For operator review/update steps, see `scripts/registry-seed-runbook.md`.
+For operator review/update steps, see `scripts/registry-update-runbook.md`.
 
 ## Registry Preflight (Local + CI)
 

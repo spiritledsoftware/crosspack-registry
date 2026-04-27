@@ -55,18 +55,9 @@ class RegistryValidateSourceTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         self.assertIn("Validation passed", result.stdout)
 
-    def test_every_packaged_package_has_source_config(self) -> None:
-        packages_root = REPO_ROOT / "packages"
-        sources_root = REPO_ROOT / "registry" / "sources"
-        packaged_packages = {
-            p.stem
-            for p in packages_root.glob("*.toml")
-            if p.is_file() and p.suffix == ".toml"
-        }
-        source_packages = {p.stem for p in sources_root.glob("*.toml")}
-
-        missing = sorted(packaged_packages - source_packages)
-        self.assertEqual(missing, [], msg=f"Missing source configs: {missing}")
+    def test_package_templates_are_the_only_source_configs(self) -> None:
+        self.assertTrue((REPO_ROOT / "packages").is_dir())
+        self.assertFalse((REPO_ROOT / "registry" / "sources").exists())
 
     def test_valid_source_config_passes(self) -> None:
         with tempfile.TemporaryDirectory(prefix="source-config-") as tmp:

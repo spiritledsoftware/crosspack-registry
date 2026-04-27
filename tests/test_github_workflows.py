@@ -17,6 +17,15 @@ class GitHubWorkflowTests(unittest.TestCase):
         self.assertIn("      - completed", quality_gate)
         self.assertIn("      - main", quality_gate)
 
+    def test_upstream_release_bot_uses_package_templates_directly(self) -> None:
+        workflow = (REPO_ROOT / ".github" / "workflows" / "upstream-release-bot.yml").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("python3 scripts/registry-validate-source.py packages/*.toml", workflow)
+        self.assertNotIn("registry/sources", workflow)
+        self.assertNotIn("seed-definitions", workflow)
+
 
 if __name__ == "__main__":
     unittest.main()

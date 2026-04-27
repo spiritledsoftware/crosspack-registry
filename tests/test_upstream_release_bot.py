@@ -68,7 +68,7 @@ class UpstreamReleaseBotTests(unittest.TestCase):
                     repo = "BurntSushi/ripgrep"
 
                     [source.checksum]
-                    kind = "download_sha256"
+                    kind = "asset_digest"
 
                     [source.asset]
                     kind = "release_asset_url"
@@ -124,7 +124,7 @@ class UpstreamReleaseBotTests(unittest.TestCase):
                     repo = "BurntSushi/ripgrep"
 
                     [source.checksum]
-                    kind = "download_sha256"
+                    kind = "asset_digest"
 
                     [source.asset]
                     kind = "release_asset_url"
@@ -218,9 +218,9 @@ class UpstreamReleaseBotTests(unittest.TestCase):
     def test_skips_incomplete_release_instead_of_failing(self) -> None:
         with tempfile.TemporaryDirectory(prefix="release-bot-") as tmp:
             tmp_path = Path(tmp)
-            sources_dir = tmp_path / "registry" / "sources"
-            sources_dir.mkdir(parents=True)
-            config_path = sources_dir / "fd.toml"
+            packages_dir = tmp_path / "packages"
+            packages_dir.mkdir(parents=True)
+            config_path = packages_dir / "fd.toml"
             config_path.write_text(
                 textwrap.dedent(
                     """
@@ -434,6 +434,82 @@ class UpstreamReleaseBotTests(unittest.TestCase):
         self.assertEqual(len(planned), 1)
         self.assertEqual(planned[0].package, "node")
         self.assertEqual(planned[0].version, "22.22.2")
+
+    def test_main_reads_package_templates_by_default(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="release-bot-") as tmp:
+            tmp_path = Path(tmp)
+            packages_dir = tmp_path / "packages"
+            packages_dir.mkdir(parents=True)
+            config_path = packages_dir / "ripgrep.toml"
+            config_path.write_text(
+                textwrap.dedent(
+                    """
+                    name = "ripgrep"
+                    license = "MIT OR Unlicense"
+                    homepage = "https://github.com/BurntSushi/ripgrep"
+
+                    [source.release]
+                    kind = "github_releases"
+                    repo = "BurntSushi/ripgrep"
+
+                    [source.checksum]
+                    kind = "asset_digest"
+
+                    [source.asset]
+                    kind = "release_asset_url"
+
+                    [[artifacts]]
+                    target = "x86_64-unknown-linux-gnu"
+                    asset = "ripgrep-{version}-x86_64-unknown-linux-musl.tar.gz"
+                    archive = "tar.gz"
+                    strip_components = 1
+
+                    [[artifacts.binaries]]
+                    name = "rg"
+                    path = "rg"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+
+            stdout = io.StringIO()
+            generator = load_generator_module()
+            previous_cwd = Path.cwd()
+            os.chdir(tmp_path)
+            try:
+                with (
+                    mock.patch.object(
+                        self.bot,
+                        "_load_generator_module",
+                        return_value=generator,
+                    ),
+                    mock.patch.object(
+                        self.bot,
+                        "fetch_github_releases",
+                        return_value=[
+                            {
+                                "tag_name": "15.2.0",
+                                "draft": False,
+                                "prerelease": False,
+                                "assets": [
+                                    {
+                                        "name": "ripgrep-15.2.0-x86_64-unknown-linux-musl.tar.gz",
+                                        "browser_download_url": "https://example.invalid/ripgrep.tar.gz",
+                                        "digest": "sha256:88fd1ce767091fd8d4a99fdb2356e98c819f93f3b1f8663853a2dee9b438068a",
+                                    }
+                                ],
+                            }
+                        ],
+                    ),
+                    contextlib.redirect_stdout(stdout),
+                ):
+                    result = self.bot.main(["--dry-run", "--package", "ripgrep"])
+            finally:
+                os.chdir(previous_cwd)
+
+        self.assertEqual(result, 0)
+        self.assertIn("[dry-run] would generate releases/ripgrep/15.2.0.toml", stdout.getvalue())
 
 
 if __name__ == "__main__":

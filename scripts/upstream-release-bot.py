@@ -497,16 +497,10 @@ def main(argv: list[str]) -> int:
         description="Generate/update manifests from upstream releases"
     )
     parser.add_argument(
-        "--sources-root",
-        type=Path,
-        default=Path("registry/sources"),
-        help="Path containing source configs",
-    )
-    parser.add_argument(
         "--packages-root",
         type=Path,
         default=Path("packages"),
-        help="Registry package template directory",
+        help="Registry package template/source directory",
     )
     parser.add_argument(
         "--releases-root",
@@ -531,12 +525,12 @@ def main(argv: list[str]) -> int:
     generator = _load_generator_module(repo_root)
 
     package_filter = set(args.package or [])
-    config_paths = sorted(args.sources_root.glob("*.toml"))
+    config_paths = sorted(args.packages_root.glob("*.toml"))
     if package_filter:
         config_paths = [p for p in config_paths if p.stem in package_filter]
 
     if not config_paths:
-        print("No source configs selected")
+        print("No package configs selected")
         return 0
 
     github_token = __import__("os").environ.get("GITHUB_TOKEN")
