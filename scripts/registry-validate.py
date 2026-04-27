@@ -21,6 +21,7 @@ RELEASE_KIND_VALUES = {
 VERSION_KIND_VALUES = {"asset_name_regex", "github_tag", "prefixed_semver_field", "regex_capture", "semver_field"}
 CHECKSUM_KIND_VALUES = {"asset_digest", "download_sha256", "download_index", "shasums256", "url_sha256"}
 ASSET_KIND_VALUES = {"json_index_asset", "release_asset_url", "templated"}
+INTEGRATION_KIND_VALUES = {"docker_cli_plugin", "path_plugin", "service"}
 
 
 def err(errors: list[str], path: Path, message: str) -> None:
@@ -73,6 +74,48 @@ def validate_common_artifact_template_fields(
         err(errors, path, f"{prefix}.strip_components must be an integer >= 0")
 
 
+def validate_integrations(path: Path, doc: dict, errors: list[str]) -> None:
+    integrations = doc.get("integrations", [])
+    if not isinstance(integrations, list):
+        err(errors, path, "integrations must be an array when present")
+        return
+
+    seen: set[str] = set()
+    for idx, integration in enumerate(integrations, start=1):
+        prefix = f"integrations[{idx}]"
+        if not isinstance(integration, dict):
+            err(errors, path, f"{prefix} must be a table")
+            continue
+        kind = integration.get("kind")
+        if not isinstance(kind, str) or kind not in INTEGRATION_KIND_VALUES:
+            err(errors, path, f"{prefix}.kind must be a supported integration kind")
+            continue
+        source = integration.get("source")
+        if not isinstance(source, str) or not source.strip():
+            err(errors, path, f"{prefix}.source must be a non-empty string")
+        elif not is_relative_without_parent_segments(source):
+            err(errors, path, f"{prefix}.source must be relative and must not contain '..'")
+        name = integration.get("name")
+        if not isinstance(name, str) or not name.strip():
+            err(errors, path, f"{prefix}.name must be a non-empty string")
+            continue
+        if kind == "path_plugin":
+            host = integration.get("host")
+            if not isinstance(host, str) or not host.strip():
+                err(errors, path, f"{prefix}.host must be a non-empty string")
+                continue
+            key = f"{kind}:{host}:{name}"
+        else:
+            key = f"{kind}:{name}"
+        if kind == "service":
+            enable = integration.get("enable")
+            if enable is not None and not isinstance(enable, bool):
+                err(errors, path, f"{prefix}.enable must be a boolean when present")
+        if key in seen:
+            err(errors, path, f"duplicate integration declaration `{key}`")
+        seen.add(key)
+
+
 def validate_package_manifest(path: Path, doc: dict, errors: list[str]) -> None:
     name_ok = expect_nonempty_str(doc.get("name"), "name", errors, path)
     expect_nonempty_str(doc.get("license"), "license", errors, path)
@@ -80,6 +123,8 @@ def validate_package_manifest(path: Path, doc: dict, errors: list[str]) -> None:
 
     if homepage_ok and not str(doc["homepage"]).startswith("https://"):
         err(errors, path, "invalid `homepage` (must start with https://)")
+
+    validate_integrations(path, doc, errors)
 
     source = doc.get("source")
     if not isinstance(source, dict):
@@ -356,6 +401,8 @@ def validate_package_manifest(path: Path, doc: dict, errors: list[str]) -> None:
 def validate_release_manifest(path: Path, doc: dict, errors: list[str]) -> None:
     name_ok = expect_nonempty_str(doc.get("name"), "name", errors, path)
     version_ok = expect_nonempty_str(doc.get("version"), "version", errors, path)
+
+    validate_integrations(path, doc, errors)
 
     if version_ok and not SEMVER_RE.fullmatch(str(doc["version"])):
         err(

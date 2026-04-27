@@ -1,0 +1,33 @@
+name = "kubectx"
+version = "0.11.0"
+
+[[integrations]]
+kind = "path_plugin"
+host = "kubectl"
+name = "ctx"
+source = "kubectx"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/ahmetb/kubectx/releases/download/v0.11.0/kubectx_v0.11.0_linux_x86_64.tar.gz"
+sha256 = "08e031c54fbffb3f100e904e4eae94bba2730fedf4869921fda79e4d7a8f5d4c"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/ahmetb/kubectx/releases/download/v0.11.0/kubectx_v0.11.0_linux_arm64.tar.gz"
+sha256 = "1dac2072216689e773325cb7587b858ea7415706ebcf04e23bf80e7e70555340"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/ahmetb/kubectx/releases/download/v0.11.0/kubectx_v0.11.0_darwin_x86_64.tar.gz"
+sha256 = "80097893b478c55be51ffe826c172f0fd5095d23cca02adbcbcabc412700a689"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/ahmetb/kubectx/releases/download/v0.11.0/kubectx_v0.11.0_darwin_arm64.tar.gz"
+sha256 = "b8c9b5150ca6d902474a115cf7e535831081b9ae10cbe561ea36c82bb3823d02"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/ahmetb/kubectx/releases/download/v0.11.0/kubectx_v0.11.0_windows_x86_64.zip"
+sha256 = "a28fc2f0c69e715c34ea6d7520b9a17aa00cea642ff6fab0c64614d436d47a5d"

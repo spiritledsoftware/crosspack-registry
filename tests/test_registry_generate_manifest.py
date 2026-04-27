@@ -158,6 +158,55 @@ class RegistryGenerateManifestTests(unittest.TestCase):
             self.assertNotIn("license =", rendered)
             self.assertNotIn("homepage =", rendered)
 
+    def test_generates_package_and_release_text_with_integrations(self) -> None:
+        doc = {
+            "name": "kubectx",
+            "license": "Apache-2.0",
+            "homepage": "https://github.com/ahmetb/kubectx",
+            "source": {
+                "release": {"kind": "github_releases", "repo": "ahmetb/kubectx"},
+                "checksum": {"kind": "asset_digest"},
+                "asset": {"kind": "release_asset_url"},
+            },
+            "integrations": [
+                {
+                    "kind": "path_plugin",
+                    "host": "kubectl",
+                    "name": "ctx",
+                    "source": "kubectl-ctx",
+                }
+            ],
+            "artifacts": [
+                {
+                    "target": "x86_64-unknown-linux-gnu",
+                    "asset": "kubectx_v{version}_linux_x86_64.tar.gz",
+                    "archive": "tar.gz",
+                    "strip_components": 0,
+                    "binaries": [{"name": "kubectl-ctx", "path": "kubectx"}],
+                }
+            ],
+        }
+
+        package_text = self.generator.render_package_text(doc)
+        release_text = self.generator.render_release_text(
+            {
+                "name": "kubectx",
+                "version": "0.9.5",
+                "integrations": doc["integrations"],
+                "artifacts": [
+                    {
+                        "target": "x86_64-unknown-linux-gnu",
+                        "url": "https://example.invalid/kubectx.tar.gz",
+                        "sha256": "a" * 64,
+                    }
+                ],
+            }
+        )
+
+        self.assertIn('[[integrations]]\nkind = "path_plugin"', package_text)
+        self.assertIn('host = "kubectl"', package_text)
+        self.assertIn('[[integrations]]\nkind = "path_plugin"', release_text)
+
     def test_download_retries_transient_http_error(self) -> None:
         with tempfile.TemporaryDirectory(prefix="manifest-gen-") as tmp:
             dest = Path(tmp) / "artifact.tar.gz"
