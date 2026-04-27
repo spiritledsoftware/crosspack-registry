@@ -53,28 +53,32 @@ Manifest updates do not need to be hand-authored for configured packages.
 
 ### Generalized source model
 
-Source configs now support a generalized schema under `[source.*]` so new upstream patterns can be expressed by composing release discovery, checksum loading, and asset URL behavior instead of adding a new top-level provider enum by default.
+Source configs use a generalized schema under `[source.*]` so new upstream patterns can be expressed by composing release discovery, version derivation, checksum loading, and asset URL behavior instead of adding package-specific source kinds.
 
 Current supported strategies:
 
 - `[source.release]`
   - `kind = "github_releases"` with `repo` and optional `tag_prefix` / `include_prereleases`
-  - `kind = "go_dist_index"` for official Go download metadata
-  - `kind = "node_dist_index"` with `major` and optional `include_prereleases`
-  - `kind = "python_build_standalone"` with `repo` and `python_major_minor`
-  - `kind = "rustup_static"` for Rustup stable static archive metadata
-  - `kind = "zig_download_index"` for official Zig download metadata
+  - `kind = "json_index"` with `url` for array/object JSON indexes such as Node, Go, and Zig
+  - `kind = "text_endpoint"` with `url` and `version_regex` for simple text metadata such as rustup stable metadata
+- `[source.version]`
+  - `kind = "github_tag"` for SemVer release tags
+  - `kind = "semver_field"` for indexes that already expose a SemVer string field
+  - `kind = "prefixed_semver_field"` for fields such as `v22.22.2` or `go1.26.2`
+  - `kind = "asset_name_regex"` for deriving a version from release asset names
+  - `kind = "regex_capture"` for extracting a SemVer value from a release field
 - `[source.checksum]`
+  - `kind = "asset_digest"` for GitHub release assets that expose `sha256:<hex>` digests
   - `kind = "download_index"` for upstream indexes that already contain SHA-256 values
   - `kind = "download_sha256"` for GitHub-style releases where the registry hashes downloaded assets
   - `kind = "shasums256"` with `url_template` for upstreams that publish a checksum manifest
   - `kind = "url_sha256"` for per-asset `.sha256` sidecar URLs
 - `[source.asset]`
-  - `kind = "download_index"` for upstream indexes that include resolved asset URLs
+  - `kind = "json_index_asset"` for upstream indexes that include resolved asset URLs and checksums
   - `kind = "release_asset_url"` for direct release asset URLs from the release feed
   - `kind = "templated"` with `base_url` for deterministic URL construction from artifact templates
 
-Legacy `provider = "github"` and `provider = "nodejs-dist"` source definitions are still normalized by tooling for compatibility during migration, but new configs should prefer the generalized `[source.release]`, `[source.checksum]`, and `[source.asset]` tables.
+Legacy `provider = "github"` and `provider = "nodejs-dist"` source definitions are still normalized by tooling for compatibility during migration, but new configs should prefer the generalized `[source.release]`, `[source.version]`, `[source.checksum]`, and `[source.asset]` tables.
 
 Useful commands:
 

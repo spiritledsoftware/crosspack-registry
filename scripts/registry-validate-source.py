@@ -21,14 +21,12 @@ TARGET_RE = re.compile(r"^[A-Za-z0-9._-]+$")
 REPO_RE = re.compile(r"^[^/\s]+/[^/\s]+$")
 RELEASE_KIND_VALUES = {
     "github_releases",
-    "go_dist_index",
-    "node_dist_index",
-    "python_build_standalone",
-    "rustup_static",
-    "zig_download_index",
+    "json_index",
+    "text_endpoint",
 }
-CHECKSUM_KIND_VALUES = {"download_sha256", "download_index", "shasums256", "url_sha256"}
-ASSET_KIND_VALUES = {"download_index", "release_asset_url", "templated"}
+VERSION_KIND_VALUES = {"asset_name_regex", "github_tag", "prefixed_semver_field", "regex_capture", "semver_field"}
+CHECKSUM_KIND_VALUES = {"asset_digest", "download_sha256", "download_index", "shasums256", "url_sha256"}
+ASSET_KIND_VALUES = {"json_index_asset", "release_asset_url", "templated"}
 
 
 def _expect_non_empty_str(obj: dict, key: str, ctx: str) -> str:
@@ -44,6 +42,19 @@ def _expect_optional_non_negative_int(obj: dict, key: str, ctx: str) -> None:
     value = obj[key]
     if isinstance(value, bool) or not isinstance(value, int) or value < 0:
         raise ValidationError(f"{ctx}.{key} must be an integer >= 0")
+
+
+def _expect_optional_bool(obj: dict, key: str, ctx: str) -> None:
+    if key in obj and not isinstance(obj[key], bool):
+        raise ValidationError(f"{ctx}.{key} must be a boolean")
+
+
+def _expect_optional_str_array(obj: dict, key: str, ctx: str) -> None:
+    if key not in obj:
+        return
+    value = obj[key]
+    if not isinstance(value, list) or not all(isinstance(item, str) and item for item in value):
+        raise ValidationError(f"{ctx}.{key} must be a string array")
 
 
 def validate_source_config(doc: dict) -> None:
@@ -71,21 +82,24 @@ def validate_source_config(doc: dict) -> None:
             repo = _expect_non_empty_str(release, "repo", "manifest.source.release")
             if not REPO_RE.fullmatch(repo):
                 raise ValidationError("manifest.source.release.repo must look like owner/name")
-        elif release_kind == "python_build_standalone":
-            repo = _expect_non_empty_str(release, "repo", "manifest.source.release")
-            if not REPO_RE.fullmatch(repo):
-                raise ValidationError("manifest.source.release.repo must look like owner/name")
-            python_major_minor = _expect_non_empty_str(
-                release, "python_major_minor", "manifest.source.release"
-            )
-            if not re.fullmatch(r"\d+\.\d+", python_major_minor):
-                raise ValidationError(
-                    "manifest.source.release.python_major_minor must look like MAJOR.MINOR"
-                )
-        elif release_kind == "node_dist_index":
-            major = release.get("major")
-            if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
-                raise ValidationError("manifest.source.release.major must be an integer > 0")
+        elif release_kind in {"json_index", "text_endpoint"}:
+            url = _expect_non_empty_str(release, "url", "manifest.source.release")
+            if not url.startswith("https://"):
+                raise ValidationError("manifest.source.release.url must start with https://")
+            if release_kind == "json_index":
+                entries = release.get("entries")
+                if entries is not None and entries not in {"array", "object_values"}:
+                    raise ValidationError("manifest.source.release.entries must be 'array' or 'object_values'")
+                _expect_optional_bool(release, "version_from_key", "manifest.source.release")
+                _expect_optional_str_array(release, "skip_keys", "manifest.source.release")
+                stable_field = release.get("stable_field")
+                if stable_field is not None and not isinstance(stable_field, str):
+                    raise ValidationError("manifest.source.release.stable_field must be a string")
+                sort_semver_field = release.get("sort_semver_field")
+                if sort_semver_field is not None and not isinstance(sort_semver_field, str):
+                    raise ValidationError("manifest.source.release.sort_semver_field must be a string")
+            else:
+                _expect_non_empty_str(release, "version_regex", "manifest.source.release")
 
         include_prereleases = release.get("include_prereleases")
         if include_prereleases is not None and not isinstance(include_prereleases, bool):
@@ -95,16 +109,30 @@ def validate_source_config(doc: dict) -> None:
         if tag_prefix is not None and not isinstance(tag_prefix, str):
             raise ValidationError("manifest.source.release.tag_prefix must be a string")
 
+        version = source.get("version")
+        if isinstance(version, dict):
+            version_kind = _expect_non_empty_str(version, "kind", "manifest.source.version")
+            if version_kind not in VERSION_KIND_VALUES:
+                raise ValidationError("manifest.source.version.kind must be a supported version strategy")
+            if version_kind in {"prefixed_semver_field", "regex_capture", "semver_field"}:
+                _expect_non_empty_str(version, "field", "manifest.source.version")
+            if version_kind in {"asset_name_regex", "regex_capture"}:
+                _expect_non_empty_str(version, "pattern", "manifest.source.version")
+            for key in ("prefix", "require_prefix"):
+                value = version.get(key)
+                if value is not None and not isinstance(value, str):
+                    raise ValidationError(f"manifest.source.version.{key} must be a string")
+
         checksum_kind = _expect_non_empty_str(checksum, "kind", "manifest.source.checksum")
         if checksum_kind not in CHECKSUM_KIND_VALUES:
             raise ValidationError(
                 "manifest.source.checksum.kind must be a supported checksum strategy"
             )
-        if checksum_kind == "shasums256":
+        if checksum_kind in {"shasums256", "url_sha256"}:
             url_template = _expect_non_empty_str(
                 checksum, "url_template", "manifest.source.checksum"
             )
-            if not url_template.startswith("https://"):
+            if checksum_kind == "shasums256" and not url_template.startswith("https://"):
                 raise ValidationError(
                     "manifest.source.checksum.url_template must start with https://"
                 )
@@ -115,9 +143,25 @@ def validate_source_config(doc: dict) -> None:
                 "manifest.source.asset.kind must be a supported asset strategy"
             )
         if asset_kind == "templated":
-            base_url = _expect_non_empty_str(asset, "base_url", "manifest.source.asset")
-            if not base_url.startswith("https://"):
-                raise ValidationError("manifest.source.asset.base_url must start with https://")
+            if "url_template" in asset:
+                _expect_non_empty_str(asset, "url_template", "manifest.source.asset")
+            else:
+                base_url = _expect_non_empty_str(asset, "base_url", "manifest.source.asset")
+                if not base_url.startswith("https://"):
+                    raise ValidationError("manifest.source.asset.base_url must start with https://")
+        elif asset_kind == "json_index_asset":
+            array_field = asset.get("asset_array_field")
+            if array_field is not None:
+                if not isinstance(array_field, str) or not array_field:
+                    raise ValidationError("manifest.source.asset.asset_array_field must be a string")
+                _expect_non_empty_str(asset, "name_field", "manifest.source.asset")
+            if "url_field" in asset:
+                _expect_non_empty_str(asset, "url_field", "manifest.source.asset")
+            else:
+                url_template = _expect_non_empty_str(asset, "url_template", "manifest.source.asset")
+                if not url_template.startswith("https://"):
+                    raise ValidationError("manifest.source.asset.url_template must start with https://")
+            _expect_non_empty_str(asset, "checksum_field", "manifest.source.asset")
     else:
         provider = _expect_non_empty_str(source, "provider", "manifest.source")
         if provider == "github":

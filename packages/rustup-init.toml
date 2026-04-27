@@ -3,11 +3,17 @@ license = "MIT OR Apache-2.0"
 homepage = "https://rustup.rs/"
 
 [source.release]
-kind = "rustup_static"
-include_prereleases = false
+kind = "text_endpoint"
+url = "https://static.rust-lang.org/rustup/release-stable.toml"
+version_regex = "^version\\s*=\\s*'([^']+)'"
+
+[source.version]
+kind = "semver_field"
+field = "version"
 
 [source.checksum]
 kind = "url_sha256"
+url_template = "{url}.sha256"
 
 [source.asset]
 kind = "templated"

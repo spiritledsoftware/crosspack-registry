@@ -197,9 +197,14 @@ class RegistryValidateSourceTests(unittest.TestCase):
                     homepage = "https://nodejs.org/"
 
                     [source.release]
-                    kind = "node_dist_index"
-                    major = 22
-                    include_prereleases = false
+                    kind = "json_index"
+                    url = "https://nodejs.org/dist/index.json"
+
+                    [source.version]
+                    kind = "prefixed_semver_field"
+                    field = "version"
+                    prefix = "v"
+                    require_prefix = "v22."
 
                     [source.checksum]
                     kind = "shasums256"
@@ -248,14 +253,23 @@ class RegistryValidateSourceTests(unittest.TestCase):
                     homepage = "https://go.dev/"
 
                     [source.release]
-                    kind = "go_dist_index"
+                    kind = "json_index"
+                    url = "https://go.dev/dl/?mode=json"
+
+                    [source.version]
+                    kind = "prefixed_semver_field"
+                    field = "version"
+                    prefix = "go"
 
                     [source.checksum]
                     kind = "download_index"
 
                     [source.asset]
-                    kind = "templated"
-                    base_url = "https://go.dev/dl"
+                    kind = "json_index_asset"
+                    asset_array_field = "files"
+                    name_field = "filename"
+                    checksum_field = "sha256"
+                    url_template = "https://go.dev/dl/{asset}"
 
                     [[artifacts]]
                     target = "x86_64-unknown-linux-gnu"
@@ -273,12 +287,15 @@ class RegistryValidateSourceTests(unittest.TestCase):
                     homepage = "https://github.com/astral-sh/python-build-standalone"
 
                     [source.release]
-                    kind = "python_build_standalone"
+                    kind = "github_releases"
                     repo = "astral-sh/python-build-standalone"
-                    python_major_minor = "3.14"
+
+                    [source.version]
+                    kind = "asset_name_regex"
+                    pattern = '^cpython-(3\\.14\\.\\d+\\+{tag_name})-'
 
                     [source.checksum]
-                    kind = "download_sha256"
+                    kind = "asset_digest"
 
                     [source.asset]
                     kind = "release_asset_url"
@@ -299,10 +316,17 @@ class RegistryValidateSourceTests(unittest.TestCase):
                     homepage = "https://rustup.rs/"
 
                     [source.release]
-                    kind = "rustup_static"
+                    kind = "text_endpoint"
+                    url = "https://static.rust-lang.org/rustup/release-stable.toml"
+                    version_regex = "^version\\\\s*=\\\\s*'([^']+)'"
+
+                    [source.version]
+                    kind = "semver_field"
+                    field = "version"
 
                     [source.checksum]
                     kind = "url_sha256"
+                    url_template = "{url}.sha256"
 
                     [source.asset]
                     kind = "templated"
@@ -323,13 +347,23 @@ class RegistryValidateSourceTests(unittest.TestCase):
                     homepage = "https://ziglang.org/"
 
                     [source.release]
-                    kind = "zig_download_index"
+                    kind = "json_index"
+                    url = "https://ziglang.org/download/index.json"
+                    entries = "object_values"
+                    version_from_key = true
+                    skip_keys = ["master"]
+
+                    [source.version]
+                    kind = "semver_field"
+                    field = "version"
 
                     [source.checksum]
                     kind = "download_index"
 
                     [source.asset]
-                    kind = "download_index"
+                    kind = "json_index_asset"
+                    url_field = "tarball"
+                    checksum_field = "shasum"
 
                     [[artifacts]]
                     target = "x86_64-unknown-linux-gnu"

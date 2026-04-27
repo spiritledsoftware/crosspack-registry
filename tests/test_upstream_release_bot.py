@@ -175,12 +175,15 @@ class UpstreamReleaseBotTests(unittest.TestCase):
                     homepage = "https://github.com/astral-sh/python-build-standalone"
 
                     [source.release]
-                    kind = "python_build_standalone"
+                    kind = "github_releases"
                     repo = "astral-sh/python-build-standalone"
-                    python_major_minor = "3.14"
+
+                    [source.version]
+                    kind = "asset_name_regex"
+                    pattern = '^cpython-(3\\.14\\.\\d+\\+{tag_name})-'
 
                     [source.checksum]
-                    kind = "download_sha256"
+                    kind = "asset_digest"
 
                     [source.asset]
                     kind = "release_asset_url"
@@ -385,9 +388,14 @@ class UpstreamReleaseBotTests(unittest.TestCase):
                     homepage = "https://nodejs.org/"
 
                     [source.release]
-                    kind = "node_dist_index"
-                    major = 22
-                    include_prereleases = false
+                    kind = "json_index"
+                    url = "https://nodejs.org/dist/index.json"
+
+                    [source.version]
+                    kind = "prefixed_semver_field"
+                    field = "version"
+                    prefix = "v"
+                    require_prefix = "v22."
 
                     [source.checksum]
                     kind = "shasums256"

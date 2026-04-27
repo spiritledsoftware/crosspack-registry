@@ -29,14 +29,11 @@ NODE_DIST_VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
 DOWNLOAD_ATTEMPTS = 3
 RELEASE_KIND_VALUES = {
     "github_releases",
-    "go_dist_index",
-    "node_dist_index",
-    "python_build_standalone",
-    "rustup_static",
-    "zig_download_index",
+    "json_index",
+    "text_endpoint",
 }
-CHECKSUM_KIND_VALUES = {"download_sha256", "download_index", "shasums256", "url_sha256"}
-ASSET_KIND_VALUES = {"download_index", "release_asset_url", "templated"}
+CHECKSUM_KIND_VALUES = {"asset_digest", "download_sha256", "download_index", "shasums256", "url_sha256"}
+ASSET_KIND_VALUES = {"json_index_asset", "release_asset_url", "templated"}
 
 
 def _escape(value: str) -> str:
@@ -54,6 +51,13 @@ def _line(key: str, value: object) -> str:
         str_values = ", ".join(f'"{_escape(str(v))}"' for v in value)
         return f"{key} = [{str_values}]"
     raise GenerateError(f"unsupported TOML value type for {key}")
+
+
+def _render_table(chunks: list[str], header: str, table: dict) -> None:
+    chunks.append(header)
+    for key, value in table.items():
+        chunks.append(_line(key, value))
+    chunks.append("")
 
 
 def _render_artifact_templates(chunks: list[str], artifacts: list[dict]) -> None:
@@ -201,8 +205,12 @@ def normalize_source(source: dict) -> dict:
     release = source.get("release")
     checksum = source.get("checksum")
     asset = source.get("asset")
+    version = source.get("version")
     if isinstance(release, dict) and isinstance(checksum, dict) and isinstance(asset, dict):
-        return {"release": release, "checksum": checksum, "asset": asset}
+        normalized = {"release": release, "checksum": checksum, "asset": asset}
+        if isinstance(version, dict):
+            normalized["version"] = version
+        return normalized
 
     provider = source.get("provider")
     if provider == "github":
@@ -219,6 +227,7 @@ def normalize_source(source: dict) -> dict:
             normalized_release["tag_prefix"] = tag_prefix
         return {
             "release": normalized_release,
+            "version": {"kind": "github_tag"},
             "checksum": {"kind": "download_sha256"},
             "asset": {"kind": "release_asset_url"},
         }
@@ -230,9 +239,14 @@ def normalize_source(source: dict) -> dict:
         base_url = _build_nodejs_dist_base_url(major=major)
         return {
             "release": {
-                "kind": "node_dist_index",
-                "major": major,
-                "include_prereleases": bool(source.get("include_prereleases", False)),
+                "kind": "json_index",
+                "url": "https://nodejs.org/dist/index.json",
+            },
+            "version": {
+                "kind": "prefixed_semver_field",
+                "field": "version",
+                "prefix": "v",
+                "require_prefix": f"v{major}.",
             },
             "checksum": {
                 "kind": "shasums256",
@@ -252,149 +266,152 @@ def render_source_text(chunks: list[str], source: dict) -> None:
     checksum = normalized["checksum"]
     asset = normalized["asset"]
 
-    chunks.append("[source.release]")
-    chunks.append(_line("kind", release["kind"]))
-    for key in ("repo", "tag_prefix", "include_prereleases", "major", "python_major_minor"):
-        if key in release:
-            chunks.append(_line(key, release[key]))
-    chunks.append("")
-
-    chunks.append("[source.checksum]")
-    chunks.append(_line("kind", checksum["kind"]))
-    if "url_template" in checksum:
-        chunks.append(_line("url_template", checksum["url_template"]))
-    chunks.append("")
-
-    chunks.append("[source.asset]")
-    chunks.append(_line("kind", asset["kind"]))
-    if "base_url" in asset:
-        chunks.append(_line("base_url", asset["base_url"]))
-    chunks.append("")
+    _render_table(chunks, "[source.release]", release)
+    version = normalized.get("version")
+    if isinstance(version, dict):
+        _render_table(chunks, "[source.version]", version)
+    _render_table(chunks, "[source.checksum]", checksum)
+    _render_table(chunks, "[source.asset]", asset)
 
 
-def _build_nodejs_dist_release_artifacts(
+def _read_checksum_url(url: str) -> str:
+    with tempfile.TemporaryDirectory(prefix="manifest-gen-") as tmp:
+        checksum_path = Path(tmp) / "artifact.sha256"
+        download(url, checksum_path)
+        checksum_parts = checksum_path.read_text(encoding="utf-8").split()
+    if not checksum_parts:
+        raise GenerateError(f"missing checksum from {url}")
+    checksum = checksum_parts[0]
+    if not re.fullmatch(r"[0-9a-fA-F]{64}", checksum):
+        raise GenerateError(f"invalid checksum from {url}")
+    return checksum
+
+
+def _download_checksum(url: str, *, downloader) -> str:
+    with tempfile.TemporaryDirectory(prefix="manifest-gen-") as tmp:
+        artifact_path = Path(tmp) / "artifact"
+        downloader(url, artifact_path)
+        return sha256_file(artifact_path)
+
+
+def _checksum_from_release_asset(*, release_asset: dict, asset_name: str) -> str:
+    digest = release_asset.get("digest")
+    if not isinstance(digest, str) or not digest.startswith("sha256:"):
+        raise GenerateError(f"missing GitHub sha256 digest for asset '{asset_name}'")
+    checksum = digest.removeprefix("sha256:")
+    if not re.fullmatch(r"[0-9a-fA-F]{64}", checksum):
+        raise GenerateError(f"invalid GitHub sha256 digest for asset '{asset_name}'")
+    return checksum
+
+
+def _find_json_index_asset(*, release: dict, asset: dict, asset_name: str, target: str) -> dict:
+    array_field = asset.get("asset_array_field")
+    if isinstance(array_field, str):
+        entries = release.get(array_field)
+        if not isinstance(entries, list):
+            raise GenerateError(f"json index asset array '{array_field}' missing for target '{target}'")
+        name_field = asset.get("name_field")
+        if not isinstance(name_field, str) or not name_field:
+            raise GenerateError("json_index_asset requires source.asset.name_field with asset_array_field")
+        for entry in entries:
+            if isinstance(entry, dict) and entry.get(name_field) == asset_name:
+                return entry
+        raise GenerateError(f"missing JSON index asset '{asset_name}' for target '{target}'")
+
+    entry = release.get(asset_name)
+    if not isinstance(entry, dict):
+        raise GenerateError(f"missing JSON index asset '{asset_name}' for target '{target}'")
+    return entry
+
+
+def _build_generic_release_artifacts(
     *,
     config: dict,
+    release: dict,
     version: str,
+    downloader,
     shasums_by_name: dict[str, str] | None,
 ) -> list[dict]:
-    source = config.get("source")
-    if not isinstance(source, dict):
-        raise GenerateError("source config requires a source table")
-    normalized = normalize_source(source)
-    release = normalized["release"]
+    normalized = normalize_source(config["source"])
+    checksum = normalized["checksum"]
+    checksum_kind = checksum.get("kind")
     asset = normalized["asset"]
-    major = release.get("major")
-    if isinstance(major, bool) or not isinstance(major, int) or major <= 0:
-        raise GenerateError("node dist release config requires release.major > 0")
-    if not NODE_DIST_VERSION_RE.fullmatch(version):
-        raise GenerateError("node dist releases require a normalized semver version")
-    if shasums_by_name is None:
-        raise GenerateError("node dist generation requires shasums_by_name")
-
-    base_url = asset.get("base_url")
-    if not isinstance(base_url, str) or not base_url.startswith("https://"):
-        raise GenerateError("templated asset config requires source.asset.base_url")
-    release_artifacts: list[dict] = []
-    for artifact in config.get("artifacts", []):
-        target = artifact["target"]
-        asset_name = artifact["asset"].format(version=version, target=target)
-        sha256 = shasums_by_name.get(asset_name)
-        if sha256 is None:
-            raise GenerateError(
-                f"missing SHASUMS256 entry '{asset_name}' for target '{target}'"
-            )
-        release_artifacts.append(
-            {
-                "target": target,
-                "url": f"{base_url}/{asset_name}",
-                "sha256": sha256,
-            }
-        )
-
-    return release_artifacts
-
-
-def _build_go_dist_release_artifacts(*, config: dict, release: dict, version: str) -> list[dict]:
-    files = release.get("files")
-    if not isinstance(files, list):
-        raise GenerateError("go dist release requires files")
-    shasums_by_name = {
-        file["filename"]: file["sha256"]
-        for file in files
-        if isinstance(file, dict)
-        and isinstance(file.get("filename"), str)
-        and isinstance(file.get("sha256"), str)
-    }
-    release_artifacts: list[dict] = []
-    for artifact in config.get("artifacts", []):
-        target = artifact["target"]
-        asset_name = artifact["asset"].format(version=version, target=target)
-        sha256 = shasums_by_name.get(asset_name)
-        if sha256 is None:
-            raise GenerateError(f"missing Go dist checksum '{asset_name}' for target '{target}'")
-        release_artifacts.append(
-            {"target": target, "url": f"https://go.dev/dl/{asset_name}", "sha256": sha256}
-        )
-    return release_artifacts
-
-
-def _build_rustup_static_release_artifacts(*, config: dict, version: str) -> list[dict]:
-    release_artifacts: list[dict] = []
-    for artifact in config.get("artifacts", []):
-        target = artifact["target"]
-        asset_name = artifact["asset"].format(version=version, target=target)
-        url = f"https://static.rust-lang.org/rustup/archive/{version}/{asset_name}"
-        with tempfile.TemporaryDirectory(prefix="manifest-gen-") as tmp:
-            checksum_path = Path(tmp) / "rustup.sha256"
-            download(f"{url}.sha256", checksum_path)
-            checksum_parts = checksum_path.read_text(encoding="utf-8").split()
-        if not checksum_parts:
-            raise GenerateError(f"missing rustup checksum for target '{target}'")
-        release_artifacts.append({"target": target, "url": url, "sha256": checksum_parts[0]})
-    return release_artifacts
-
-
-def _build_zig_download_release_artifacts(*, config: dict, release: dict) -> list[dict]:
-    release_artifacts: list[dict] = []
-    for artifact in config.get("artifacts", []):
-        target = artifact["target"]
-        asset_key = artifact["asset"].format(version=release["version"], target=target)
-        asset = release.get(asset_key)
-        if not isinstance(asset, dict):
-            raise GenerateError(f"missing Zig download index asset '{asset_key}' for target '{target}'")
-        url = asset.get("tarball")
-        sha256 = asset.get("shasum")
-        if not isinstance(url, str) or not url.startswith("https://"):
-            raise GenerateError(f"missing Zig download URL for target '{target}'")
-        if not isinstance(sha256, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", sha256):
-            raise GenerateError(f"missing Zig checksum for target '{target}'")
-        release_artifacts.append({"target": target, "url": url, "sha256": sha256})
-    return release_artifacts
-
-
-def _build_python_standalone_release_artifacts(
-    *, config: dict, release: dict, version: str
-) -> list[dict]:
+    asset_kind = asset.get("kind")
     assets = _asset_map(release)
     release_artifacts: list[dict] = []
+
     for artifact in config.get("artifacts", []):
         target = artifact["target"]
         asset_name = artifact["asset"].format(version=version, target=target)
-        release_asset = assets.get(asset_name)
-        if release_asset is None:
-            raise GenerateError(
-                f"missing python-build-standalone asset '{asset_name}' for target '{target}'"
+
+        release_asset: dict | None = None
+        json_asset: dict | None = None
+        if asset_kind == "release_asset_url":
+            release_asset = assets.get(asset_name)
+            if release_asset is None:
+                raise GenerateError(f"missing release asset '{asset_name}' for target '{target}'")
+            url = release_asset.get("browser_download_url")
+        elif asset_kind == "templated":
+            url_template = asset.get("url_template")
+            if isinstance(url_template, str) and url_template:
+                url = url_template.format(version=version, target=target, asset=asset_name)
+            else:
+                base_url = asset.get("base_url")
+                if not isinstance(base_url, str) or not base_url.startswith("https://"):
+                    raise GenerateError("templated asset config requires source.asset.base_url")
+                url = f"{base_url.rstrip('/')}/{asset_name}"
+        elif asset_kind == "json_index_asset":
+            json_asset = _find_json_index_asset(
+                release=release, asset=asset, asset_name=asset_name, target=target
             )
-        url = release_asset.get("browser_download_url")
-        digest = release_asset.get("digest")
+            url_field = asset.get("url_field")
+            if isinstance(url_field, str):
+                url = json_asset.get(url_field)
+            else:
+                url_template = asset.get("url_template")
+                if not isinstance(url_template, str) or not url_template.startswith("https://"):
+                    raise GenerateError("json_index_asset requires source.asset.url_template or url_field")
+                url = url_template.format(version=version, target=target, asset=asset_name)
+        else:
+            raise GenerateError(f"unsupported asset strategy '{asset_kind}'")
+
         if not isinstance(url, str) or not url.startswith("https://"):
             raise GenerateError(f"invalid download URL for asset '{asset_name}'")
-        if not isinstance(digest, str) or not digest.startswith("sha256:"):
-            raise GenerateError(f"missing GitHub sha256 digest for asset '{asset_name}'")
-        release_artifacts.append(
-            {"target": target, "url": url, "sha256": digest.removeprefix("sha256:")}
-        )
+
+        if checksum_kind == "asset_digest":
+            if release_asset is None:
+                raise GenerateError("asset_digest checksum requires release_asset_url assets")
+            sha256 = _checksum_from_release_asset(release_asset=release_asset, asset_name=asset_name)
+        elif checksum_kind == "download_sha256":
+            sha256 = _download_checksum(url, downloader=downloader)
+        elif checksum_kind == "download_index":
+            if json_asset is None:
+                raise GenerateError("download_index checksum requires json_index_asset assets")
+            checksum_field = asset.get("checksum_field")
+            if not isinstance(checksum_field, str) or not checksum_field:
+                raise GenerateError("download_index checksum requires source.asset.checksum_field")
+            sha256 = json_asset.get(checksum_field)
+        elif checksum_kind == "shasums256":
+            if shasums_by_name is None:
+                raise GenerateError("shasums256 generation requires shasums_by_name")
+            sha256 = shasums_by_name.get(asset_name)
+            if sha256 is None:
+                raise GenerateError(f"missing SHASUMS256 entry '{asset_name}' for target '{target}'")
+        elif checksum_kind == "url_sha256":
+            checksum_template = checksum.get("url_template", "{url}.sha256")
+            if not isinstance(checksum_template, str) or not checksum_template:
+                raise GenerateError("url_sha256 checksum requires source.checksum.url_template")
+            checksum_url = checksum_template.format(
+                url=url, version=version, target=target, asset=asset_name
+            )
+            sha256 = _read_checksum_url(checksum_url)
+        else:
+            raise GenerateError(f"unsupported checksum strategy '{checksum_kind}'")
+
+        if not isinstance(sha256, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", sha256):
+            raise GenerateError(f"invalid checksum for asset '{asset_name}'")
+        release_artifacts.append({"target": target, "url": url, "sha256": sha256})
+
     return release_artifacts
 
 
@@ -415,54 +432,13 @@ def generate_release_text(
     if not isinstance(source, dict):
         raise GenerateError("source config root requires a source table")
     normalized = normalize_source(source)
-    release_kind = normalized["release"].get("kind")
-    if release_kind == "node_dist_index":
-        release_artifacts = _build_nodejs_dist_release_artifacts(
-            config=config,
-            version=version,
-            shasums_by_name=shasums_by_name,
-        )
-    elif release_kind == "go_dist_index":
-        release_artifacts = _build_go_dist_release_artifacts(
-            config=config, release=release, version=version
-        )
-    elif release_kind == "rustup_static":
-        release_artifacts = _build_rustup_static_release_artifacts(config=config, version=version)
-    elif release_kind == "zig_download_index":
-        release_artifacts = _build_zig_download_release_artifacts(config=config, release=release)
-    elif release_kind == "python_build_standalone":
-        release_artifacts = _build_python_standalone_release_artifacts(
-            config=config, release=release, version=version
-        )
-    else:
-        assets = _asset_map(release)
-        release_artifacts: list[dict] = []
-
-        for artifact in config.get("artifacts", []):
-            target = artifact["target"]
-            asset_name = artifact["asset"].format(version=version, target=target)
-            release_asset = assets.get(asset_name)
-            if release_asset is None:
-                raise GenerateError(
-                    f"missing release asset '{asset_name}' for target '{target}'"
-                )
-
-            url = release_asset.get("browser_download_url")
-            if not isinstance(url, str) or not url.startswith("https://"):
-                raise GenerateError(f"invalid download URL for asset '{asset_name}'")
-
-            with tempfile.TemporaryDirectory(prefix="manifest-gen-") as tmp:
-                artifact_path = Path(tmp) / asset_name
-                downloader(url, artifact_path)
-                checksum = sha256_file(artifact_path)
-
-            release_artifacts.append(
-                {
-                    "target": target,
-                    "url": url,
-                    "sha256": checksum,
-                }
-            )
+    release_artifacts = _build_generic_release_artifacts(
+        config=config,
+        release=release,
+        version=version,
+        downloader=downloader,
+        shasums_by_name=shasums_by_name,
+    )
 
     document = {
         "name": config["name"],

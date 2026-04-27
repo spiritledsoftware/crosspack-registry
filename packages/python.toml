@@ -3,13 +3,16 @@ license = "Python-2.0"
 homepage = "https://github.com/astral-sh/python-build-standalone"
 
 [source.release]
-kind = "python_build_standalone"
+kind = "github_releases"
 repo = "astral-sh/python-build-standalone"
-python_major_minor = "3.14"
 include_prereleases = false
 
+[source.version]
+kind = "asset_name_regex"
+pattern = '^cpython-(3\.14\.\d+\+{tag_name})-'
+
 [source.checksum]
-kind = "download_sha256"
+kind = "asset_digest"
 
 [source.asset]
 kind = "release_asset_url"

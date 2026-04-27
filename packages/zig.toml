@@ -3,14 +3,24 @@ license = "MIT"
 homepage = "https://ziglang.org/"
 
 [source.release]
-kind = "zig_download_index"
-include_prereleases = false
+kind = "json_index"
+url = "https://ziglang.org/download/index.json"
+entries = "object_values"
+version_from_key = true
+skip_keys = ["master"]
+sort_semver_field = "version"
+
+[source.version]
+kind = "semver_field"
+field = "version"
 
 [source.checksum]
 kind = "download_index"
 
 [source.asset]
-kind = "download_index"
+kind = "json_index_asset"
+url_field = "tarball"
+checksum_field = "shasum"
 
 [[artifacts]]
 target = "x86_64-unknown-linux-gnu"
