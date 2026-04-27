@@ -59,11 +59,18 @@ Current supported strategies:
 
 - `[source.release]`
   - `kind = "github_releases"` with `repo` and optional `tag_prefix` / `include_prereleases`
+  - `kind = "go_dist_index"` for official Go download metadata
   - `kind = "node_dist_index"` with `major` and optional `include_prereleases`
+  - `kind = "python_build_standalone"` with `repo` and `python_major_minor`
+  - `kind = "rustup_static"` for Rustup stable static archive metadata
+  - `kind = "zig_download_index"` for official Zig download metadata
 - `[source.checksum]`
+  - `kind = "download_index"` for upstream indexes that already contain SHA-256 values
   - `kind = "download_sha256"` for GitHub-style releases where the registry hashes downloaded assets
   - `kind = "shasums256"` with `url_template` for upstreams that publish a checksum manifest
+  - `kind = "url_sha256"` for per-asset `.sha256` sidecar URLs
 - `[source.asset]`
+  - `kind = "download_index"` for upstream indexes that include resolved asset URLs
   - `kind = "release_asset_url"` for direct release asset URLs from the release feed
   - `kind = "templated"` with `base_url` for deterministic URL construction from artifact templates
 
