@@ -1,0 +1,80 @@
+name = "helm"
+license = "Apache-2.0"
+homepage = "https://github.com/helm/helm"
+
+[source.release]
+kind = "github_releases"
+repo = "helm/helm"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "url_sha256"
+url_template = "{url}.sha256sum"
+
+[source.asset]
+kind = "templated"
+base_url = "https://get.helm.sh"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "helm-v{version}-linux-amd64.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "helm"
+path = "helm"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "helm-v{version}-linux-arm64.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "helm"
+path = "helm"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "helm-v{version}-darwin-amd64.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "helm"
+path = "helm"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "helm-v{version}-darwin-arm64.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "helm"
+path = "helm"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "helm-v{version}-windows-amd64.zip"
+archive = "zip"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "helm"
+path = "helm.exe"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+asset = "helm-v{version}-windows-arm64.zip"
+archive = "zip"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "helm"
+path = "helm.exe"

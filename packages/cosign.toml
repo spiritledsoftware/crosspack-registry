@@ -1,0 +1,68 @@
+name = "cosign"
+license = "Apache-2.0"
+homepage = "https://github.com/sigstore/cosign"
+
+[source.release]
+kind = "github_releases"
+repo = "sigstore/cosign"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "asset_digest"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "cosign-linux-amd64"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "cosign"
+path = "cosign"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "cosign-linux-arm64"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "cosign"
+path = "cosign"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "cosign-darwin-amd64"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "cosign"
+path = "cosign"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "cosign-darwin-arm64"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "cosign"
+path = "cosign"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "cosign-windows-amd64.exe"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "cosign"
+path = "cosign.exe"

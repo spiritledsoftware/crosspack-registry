@@ -1,0 +1,73 @@
+name = "docker-compose"
+license = "Apache-2.0"
+homepage = "https://github.com/docker/compose"
+
+[source.release]
+kind = "github_releases"
+repo = "docker/compose"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "asset_digest"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[integrations]]
+kind = "docker_cli_plugin"
+name = "compose"
+source = "artifact.bin"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "docker-compose-linux-x86_64"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "docker-compose"
+path = "artifact.bin"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "docker-compose-linux-aarch64"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "docker-compose"
+path = "artifact.bin"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "docker-compose-darwin-x86_64"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "docker-compose"
+path = "artifact.bin"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "docker-compose-darwin-aarch64"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "docker-compose"
+path = "artifact.bin"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "docker-compose-windows-x86_64.exe"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "docker-compose"
+path = "artifact.bin"

@@ -1,0 +1,78 @@
+name = "sops"
+license = "MPL-2.0"
+homepage = "https://github.com/getsops/sops"
+
+[source.release]
+kind = "github_releases"
+repo = "getsops/sops"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "asset_digest"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "sops-v{version}.linux.amd64"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "sops"
+path = "vendor/bin/sops"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "sops-v{version}.linux.arm64"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "sops"
+path = "vendor/bin/sops"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "sops-v{version}.darwin.amd64"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "sops"
+path = "vendor/bin/sops"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "sops-v{version}.darwin.arm64"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "sops"
+path = "vendor/bin/sops"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "sops-v{version}.amd64.exe"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "sops"
+path = "vendor/bin/sops.exe"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+asset = "sops-v{version}.arm64.exe"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "sops"
+path = "vendor/bin/sops.exe"

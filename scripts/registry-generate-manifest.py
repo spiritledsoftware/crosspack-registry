@@ -93,6 +93,14 @@ def _render_artifact_templates(chunks: list[str], artifacts: list[dict]) -> None
             chunks.append("")
 
 
+def _render_integrations(chunks: list[str], integrations: list[dict]) -> None:
+    for integration in integrations:
+        chunks.append("[[integrations]]")
+        for key, value in integration.items():
+            chunks.append(_line(key, value))
+        chunks.append("")
+
+
 def render_package_text(doc: dict) -> str:
     chunks: list[str] = []
     chunks.append(_line("name", doc["name"]))
@@ -103,6 +111,12 @@ def render_package_text(doc: dict) -> str:
     source = doc.get("source")
     if isinstance(source, dict):
         render_source_text(chunks, source)
+
+    integrations = doc.get("integrations", [])
+    if integrations:
+        if not isinstance(integrations, list):
+            raise GenerateError("integrations must be an array")
+        _render_integrations(chunks, integrations)
 
     artifacts = doc.get("artifacts")
     if not isinstance(artifacts, list) or not artifacts:
@@ -117,6 +131,12 @@ def render_release_text(doc: dict) -> str:
     chunks.append(_line("name", doc["name"]))
     chunks.append(_line("version", doc["version"]))
     chunks.append("")
+
+    integrations = doc.get("integrations", [])
+    if integrations:
+        if not isinstance(integrations, list):
+            raise GenerateError("integrations must be an array")
+        _render_integrations(chunks, integrations)
 
     for artifact in doc["artifacts"]:
         chunks.append("[[artifacts]]")
@@ -443,6 +463,7 @@ def generate_release_text(
     document = {
         "name": config["name"],
         "version": version,
+        "integrations": config.get("integrations", []),
         "artifacts": release_artifacts,
     }
     return render_release_text(document)

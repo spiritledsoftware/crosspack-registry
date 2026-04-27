@@ -1,0 +1,78 @@
+name = "k9s"
+license = "Apache-2.0"
+homepage = "https://github.com/derailed/k9s"
+
+[source.release]
+kind = "github_releases"
+repo = "derailed/k9s"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "asset_digest"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "k9s_Linux_amd64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "k9s"
+path = "k9s"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "k9s_Linux_arm64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "k9s"
+path = "k9s"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "k9s_Darwin_amd64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "k9s"
+path = "k9s"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "k9s_Darwin_arm64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "k9s"
+path = "k9s"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "k9s_Windows_amd64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "k9s"
+path = "k9s.exe"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+asset = "k9s_Windows_arm64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "k9s"
+path = "k9s.exe"

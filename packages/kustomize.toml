@@ -1,0 +1,78 @@
+name = "kustomize"
+license = "Apache-2.0"
+homepage = "https://github.com/kubernetes-sigs/kustomize"
+
+[source.release]
+kind = "github_releases"
+repo = "kubernetes-sigs/kustomize"
+tag_prefix = "kustomize/v"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "asset_digest"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "kustomize_v{version}_linux_amd64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "kustomize"
+path = "kustomize"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "kustomize_v{version}_linux_arm64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "kustomize"
+path = "kustomize"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "kustomize_v{version}_darwin_amd64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "kustomize"
+path = "kustomize"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "kustomize_v{version}_darwin_arm64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "kustomize"
+path = "kustomize"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "kustomize_v{version}_windows_amd64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "kustomize"
+path = "kustomize.exe"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+asset = "kustomize_v{version}_windows_arm64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "kustomize"
+path = "kustomize.exe"

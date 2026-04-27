@@ -25,6 +25,11 @@ class RegistryValidateTests(unittest.TestCase):
                     license = "MIT"
                     homepage = "https://example.com/demo"
 
+                    [[integrations]]
+                    kind = "service"
+                    name = "demo"
+                    source = "etc/systemd/demo.service"
+
                     [source]
                     provider = "github"
                     repo = "example/demo"
@@ -49,6 +54,11 @@ class RegistryValidateTests(unittest.TestCase):
                     """
                     name = "demo"
                     version = "1.2.3"
+
+                    [[integrations]]
+                    kind = "service"
+                    name = "demo"
+                    source = "etc/systemd/demo.service"
 
                     [[artifacts]]
                     target = "x86_64-unknown-linux-gnu"

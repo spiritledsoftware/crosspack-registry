@@ -1,0 +1,68 @@
+name = "minikube"
+license = "Apache-2.0"
+homepage = "https://github.com/kubernetes/minikube"
+
+[source.release]
+kind = "github_releases"
+repo = "kubernetes/minikube"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "asset_digest"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "minikube-linux-amd64"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "minikube"
+path = "minikube"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "minikube-linux-arm64"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "minikube"
+path = "minikube"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "minikube-darwin-amd64"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "minikube"
+path = "minikube"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "minikube-darwin-arm64"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "minikube"
+path = "minikube"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "minikube-windows-amd64.exe"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "minikube"
+path = "minikube.exe"

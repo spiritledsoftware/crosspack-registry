@@ -27,6 +27,7 @@ RELEASE_KIND_VALUES = {
 VERSION_KIND_VALUES = {"asset_name_regex", "github_tag", "prefixed_semver_field", "regex_capture", "semver_field"}
 CHECKSUM_KIND_VALUES = {"asset_digest", "download_sha256", "download_index", "shasums256", "url_sha256"}
 ASSET_KIND_VALUES = {"json_index_asset", "release_asset_url", "templated"}
+INTEGRATION_KIND_VALUES = {"docker_cli_plugin", "path_plugin", "service"}
 
 
 def _expect_non_empty_str(obj: dict, key: str, ctx: str) -> str:
@@ -55,6 +56,40 @@ def _expect_optional_str_array(obj: dict, key: str, ctx: str) -> None:
     value = obj[key]
     if not isinstance(value, list) or not all(isinstance(item, str) and item for item in value):
         raise ValidationError(f"{ctx}.{key} must be a string array")
+
+
+def _is_relative_without_parent_segments(value: str) -> bool:
+    candidate = Path(value)
+    return not candidate.is_absolute() and ".." not in candidate.parts
+
+
+def _validate_integrations(doc: dict) -> None:
+    integrations = doc.get("integrations", [])
+    if not isinstance(integrations, list):
+        raise ValidationError("manifest.integrations must be an array when present")
+
+    seen: set[str] = set()
+    for idx, integration in enumerate(integrations, start=1):
+        if not isinstance(integration, dict):
+            raise ValidationError(f"manifest.integrations[{idx}] must be a table")
+        prefix = f"manifest.integrations[{idx}]"
+        kind = _expect_non_empty_str(integration, "kind", prefix)
+        if kind not in INTEGRATION_KIND_VALUES:
+            raise ValidationError(f"{prefix}.kind must be a supported integration kind")
+        source = _expect_non_empty_str(integration, "source", prefix)
+        if not _is_relative_without_parent_segments(source):
+            raise ValidationError(f"{prefix}.source must be relative and must not contain '..'")
+        name = _expect_non_empty_str(integration, "name", prefix)
+        if kind == "path_plugin":
+            host = _expect_non_empty_str(integration, "host", prefix)
+            key = f"{kind}:{host}:{name}"
+        else:
+            key = f"{kind}:{name}"
+        if kind == "service":
+            _expect_optional_bool(integration, "enable", prefix)
+        if key in seen:
+            raise ValidationError(f"duplicate integration declaration {key}")
+        seen.add(key)
 
 
 def validate_source_config(doc: dict) -> None:
@@ -182,6 +217,8 @@ def validate_source_config(doc: dict) -> None:
         tag_prefix = source.get("tag_prefix")
         if tag_prefix is not None and not isinstance(tag_prefix, str):
             raise ValidationError("manifest.source.tag_prefix must be a string")
+
+    _validate_integrations(doc)
 
     artifacts = doc.get("artifacts")
     if not isinstance(artifacts, list) or not artifacts:

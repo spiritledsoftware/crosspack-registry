@@ -1,0 +1,32 @@
+name = "flux"
+version = "2.8.6"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/fluxcd/flux2/releases/download/v2.8.6/flux_2.8.6_linux_amd64.tar.gz"
+sha256 = "c53cc990ae266f7840f64c81515d701d8821d558a9062aa4211d71b38cf044be"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/fluxcd/flux2/releases/download/v2.8.6/flux_2.8.6_linux_arm64.tar.gz"
+sha256 = "bc460320c2d33ad833791277896dd1aaf1cff6b3e64ba397c44238f00d4ae5bc"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/fluxcd/flux2/releases/download/v2.8.6/flux_2.8.6_darwin_amd64.tar.gz"
+sha256 = "83ce032f39248ed04324f3e50344794575fb5f7149f24c071972e320b64826a6"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/fluxcd/flux2/releases/download/v2.8.6/flux_2.8.6_darwin_arm64.tar.gz"
+sha256 = "20de67ebf2da689dd165b004dc073469f33aa2a3eac45a69f38a40435e14d20b"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/fluxcd/flux2/releases/download/v2.8.6/flux_2.8.6_windows_amd64.zip"
+sha256 = "05fe1b414bb40555d72e8149aca7046eba4ceacea7825d011c1188cc74c62e9c"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+url = "https://github.com/fluxcd/flux2/releases/download/v2.8.6/flux_2.8.6_windows_arm64.zip"
+sha256 = "8be323b730d1c99977926e12a6d35d32ccfc91cb942e19c282fc7e8a21e4f1ed"

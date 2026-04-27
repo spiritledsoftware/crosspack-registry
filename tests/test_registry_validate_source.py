@@ -104,6 +104,107 @@ class RegistryValidateSourceTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         self.assertIn("Validation passed", result.stdout)
 
+    def test_valid_source_config_with_integrations_passes(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="source-config-") as tmp:
+            config = Path(tmp) / "docker-compose.toml"
+            config.write_text(
+                textwrap.dedent(
+                    """
+                    name = "docker-compose"
+                    license = "Apache-2.0"
+                    homepage = "https://github.com/docker/compose"
+
+                    [source.release]
+                    kind = "github_releases"
+                    repo = "docker/compose"
+
+                    [source.checksum]
+                    kind = "asset_digest"
+
+                    [source.asset]
+                    kind = "release_asset_url"
+
+                    [[integrations]]
+                    kind = "docker_cli_plugin"
+                    name = "compose"
+                    source = "docker-compose"
+
+                    [[artifacts]]
+                    target = "x86_64-unknown-linux-gnu"
+                    asset = "docker-compose-linux-x86_64"
+                    archive = "bin"
+                    strip_components = 0
+
+                    [[artifacts.binaries]]
+                    name = "docker-compose"
+                    path = "docker-compose"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+
+            result = subprocess.run(
+                ["python3", str(SCRIPT), str(config)],
+                cwd=REPO_ROOT,
+                text=True,
+                capture_output=True,
+            )
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("Validation passed", result.stdout)
+
+    def test_integration_source_path_rejects_parent_segments(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="source-config-") as tmp:
+            config = Path(tmp) / "kubectx.toml"
+            config.write_text(
+                textwrap.dedent(
+                    """
+                    name = "kubectx"
+                    license = "Apache-2.0"
+                    homepage = "https://github.com/ahmetb/kubectx"
+
+                    [source.release]
+                    kind = "github_releases"
+                    repo = "ahmetb/kubectx"
+
+                    [source.checksum]
+                    kind = "asset_digest"
+
+                    [source.asset]
+                    kind = "release_asset_url"
+
+                    [[integrations]]
+                    kind = "path_plugin"
+                    host = "kubectl"
+                    name = "ctx"
+                    source = "../kubectl-ctx"
+
+                    [[artifacts]]
+                    target = "x86_64-unknown-linux-gnu"
+                    asset = "kubectx_v{version}_linux_x86_64.tar.gz"
+                    archive = "tar.gz"
+                    strip_components = 0
+
+                    [[artifacts.binaries]]
+                    name = "kubectl-ctx"
+                    path = "kubectx"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+
+            result = subprocess.run(
+                ["python3", str(SCRIPT), str(config)],
+                cwd=REPO_ROOT,
+                text=True,
+                capture_output=True,
+            )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("integrations[1].source", result.stderr)
+
     def test_missing_required_source_fields_fails(self) -> None:
         with tempfile.TemporaryDirectory(prefix="source-config-") as tmp:
             config = Path(tmp) / "ripgrep.toml"

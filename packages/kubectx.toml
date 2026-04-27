@@ -1,0 +1,74 @@
+name = "kubectx"
+license = "Apache-2.0"
+homepage = "https://github.com/ahmetb/kubectx"
+
+[source.release]
+kind = "github_releases"
+repo = "ahmetb/kubectx"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "asset_digest"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[integrations]]
+kind = "path_plugin"
+host = "kubectl"
+name = "ctx"
+source = "kubectx"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "kubectx_v{version}_linux_x86_64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "kubectl-ctx"
+path = "kubectx"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "kubectx_v{version}_linux_arm64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "kubectl-ctx"
+path = "kubectx"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "kubectx_v{version}_darwin_x86_64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "kubectl-ctx"
+path = "kubectx"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "kubectx_v{version}_darwin_arm64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "kubectl-ctx"
+path = "kubectx"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "kubectx_v{version}_windows_x86_64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "kubectl-ctx"
+path = "kubectx.exe"
