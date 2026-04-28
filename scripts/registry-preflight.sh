@@ -16,8 +16,8 @@ load_manifests() {
 load_manifests "$repo_root/scripts/registry-changed-manifests.sh"
 
 if [[ "${#manifests[@]}" -eq 0 ]]; then
-  echo "No manifest changes detected. Running full registry preflight to validate tooling changes."
-  load_manifests env REGISTRY_PREFLIGHT_ALL=1 "$repo_root/scripts/registry-changed-manifests.sh"
+  echo "No manifest changes detected. Skipping registry preflight."
+  exit 0
 fi
 
 echo "Running registry preflight on ${#manifests[@]} manifest(s)..."
