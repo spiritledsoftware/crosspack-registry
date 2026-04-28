@@ -2,11 +2,20 @@ name = "gh"
 license = "MIT"
 homepage = "https://github.com/cli/cli"
 
-[source]
-provider = "github"
+[source.release]
+kind = "github_releases"
 repo = "cli/cli"
-tag_prefix = "v"
 include_prereleases = false
+tag_prefix = "v"
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "download_sha256"
+
+[source.asset]
+kind = "release_asset_url"
 
 [[artifacts]]
 target = "x86_64-unknown-linux-gnu"
