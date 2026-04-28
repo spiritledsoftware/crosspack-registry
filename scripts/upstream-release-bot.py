@@ -511,6 +511,22 @@ def _run(cmd: list[str], *, cwd: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(cmd, cwd=cwd, check=True, text=True, capture_output=True)
 
 
+def _snapshot_paths(repo_root: Path, paths: list[Path]) -> dict[Path, bytes]:
+    snapshot: dict[Path, bytes] = {}
+    for path in paths:
+        full_path = repo_root / path
+        if full_path.exists():
+            snapshot[path] = full_path.read_bytes()
+    return snapshot
+
+
+def _restore_path_snapshot(repo_root: Path, snapshot: dict[Path, bytes]) -> None:
+    for path, content in snapshot.items():
+        full_path = repo_root / path
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        full_path.write_bytes(content)
+
+
 def validate_generated_paths(*, repo_root: Path, staged_paths: list[Path]) -> None:
     package_paths: list[str] = []
     release_paths: list[str] = []
@@ -626,6 +642,7 @@ def _open_or_update_pr(
         f"- add generated package/release metadata for `{package}` `{version}`\n"
         "- produced by upstream release bot\n"
     )
+    path_snapshot = _snapshot_paths(repo_root, staged_paths)
 
     _run(["git", "checkout", base_branch], cwd=repo_root)
     remote_branch = _run(
@@ -651,6 +668,7 @@ def _open_or_update_pr(
             )
     else:
         _run(["git", "switch", "-C", branch_name, base_branch], cwd=repo_root)
+    _restore_path_snapshot(repo_root, path_snapshot)
     if staged_paths:
         _run(["git", "add", *(str(path) for path in staged_paths)], cwd=repo_root)
     validate_generated_paths(repo_root=repo_root, staged_paths=staged_paths)
