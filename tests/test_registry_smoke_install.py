@@ -1,10 +1,12 @@
 import hashlib
 import importlib.util
 import io
+import urllib.error
 import tempfile
 import textwrap
 import unittest
 import zipfile
+from email.message import Message
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest import mock
@@ -151,6 +153,70 @@ class RegistrySmokeInstallTests(unittest.TestCase):
         self.assertTrue(ok)
         self.assertIn("demo@1.0.0", message)
         self.assertIn("target=fallback-target", message)
+
+    def test_download_retries_transient_http_error(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="smoke-test-") as tmp:
+            dest = Path(tmp) / "payload"
+            attempts = 0
+
+            class FakeResponse:
+                def __init__(self) -> None:
+                    self._sent = False
+
+                def __enter__(self):
+                    return self
+
+                def __exit__(self, exc_type, exc, tb):
+                    return False
+
+                def read(self, _size: int = -1) -> bytes:
+                    if self._sent:
+                        return b""
+                    self._sent = True
+                    return b"demo-payload"
+
+            def fake_urlopen(_request, timeout):
+                nonlocal attempts
+                attempts += 1
+                if attempts == 1:
+                    raise urllib.error.HTTPError(
+                        "https://example.invalid/demo.tar.gz",
+                        502,
+                        "Bad Gateway",
+                        Message(),
+                        None,
+                    )
+                return FakeResponse()
+
+            with (
+                mock.patch.object(self.smoke.urllib.request, "urlopen", side_effect=fake_urlopen),
+                mock.patch.object(self.smoke.time, "sleep"),
+            ):
+                self.smoke.download("https://example.invalid/demo.tar.gz", dest)
+            payload = dest.read_bytes()
+
+        self.assertEqual(attempts, 2)
+        self.assertEqual(payload, b"demo-payload")
+
+    def test_download_fails_fast_for_non_transient_http_error(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="smoke-test-") as tmp:
+            dest = Path(tmp) / "payload"
+
+            with mock.patch.object(
+                self.smoke.urllib.request,
+                "urlopen",
+                side_effect=urllib.error.HTTPError(
+                    "https://example.invalid/demo.tar.gz",
+                    404,
+                    "Not Found",
+                    Message(),
+                    None,
+                ),
+            ) as urlopen:
+                with self.assertRaises(urllib.error.HTTPError):
+                    self.smoke.download("https://example.invalid/demo.tar.gz", dest)
+
+        self.assertEqual(urlopen.call_count, 1)
 
     def test_app_bundle_canary_succeeds(self) -> None:
         ok, message = self.smoke.app_bundle_canary()
