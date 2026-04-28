@@ -10,7 +10,10 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from datetime import datetime, timezone
+from email.message import Message
 from pathlib import Path
+from typing import Any
 
 try:
     import tomllib
@@ -19,6 +22,7 @@ except ModuleNotFoundError:
 
 
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$")
+STATE_SCHEMA_VERSION = 1
 
 
 class PlannedUpdate:
@@ -27,6 +31,21 @@ class PlannedUpdate:
         self.version = version
         self.config_path = config_path
         self.release = release
+
+
+class GithubReleaseFetchResult:
+    def __init__(
+        self,
+        *,
+        releases: list[dict],
+        etag: str | None = None,
+        last_modified: str | None = None,
+        not_modified: bool = False,
+    ):
+        self.releases = releases
+        self.etag = etag
+        self.last_modified = last_modified
+        self.not_modified = not_modified
 
 
 def normalize_source(source: dict) -> dict:
@@ -99,20 +118,78 @@ def _load_generator_module(repo_root: Path):
     return module
 
 
-def _http_get_json(url: str, token: str | None = None) -> object:
+def empty_bot_state() -> dict[str, Any]:
+    return {"schema_version": STATE_SCHEMA_VERSION, "sources": {}}
+
+
+def load_bot_state(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return empty_bot_state()
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"Ignoring invalid release bot state at {path}: {exc}", file=sys.stderr)
+        return empty_bot_state()
+    if not isinstance(data, dict) or data.get("schema_version") != STATE_SCHEMA_VERSION:
+        print(f"Ignoring unsupported release bot state at {path}", file=sys.stderr)
+        return empty_bot_state()
+    sources = data.get("sources")
+    if not isinstance(sources, dict):
+        print(
+            f"Ignoring invalid release bot state at {path}: sources must be an object",
+            file=sys.stderr,
+        )
+        return empty_bot_state()
+    normalized_sources = {
+        key: value
+        for key, value in sources.items()
+        if isinstance(key, str) and isinstance(value, dict)
+    }
+    return {"schema_version": STATE_SCHEMA_VERSION, "sources": normalized_sources}
+
+
+def write_bot_state(path: Path, state: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    sources = state.get("sources")
+    if not isinstance(sources, dict):
+        sources = {}
+    normalized = {
+        "schema_version": STATE_SCHEMA_VERSION,
+        "sources": dict(sorted(sources.items())),
+    }
+    path.write_text(
+        json.dumps(normalized, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+
+def utc_now_iso() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def github_release_state_key(repo: str) -> str:
+    return f"github_releases:{repo}"
+
+
+def _http_get_json(
+    url: str,
+    token: str | None = None,
+    extra_headers: dict[str, str] | None = None,
+) -> tuple[object, Message]:
     headers = {
         "Accept": "application/vnd.github+json",
         "User-Agent": "crosspack-registry-upstream-bot",
     }
     if token:
         headers["Authorization"] = f"Bearer {token}"
+    if extra_headers:
+        headers.update(extra_headers)
 
     last_error: Exception | None = None
     for attempt in range(3):
         request = urllib.request.Request(url, headers=headers)
         try:
             with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310
-                return json.loads(response.read().decode("utf-8"))
+                return json.loads(response.read().decode("utf-8")), response.headers
         except urllib.error.HTTPError as error:
             if error.code < 500 or attempt == 2:
                 raise
@@ -129,19 +206,74 @@ def _http_get_json(url: str, token: str | None = None) -> object:
     raise RuntimeError(f"Failed to fetch JSON from {url}")
 
 
-def fetch_github_releases(repo: str, token: str | None = None) -> list[dict]:
+def fetch_github_releases(
+    repo: str,
+    token: str | None = None,
+    state_entry: dict[str, Any] | None = None,
+) -> GithubReleaseFetchResult:
     url = f"https://api.github.com/repos/{repo}/releases?per_page=20"
-    payload = _http_get_json(url, token=token)
+    extra_headers: dict[str, str] = {}
+    if isinstance(state_entry, dict):
+        etag = state_entry.get("etag")
+        last_modified = state_entry.get("last_modified")
+        if isinstance(etag, str) and etag:
+            extra_headers["If-None-Match"] = etag
+        if isinstance(last_modified, str) and last_modified:
+            extra_headers["If-Modified-Since"] = last_modified
+    try:
+        payload, headers = _http_get_json(
+            url, token=token, extra_headers=extra_headers
+        )
+    except urllib.error.HTTPError as error:
+        if error.code == 304:
+            return GithubReleaseFetchResult(releases=[], not_modified=True)
+        raise
     if not isinstance(payload, list):
         raise RuntimeError(f"Unexpected releases response for {repo}")
-    return [item for item in payload if isinstance(item, dict)]
+    return GithubReleaseFetchResult(
+        releases=[item for item in payload if isinstance(item, dict)],
+        etag=headers.get("ETag"),
+        last_modified=headers.get("Last-Modified"),
+    )
+
+
+def _format_fetch_error(error: urllib.error.HTTPError | urllib.error.URLError) -> str:
+    if isinstance(error, urllib.error.HTTPError):
+        return f"HTTP {error.code} {error.reason}"
+    return str(error.reason)
+
+
+def _http_error_body(error: urllib.error.HTTPError) -> str:
+    if error.fp is None:
+        return ""
+    try:
+        return error.fp.read().decode("utf-8", errors="replace")
+    except OSError:
+        return ""
+
+
+def _is_skippable_release_fetch_error(
+    *, error: urllib.error.HTTPError, release_kind: object
+) -> bool:
+    if error.code != 403:
+        return False
+    if release_kind == "github_releases":
+        return True
+    reason = str(error.reason).lower()
+    if "rate limit" in reason:
+        return True
+    remaining = error.headers.get("x-ratelimit-remaining") if error.headers else None
+    if remaining == "0":
+        return True
+    body = _http_error_body(error).lower()
+    return "rate limit" in body
 
 
 def fetch_json_index_releases(release_strategy: dict) -> list[dict]:
     url = release_strategy.get("url")
     if not isinstance(url, str) or not url.startswith("https://"):
         raise RuntimeError("json_index release.url must start with https://")
-    payload = _http_get_json(url)
+    payload, _headers = _http_get_json(url)
     entries = release_strategy.get("entries", "array")
     if entries == "array":
         if not isinstance(payload, list):
@@ -310,6 +442,21 @@ def version_from_strategy(release: dict, strategy: dict, release_strategy: dict)
     raise RuntimeError("source.version.kind must be a supported version strategy")
 
 
+def latest_version_from_releases(
+    releases: list[dict], release_strategy: dict, version_strategy: dict
+) -> str | None:
+    include_prereleases = bool(release_strategy.get("include_prereleases", False))
+    for release in releases:
+        if release.get("draft") is True:
+            continue
+        if release.get("prerelease") is True and not include_prereleases:
+            continue
+        version = version_from_strategy(release, version_strategy, release_strategy)
+        if version is not None:
+            return version
+    return None
+
+
 def load_config(path: Path) -> dict:
     data = tomllib.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
@@ -362,6 +509,64 @@ def plan_updates_for_config(
 
 def _run(cmd: list[str], *, cwd: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(cmd, cwd=cwd, check=True, text=True, capture_output=True)
+
+
+def validate_generated_paths(*, repo_root: Path, staged_paths: list[Path]) -> None:
+    package_paths: list[str] = []
+    release_paths: list[str] = []
+    state_path = Path("state/upstream-release-bot.json")
+    for path in staged_paths:
+        value = path.as_posix()
+        if value.startswith("packages/") and value.endswith(".toml") and len(path.parts) == 2:
+            package_paths.append(value)
+        elif value.startswith("releases/") and value.endswith(".toml") and len(path.parts) == 3:
+            release_paths.append(value)
+        elif path == state_path:
+            continue
+        else:
+            raise RuntimeError(f"unexpected generated path for release bot PR: {value}")
+
+    if package_paths:
+        _run(["python3", "scripts/registry-validate-source.py", *package_paths], cwd=repo_root)
+    if package_paths or release_paths:
+        _run(
+            [
+                "python3",
+                "scripts/registry-validate.py",
+                "--allow-missing-signatures",
+                *package_paths,
+                *release_paths,
+            ],
+            cwd=repo_root,
+        )
+
+
+def _enable_pr_automerge(*, repo_root: Path, pr_ref: str) -> None:
+    _run(["gh", "pr", "merge", pr_ref, "--auto", "--squash"], cwd=repo_root)
+
+
+def _open_pr_number_for_branch(*, repo_root: Path, branch_name: str) -> int | None:
+    existing = _run(
+        [
+            "gh",
+            "pr",
+            "list",
+            "--head",
+            branch_name,
+            "--state",
+            "open",
+            "--json",
+            "number",
+        ],
+        cwd=repo_root,
+    )
+    found = json.loads(existing.stdout)
+    if not isinstance(found, list) or not found:
+        return None
+    number = found[0].get("number")
+    if not isinstance(number, int):
+        raise RuntimeError(f"Unexpected PR lookup response for {branch_name}")
+    return number
 
 
 def _stash_paths_for_branch_switch(*, repo_root: Path, paths: list[Path]) -> str | None:
@@ -448,30 +653,22 @@ def _open_or_update_pr(
         _run(["git", "switch", "-C", branch_name, base_branch], cwd=repo_root)
     if staged_paths:
         _run(["git", "add", *(str(path) for path in staged_paths)], cwd=repo_root)
+    validate_generated_paths(repo_root=repo_root, staged_paths=staged_paths)
     staged = _run(["git", "diff", "--cached", "--name-only"], cwd=repo_root)
     if not staged.stdout.strip():
+        number = _open_pr_number_for_branch(repo_root=repo_root, branch_name=branch_name)
+        if number is not None:
+            _enable_pr_automerge(repo_root=repo_root, pr_ref=str(number))
+            print(f"PR already open for {branch_name}; enabled automerge")
         return
 
     _run(["git", "commit", "-m", title], cwd=repo_root)
     _run(["git", "push", "-u", "origin", branch_name], cwd=repo_root)
 
-    existing = _run(
-        [
-            "gh",
-            "pr",
-            "list",
-            "--head",
-            branch_name,
-            "--state",
-            "open",
-            "--json",
-            "number",
-        ],
-        cwd=repo_root,
-    )
-    found = json.loads(existing.stdout)
-    if isinstance(found, list) and found:
-        print(f"PR already open for {branch_name}")
+    number = _open_pr_number_for_branch(repo_root=repo_root, branch_name=branch_name)
+    if number is not None:
+        _enable_pr_automerge(repo_root=repo_root, pr_ref=str(number))
+        print(f"PR already open for {branch_name}; enabled automerge")
         return
 
     _run(
@@ -490,6 +687,7 @@ def _open_or_update_pr(
         ],
         cwd=repo_root,
     )
+    _enable_pr_automerge(repo_root=repo_root, pr_ref=branch_name)
 
 
 def main(argv: list[str]) -> int:
@@ -519,6 +717,12 @@ def main(argv: list[str]) -> int:
     )
     parser.add_argument("--base-branch", default="main")
     parser.add_argument("--branch-prefix", default="upstream-release")
+    parser.add_argument(
+        "--state-path",
+        type=Path,
+        default=Path("state/upstream-release-bot.json"),
+        help="Release bot advisory state path",
+    )
     args = parser.parse_args(argv)
 
     repo_root = Path.cwd()
@@ -534,7 +738,14 @@ def main(argv: list[str]) -> int:
         return 0
 
     github_token = __import__("os").environ.get("GITHUB_TOKEN")
+    bot_state = load_bot_state(args.state_path)
+    state_sources = bot_state.setdefault("sources", {})
+    if not isinstance(state_sources, dict):
+        state_sources = {}
+        bot_state["sources"] = state_sources
+    state_changed = False
     planned: list[PlannedUpdate] = []
+    skipped_fetches = 0
     for config_path in config_paths:
         config = load_config(config_path)
         source = config.get("source")
@@ -543,17 +754,56 @@ def main(argv: list[str]) -> int:
         normalized = normalize_source(source)
         release_strategy = normalized["release"]
         release_kind = release_strategy.get("kind")
-        if release_kind == "json_index":
-            releases = fetch_json_index_releases(release_strategy)
-        elif release_kind == "text_endpoint":
-            releases = fetch_text_endpoint_releases(release_strategy)
-        elif release_kind == "github_releases":
-            repo = release_strategy.get("repo")
-            if not isinstance(repo, str):
-                raise RuntimeError(f"Missing source.release.repo in {config_path}")
-            releases = fetch_github_releases(repo, token=github_token)
-        else:
-            raise RuntimeError(f"Unsupported source.release.kind in {config_path}")
+        try:
+            if release_kind == "json_index":
+                releases = fetch_json_index_releases(release_strategy)
+            elif release_kind == "text_endpoint":
+                releases = fetch_text_endpoint_releases(release_strategy)
+            elif release_kind == "github_releases":
+                repo = release_strategy.get("repo")
+                if not isinstance(repo, str):
+                    raise RuntimeError(f"Missing source.release.repo in {config_path}")
+                state_key = github_release_state_key(repo)
+                state_entry = state_sources.get(state_key)
+                if not isinstance(state_entry, dict):
+                    state_entry = None
+                fetch_result = fetch_github_releases(
+                    repo, token=github_token, state_entry=state_entry
+                )
+                if fetch_result.not_modified:
+                    continue
+                releases = fetch_result.releases
+                version_strategy = normalized.get("version")
+                if not isinstance(version_strategy, dict):
+                    version_strategy = {"kind": "github_tag"}
+                next_entry = dict(state_entry or {})
+                if fetch_result.etag:
+                    next_entry["etag"] = fetch_result.etag
+                if fetch_result.last_modified:
+                    next_entry["last_modified"] = fetch_result.last_modified
+                next_entry["last_checked_at"] = utc_now_iso()
+                latest_version = latest_version_from_releases(
+                    releases, release_strategy, version_strategy
+                )
+                if latest_version is not None:
+                    next_entry["latest_version"] = latest_version
+                if next_entry != state_sources.get(state_key):
+                    state_sources[state_key] = next_entry
+                    state_changed = True
+            else:
+                raise RuntimeError(f"Unsupported source.release.kind in {config_path}")
+        except urllib.error.HTTPError as error:
+            if not _is_skippable_release_fetch_error(
+                error=error, release_kind=release_kind
+            ):
+                raise
+            skipped_fetches += 1
+            print(
+                f"Skipping {config_path.stem}: failed to fetch upstream releases "
+                f"({_format_fetch_error(error)})",
+                file=sys.stderr,
+            )
+            continue
         planned.extend(
             plan_updates_for_config(
                 config_path=config_path,
@@ -563,7 +813,10 @@ def main(argv: list[str]) -> int:
         )
 
     if not planned:
-        print("No new releases detected")
+        print(
+            "No new releases detected; "
+            f"skipped {skipped_fetches} release fetch(es)"
+        )
         return 0
 
     created_releases = 0
@@ -629,6 +882,11 @@ def main(argv: list[str]) -> int:
         created_releases += 1
         staged_paths.append(release_path)
 
+        if state_changed:
+            write_bot_state(args.state_path, bot_state)
+            if args.state_path not in staged_paths:
+                staged_paths.append(args.state_path)
+
         if args.create_prs:
             _open_or_update_pr(
                 repo_root=repo_root,
@@ -642,7 +900,9 @@ def main(argv: list[str]) -> int:
     print(
         "Planned "
         f"{len(planned)} update(s), wrote {created_releases} release manifest(s), "
-        f"updated {written_packages} package template(s), skipped {skipped_updates} incomplete update(s)"
+        f"updated {written_packages} package template(s), "
+        f"skipped {skipped_updates} incomplete update(s), "
+        f"skipped {skipped_fetches} release fetch(es)"
     )
     return 0
 
