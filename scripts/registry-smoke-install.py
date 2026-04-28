@@ -9,7 +9,9 @@ import shutil
 import sys
 import tarfile
 import tempfile
+import time
 import tomllib
+import urllib.error
 import urllib.request
 import zipfile
 from pathlib import Path, PurePosixPath
@@ -91,13 +93,36 @@ def choose_artifact(
     return artifacts[0]
 
 
+DOWNLOAD_ATTEMPTS = 3
+TRANSIENT_HTTP_STATUS_CODES = {408, 429, 500, 502, 503, 504}
+
+
+def is_transient_download_error(error: BaseException) -> bool:
+    if isinstance(error, urllib.error.HTTPError):
+        return error.code in TRANSIENT_HTTP_STATUS_CODES
+    return isinstance(error, urllib.error.URLError)
+
+
 def download(url: str, dest: Path) -> None:
-    req = urllib.request.Request(
-        url, headers={"User-Agent": "crosspack-registry-ci/1.0"}
-    )
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        with dest.open("wb") as out:
-            shutil.copyfileobj(resp, out)
+    last_error: BaseException | None = None
+    for attempt in range(DOWNLOAD_ATTEMPTS):
+        req = urllib.request.Request(
+            url, headers={"User-Agent": "crosspack-registry-ci/1.0"}
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                with dest.open("wb") as out:
+                    shutil.copyfileobj(resp, out)
+            return
+        except (urllib.error.HTTPError, urllib.error.URLError) as error:
+            if not is_transient_download_error(error) or attempt == DOWNLOAD_ATTEMPTS - 1:
+                raise
+            last_error = error
+            time.sleep(2**attempt)
+
+    if last_error is not None:
+        raise last_error
+    raise RuntimeError(f"failed to download {url}")
 
 
 def sha256_file(path: Path) -> str:
