@@ -961,6 +961,90 @@ class UpstreamReleaseBotTests(unittest.TestCase):
                 self._git(repo, "log", "-1", "--pretty=%s"),
             )
 
+    def test_open_or_update_pr_restores_generated_state_removed_by_branch_switch(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="release-bot-git-") as tmp:
+            tmp_path = Path(tmp)
+            remote = tmp_path / "remote.git"
+            repo = tmp_path / "repo"
+            subprocess.run(["git", "init", "--bare", remote], check=True)
+            subprocess.run(["git", "init", "-b", "main", repo], check=True)
+
+            self._git(repo, "config", "user.name", "Test User")
+            self._git(repo, "config", "user.email", "test@example.com")
+            self._git(repo, "remote", "add", "origin", str(remote))
+
+            packages_dir = repo / "packages"
+            packages_dir.mkdir()
+            package_path = packages_dir / "gh.toml"
+            package_path.write_text('name = "gh"\n', encoding="utf-8")
+            self._git(repo, "add", "packages/gh.toml")
+            self._git(repo, "commit", "-m", "base")
+            self._git(repo, "push", "-u", "origin", "main")
+
+            self._git(repo, "switch", "-c", "upstream-release/deno/2.7.14")
+            state_path = repo / "state" / "upstream-release-bot.json"
+            state_path.parent.mkdir()
+            state_path.write_text('{"schema_version":1}\n', encoding="utf-8")
+            self._git(repo, "add", "state/upstream-release-bot.json")
+            self._git(repo, "commit", "-m", "existing release branch")
+
+            release_path = repo / "releases" / "gh" / "2.92.0.toml"
+            release_path.parent.mkdir(parents=True)
+            release_path.write_text('version = "2.92.0"\n', encoding="utf-8")
+
+            fake_bin = tmp_path / "bin"
+            fake_bin.mkdir()
+            gh = fake_bin / "gh"
+            gh.write_text(
+                textwrap.dedent(
+                    """
+                    #!/usr/bin/env python3
+                    import sys
+
+                    if sys.argv[1:4] == ["pr", "list", "--head"]:
+                        print("[]")
+                    elif sys.argv[1:3] == ["pr", "create"]:
+                        print("created")
+                    elif sys.argv[1:3] == ["pr", "merge"]:
+                        print("automerge enabled")
+                    else:
+                        raise SystemExit(f"unexpected gh args: {sys.argv[1:]}")
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+            gh.chmod(0o755)
+
+            previous_path = os.environ.get("PATH", "")
+            os.environ["PATH"] = f"{fake_bin}:{previous_path}"
+            try:
+                with mock.patch.object(self.bot, "validate_generated_paths"):
+                    self.bot._open_or_update_pr(
+                        repo_root=repo,
+                        staged_paths=[
+                            package_path.relative_to(repo),
+                            release_path.relative_to(repo),
+                            state_path.relative_to(repo),
+                        ],
+                        package="gh",
+                        version="2.92.0",
+                        base_branch="main",
+                        branch_prefix="upstream-release",
+                    )
+            finally:
+                os.environ["PATH"] = previous_path
+
+            self.assertEqual(
+                self._git(repo, "branch", "--show-current"),
+                "upstream-release/gh/2.92.0",
+            )
+            self.assertTrue(state_path.exists())
+            self.assertIn(
+                "chore(registry): add gh 2.92.0",
+                self._git(repo, "log", "-1", "--pretty=%s"),
+            )
+
     def test_plan_updates_for_nodejs_dist_major_channel(self) -> None:
         with tempfile.TemporaryDirectory(prefix="release-bot-") as tmp:
             tmp_path = Path(tmp)
