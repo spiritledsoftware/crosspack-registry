@@ -1,0 +1,33 @@
+name = "kubens"
+version = "0.11.0"
+
+[[integrations]]
+kind = "path_plugin"
+host = "kubectl"
+name = "ns"
+source = "kubens"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/ahmetb/kubectx/releases/download/v0.11.0/kubens_v0.11.0_linux_x86_64.tar.gz"
+sha256 = "326c021c7b35468ed9a187b361198d0f22ae32828139c65eb6670c0d8301cc09"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/ahmetb/kubectx/releases/download/v0.11.0/kubens_v0.11.0_linux_arm64.tar.gz"
+sha256 = "37058abe82ef20c93b44f3dc8ca2382dbb95d416cec958fbf7b8f79f011be86c"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/ahmetb/kubectx/releases/download/v0.11.0/kubens_v0.11.0_darwin_x86_64.tar.gz"
+sha256 = "9dbe1bf26fd911f2f56661a2f34bf2fe32dfd3af5f11287d0a864da92a746509"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/ahmetb/kubectx/releases/download/v0.11.0/kubens_v0.11.0_darwin_arm64.tar.gz"
+sha256 = "b1c87ddca22f1afc3e980ac807a715cd1183750022798d28a0a4e0cf66bec4e3"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/ahmetb/kubectx/releases/download/v0.11.0/kubens_v0.11.0_windows_x86_64.zip"
+sha256 = "aa10daca6ce321377d61a7e9534911df9eee42a0b6e198000757f8d1e8d0a480"

@@ -1,0 +1,75 @@
+name = "kubelogin"
+license = "Apache-2.0"
+homepage = "https://github.com/int128/kubelogin"
+
+[source.release]
+kind = "github_releases"
+repo = "int128/kubelogin"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "url_sha256"
+url_template = "{url}.sha256"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[integrations]]
+kind = "path_plugin"
+host = "kubectl"
+name = "oidc-login"
+source = "kubelogin"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "kubelogin_linux_amd64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "kubectl-oidc-login"
+path = "kubelogin"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "kubelogin_linux_arm64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "kubectl-oidc-login"
+path = "kubelogin"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "kubelogin_darwin_amd64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "kubectl-oidc-login"
+path = "kubelogin"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "kubelogin_darwin_arm64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "kubectl-oidc-login"
+path = "kubelogin"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "kubelogin_windows_amd64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "kubectl-oidc-login"
+path = "kubelogin.exe"

@@ -1,0 +1,33 @@
+name = "kubelogin"
+version = "1.36.1"
+
+[[integrations]]
+kind = "path_plugin"
+host = "kubectl"
+name = "oidc-login"
+source = "kubelogin"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/int128/kubelogin/releases/download/v1.36.1/kubelogin_linux_amd64.zip"
+sha256 = "a6dae91dfedd564906d892b1bdb1b74d821808802263b95751ca8e95cb1c0936"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/int128/kubelogin/releases/download/v1.36.1/kubelogin_linux_arm64.zip"
+sha256 = "b6790c4991d9ec13fca3c9375635608874434da4a5476b8567e65302c852690e"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/int128/kubelogin/releases/download/v1.36.1/kubelogin_darwin_amd64.zip"
+sha256 = "ab6611b5997bfdd7318cb09bddb8e73445c6ababcacc16d5701c7aa59ad98449"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/int128/kubelogin/releases/download/v1.36.1/kubelogin_darwin_arm64.zip"
+sha256 = "274da7f96172f8b135dc22ce93dd62947bfdec44a2e9554a9111f58c99684f6f"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/int128/kubelogin/releases/download/v1.36.1/kubelogin_windows_amd64.zip"
+sha256 = "0e48b4cc6c0cf6c96e8308f54473ddbcafce037549dce989e3eeecec428bfa32"
