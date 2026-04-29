@@ -2,11 +2,20 @@ name = "beekeeper-studio"
 license = "GPL-3.0-or-later"
 homepage = "https://www.beekeeperstudio.io"
 
-[source]
-provider = "github"
+[source.release]
+kind = "github_releases"
 repo = "beekeeper-studio/beekeeper-studio"
-tag_prefix = "v"
 include_prereleases = false
+tag_prefix = "v"
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "download_sha256"
+
+[source.asset]
+kind = "release_asset_url"
 
 [[artifacts]]
 target = "x86_64-unknown-linux-gnu"

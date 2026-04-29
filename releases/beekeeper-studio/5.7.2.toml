@@ -1,0 +1,27 @@
+name = "beekeeper-studio"
+version = "5.7.2"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/beekeeper-studio/beekeeper-studio/releases/download/v5.7.2/Beekeeper-Studio-5.7.2.AppImage"
+sha256 = "a6be11021b6f1506aae152a875fc45d17431b03e63f6df09ff28e2f42d341bbf"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/beekeeper-studio/beekeeper-studio/releases/download/v5.7.2/Beekeeper-Studio-5.7.2-arm64.AppImage"
+sha256 = "adb06c049d076634e8f37eab073b9061164d7edf28d4db359add952c29d31cf9"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/beekeeper-studio/beekeeper-studio/releases/download/v5.7.2/Beekeeper-Studio-5.7.2.dmg"
+sha256 = "44c4fc61eae301a1d38e8a89191f445553f642aff42310c7faec4c08e6266883"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/beekeeper-studio/beekeeper-studio/releases/download/v5.7.2/Beekeeper-Studio-5.7.2-arm64.dmg"
+sha256 = "3711f2f9d1943adf7a95e6debd301157619d11de70a4fd44bcc973b1532ea389"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/beekeeper-studio/beekeeper-studio/releases/download/v5.7.2/Beekeeper-Studio-5.7.2-portable.exe"
+sha256 = "bcf69341047a3d7b3a2c37587af9c8fcd217d9a2987d30cbd5d2bcc7d8147799"
