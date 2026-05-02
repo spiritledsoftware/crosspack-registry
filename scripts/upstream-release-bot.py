@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import http.client
 import importlib.util
 import json
 import re
@@ -195,6 +196,10 @@ def _http_get_json(
                 raise
             last_error = error
         except urllib.error.URLError as error:
+            if attempt == 2:
+                raise
+            last_error = error
+        except http.client.IncompleteRead as error:
             if attempt == 2:
                 raise
             last_error = error

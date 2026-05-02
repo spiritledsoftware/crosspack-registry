@@ -1,4 +1,5 @@
 import contextlib
+import http.client
 import importlib.util
 import io
 import json
@@ -41,6 +42,36 @@ def load_generator_module():
 class UpstreamReleaseBotTests(unittest.TestCase):
     def setUp(self) -> None:
         self.bot = load_module()
+
+    def test_http_get_json_retries_incomplete_reads(self) -> None:
+        class Response:
+            def __init__(self, payload: bytes):
+                self.payload = payload
+                self.headers = Message()
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, _exc_type, _exc, _tb):
+                return False
+
+            def read(self):
+                return self.payload
+
+        attempts = [http.client.IncompleteRead(b"{", 10), Response(b'{"ok": true}')]
+
+        def fake_urlopen(_request, timeout):
+            self.assertEqual(timeout, 30)
+            result = attempts.pop(0)
+            if isinstance(result, Exception):
+                raise result
+            return result
+
+        with mock.patch.object(self.bot.urllib.request, "urlopen", side_effect=fake_urlopen):
+            payload, _headers = self.bot._http_get_json("https://example.invalid/releases")
+
+        self.assertEqual(payload, {"ok": True})
+        self.assertEqual(attempts, [])
 
     def test_load_bot_state_returns_empty_state_when_missing(self) -> None:
         with tempfile.TemporaryDirectory(prefix="release-bot-state-") as tmp:
