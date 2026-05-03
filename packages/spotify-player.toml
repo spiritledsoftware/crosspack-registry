@@ -1,0 +1,58 @@
+name = "spotify-player"
+license = "MIT"
+homepage = "https://github.com/aome510/spotify-player"
+
+[source.release]
+kind = "github_releases"
+repo = "aome510/spotify-player"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "download_sha256"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "spotify_player-x86_64-unknown-linux-gnu.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "spotify_player"
+path = "spotify_player"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "spotify_player-x86_64-apple-darwin.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "spotify_player"
+path = "spotify_player"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "spotify_player-aarch64-apple-darwin.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "spotify_player"
+path = "spotify_player"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "spotify_player-x86_64-pc-windows-msvc.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "spotify_player"
+path = "spotify_player.exe"

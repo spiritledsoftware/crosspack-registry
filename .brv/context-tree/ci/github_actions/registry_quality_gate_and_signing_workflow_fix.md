@@ -2,7 +2,7 @@
 title: Registry Quality Gate and Signing Workflow Fix
 summary: Workflow fix work was done in ./.worktrees/fix-registry-gate-after-signing; origin/main already had the python3 portability change; validation passed with tests.test_github_workflows and full test discovery.
 tags: []
-related: [ci/github_actions/sign_manifests_on_merge.md, ci/github_actions/registry_quality_gate_and_signing_workflow_fix.md]
+related: [ci/github_actions/sign_manifests_on_merge.md, ci/github_actions/registry_quality_gate_and_signing_workflow_fix.md, ci/github_actions/dotfiles_package_batch_for_registry.md]
 keywords: []
 createdAt: '2026-04-26T00:09:44.731Z'
 updatedAt: '2026-04-26T01:33:41.225Z'

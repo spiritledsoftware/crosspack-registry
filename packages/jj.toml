@@ -1,0 +1,80 @@
+name = "jj"
+license = "Apache-2.0"
+homepage = "https://github.com/jj-vcs/jj"
+
+[source.release]
+kind = "github_releases"
+repo = "jj-vcs/jj"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "download_sha256"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+# jj only publishes musl Linux archives; use them for the generic Linux targets.
+asset = "jj-v{version}-x86_64-unknown-linux-musl.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "jj"
+path = "jj"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+# jj only publishes musl Linux archives; use them for the generic Linux targets.
+asset = "jj-v{version}-aarch64-unknown-linux-musl.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "jj"
+path = "jj"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "jj-v{version}-x86_64-apple-darwin.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "jj"
+path = "jj"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "jj-v{version}-aarch64-apple-darwin.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "jj"
+path = "jj"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "jj-v{version}-x86_64-pc-windows-msvc.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "jj"
+path = "jj.exe"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+asset = "jj-v{version}-aarch64-pc-windows-msvc.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "jj"
+path = "jj.exe"

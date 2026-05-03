@@ -1,0 +1,68 @@
+name = "chezmoi"
+license = "MIT"
+homepage = "https://github.com/twpayne/chezmoi"
+
+[source.release]
+kind = "github_releases"
+repo = "twpayne/chezmoi"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "download_sha256"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "chezmoi_{version}_linux-glibc_amd64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "chezmoi"
+path = "chezmoi"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "chezmoi_{version}_linux_arm64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "chezmoi"
+path = "chezmoi"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "chezmoi_{version}_darwin_amd64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "chezmoi"
+path = "chezmoi"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "chezmoi_{version}_darwin_arm64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "chezmoi"
+path = "chezmoi"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "chezmoi_{version}_windows_amd64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "chezmoi"
+path = "chezmoi.exe"

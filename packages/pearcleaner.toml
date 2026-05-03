@@ -1,0 +1,49 @@
+name = "pearcleaner"
+license = "GPL-3.0"
+homepage = "https://github.com/alienator88/Pearcleaner"
+
+[source.release]
+kind = "github_releases"
+repo = "alienator88/Pearcleaner"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "download_sha256"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "Pearcleaner-intel.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "pearcleaner"
+path = "Pearcleaner.app/Contents/MacOS/Pearcleaner"
+
+[[artifacts.gui_apps]]
+app_id = "com.alienator88.Pearcleaner"
+display_name = "Pearcleaner"
+exec = "Pearcleaner.app"
+categories = ["Utility"]
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "Pearcleaner-arm.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "pearcleaner"
+path = "Pearcleaner.app/Contents/MacOS/Pearcleaner"
+
+[[artifacts.gui_apps]]
+app_id = "com.alienator88.Pearcleaner"
+display_name = "Pearcleaner"
+exec = "Pearcleaner.app"
+categories = ["Utility"]

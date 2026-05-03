@@ -1,0 +1,69 @@
+name = "linear"
+license = "MIT"
+homepage = "https://github.com/schpet/linear-cli"
+
+[source.release]
+kind = "github_releases"
+repo = "schpet/linear-cli"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "url_sha256"
+url_template = "{url}.sha256"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "linear-x86_64-unknown-linux-gnu.tar.xz"
+archive = "tar.xz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "linear"
+path = "linear"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "linear-aarch64-unknown-linux-gnu.tar.xz"
+archive = "tar.xz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "linear"
+path = "linear"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "linear-x86_64-apple-darwin.tar.xz"
+archive = "tar.xz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "linear"
+path = "linear"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "linear-aarch64-apple-darwin.tar.xz"
+archive = "tar.xz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "linear"
+path = "linear"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "linear-x86_64-pc-windows-msvc.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "linear"
+path = "linear.exe"

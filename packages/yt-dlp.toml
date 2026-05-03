@@ -1,0 +1,77 @@
+name = "yt-dlp"
+license = "Unlicense"
+homepage = "https://github.com/yt-dlp/yt-dlp"
+
+[source.release]
+kind = "github_releases"
+repo = "yt-dlp/yt-dlp"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "download_sha256"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "yt-dlp_linux"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "yt-dlp"
+path = "yt-dlp_linux"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "yt-dlp_linux_aarch64"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "yt-dlp"
+path = "yt-dlp_linux_aarch64"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "yt-dlp_macos"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "yt-dlp"
+path = "yt-dlp_macos"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "yt-dlp_macos"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "yt-dlp"
+path = "yt-dlp_macos"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "yt-dlp.exe"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "yt-dlp"
+path = "yt-dlp.exe"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+asset = "yt-dlp_arm64.exe"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "yt-dlp"
+path = "yt-dlp_arm64.exe"

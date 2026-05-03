@@ -1,0 +1,48 @@
+name = "karabiner-elements"
+license = "Unlicense"
+homepage = "https://github.com/pqrs-org/Karabiner-Elements"
+
+[source.release]
+kind = "github_releases"
+repo = "pqrs-org/Karabiner-Elements"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "download_sha256"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "Karabiner-Elements-{version}.dmg"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "karabiner-elements"
+path = "Karabiner-Elements.app/Contents/MacOS/Karabiner-Elements"
+
+[[artifacts.gui_apps]]
+app_id = "org.pqrs.Karabiner-Elements"
+display_name = "Karabiner-Elements"
+exec = "Karabiner-Elements.app"
+categories = ["Utility"]
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "Karabiner-Elements-{version}.dmg"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "karabiner-elements"
+path = "Karabiner-Elements.app/Contents/MacOS/Karabiner-Elements"
+
+[[artifacts.gui_apps]]
+app_id = "org.pqrs.Karabiner-Elements"
+display_name = "Karabiner-Elements"
+exec = "Karabiner-Elements.app"
+categories = ["Utility"]

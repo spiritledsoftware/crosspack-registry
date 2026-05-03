@@ -1,0 +1,78 @@
+name = "neovim"
+license = "Apache-2.0"
+homepage = "https://github.com/neovim/neovim"
+
+[source.release]
+kind = "github_releases"
+repo = "neovim/neovim"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "download_sha256"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "nvim-linux-x86_64.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "nvim"
+path = "bin/nvim"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "nvim-linux-arm64.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "nvim"
+path = "bin/nvim"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "nvim-macos-x86_64.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "nvim"
+path = "bin/nvim"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "nvim-macos-arm64.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "nvim"
+path = "bin/nvim"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "nvim-win64.zip"
+archive = "zip"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "nvim"
+path = "bin/nvim.exe"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+asset = "nvim-win-arm64.zip"
+archive = "zip"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "nvim"
+path = "bin/nvim.exe"

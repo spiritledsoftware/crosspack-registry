@@ -1,0 +1,33 @@
+name = "hammerspoon"
+license = "MIT"
+homepage = "https://github.com/Hammerspoon/hammerspoon"
+
+[source.release]
+kind = "github_releases"
+repo = "Hammerspoon/hammerspoon"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "download_sha256"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "Hammerspoon-{version}.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "hammerspoon"
+path = "Hammerspoon.app/Contents/MacOS/Hammerspoon"
+
+[[artifacts.gui_apps]]
+app_id = "org.hammerspoon.Hammerspoon"
+display_name = "Hammerspoon"
+exec = "Hammerspoon.app"
+categories = ["Utility"]
