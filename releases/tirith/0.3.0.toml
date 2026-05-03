@@ -1,0 +1,27 @@
+name = "tirith"
+version = "0.3.0"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/sheeki03/tirith/releases/download/v0.3.0/tirith-x86_64-unknown-linux-gnu.tar.gz"
+sha256 = "111471db8839013a0875f076f70437a78d8f4cf3d3f90ba0b3f096c558478257"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/sheeki03/tirith/releases/download/v0.3.0/tirith-aarch64-unknown-linux-gnu.tar.gz"
+sha256 = "ac9981269557ae338a1a75e92904691d8b865caa6e4fd0fa059fe64e69ca74ed"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/sheeki03/tirith/releases/download/v0.3.0/tirith-x86_64-apple-darwin.tar.gz"
+sha256 = "2df8f142b10db9adb9c205cb2539b887235cafe3066607020c75f9c472fe343f"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/sheeki03/tirith/releases/download/v0.3.0/tirith-aarch64-apple-darwin.tar.gz"
+sha256 = "e12a2a6d53f8f16b5ea2c08f8510624a03f37c1cb7ab800cb67200a02b1a8e06"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/sheeki03/tirith/releases/download/v0.3.0/tirith-x86_64-pc-windows-msvc.zip"
+sha256 = "b8edf5d408f77624551dbb3df7946055b073183b92f3ebfca8862e7a9db25840"
