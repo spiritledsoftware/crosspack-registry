@@ -1,0 +1,27 @@
+name = "fastfetch"
+version = "2.62.1"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/fastfetch-cli/fastfetch/releases/download/2.62.1/fastfetch-linux-amd64.tar.gz"
+sha256 = "52619f3d39f03266ec74f9ae9c86893290ec2aa3ea055137f63750a1ce7ea00d"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/fastfetch-cli/fastfetch/releases/download/2.62.1/fastfetch-linux-aarch64.tar.gz"
+sha256 = "92086b8b470ec8962d148363c350c7e0f291b9159b832add2c46f4c08ff4792d"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/fastfetch-cli/fastfetch/releases/download/2.62.1/fastfetch-macos-amd64.tar.gz"
+sha256 = "742a6daddcbee5682904824eed438b96676190139d58cb6bdabdcca9a07ae0d0"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/fastfetch-cli/fastfetch/releases/download/2.62.1/fastfetch-macos-aarch64.tar.gz"
+sha256 = "751f61d5c60b21c4a2f88ac5bf295ed3ff42ba7d3333bc7f08d26d2d5d3455c0"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/fastfetch-cli/fastfetch/releases/download/2.62.1/fastfetch-windows-amd64.zip"
+sha256 = "93196caef8aac6630847422fb1e9b27eb6574d3c7f562fb88bd7dbf754115bc4"
