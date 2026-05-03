@@ -1,0 +1,32 @@
+name = "mise"
+version = "2026.4.28"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/jdx/mise/releases/download/v2026.4.28/mise-v2026.4.28-linux-x64.tar.gz"
+sha256 = "ea7461398ca944029e9a4bd8ee25c94dc5c33bea78926f4c9fd7409e73b29b39"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/jdx/mise/releases/download/v2026.4.28/mise-v2026.4.28-linux-arm64.tar.gz"
+sha256 = "3d8a3570e520136424e781208249abab456c3705f684efd21a4c65a6af565b42"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/jdx/mise/releases/download/v2026.4.28/mise-v2026.4.28-macos-x64.tar.gz"
+sha256 = "c590f28b9e04085df73736fdfc4a1f6eef3b866d730c7a061aa2df46c8cf1c66"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/jdx/mise/releases/download/v2026.4.28/mise-v2026.4.28-macos-arm64.tar.gz"
+sha256 = "0b226fa0b96f50bf41a35f96e8ef166e3d7a834ab7bfad4f3f1a12ff928363f4"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/jdx/mise/releases/download/v2026.4.28/mise-v2026.4.28-windows-x64.zip"
+sha256 = "36db52c5bbb3c825f753fef58b3ea4389ba833ee9a455b05e6ee2b9d657d14b6"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+url = "https://github.com/jdx/mise/releases/download/v2026.4.28/mise-v2026.4.28-windows-arm64.zip"
+sha256 = "9d87a7d985d3082df9010d58d7ed5b08c0778afd5cefba84e3eb674c50176a95"
