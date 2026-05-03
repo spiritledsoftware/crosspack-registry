@@ -1,0 +1,77 @@
+name = "ast-grep"
+license = "MIT"
+homepage = "https://github.com/ast-grep/ast-grep"
+
+[source.release]
+kind = "github_releases"
+repo = "ast-grep/ast-grep"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "download_sha256"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "app-x86_64-unknown-linux-gnu.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "ast-grep"
+path = "sg"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "app-aarch64-unknown-linux-gnu.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "ast-grep"
+path = "sg"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "app-x86_64-apple-darwin.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "ast-grep"
+path = "sg"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "app-aarch64-apple-darwin.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "ast-grep"
+path = "sg"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "app-x86_64-pc-windows-msvc.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "ast-grep"
+path = "sg.exe"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+asset = "app-aarch64-pc-windows-msvc.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "ast-grep"
+path = "sg.exe"

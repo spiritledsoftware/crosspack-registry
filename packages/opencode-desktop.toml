@@ -1,0 +1,94 @@
+name = "opencode-desktop"
+license = "MIT"
+homepage = "https://github.com/sst/opencode"
+
+[source.release]
+kind = "github_releases"
+repo = "sst/opencode"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "download_sha256"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "opencode-electron-linux-x86_64.AppImage"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "opencode-desktop"
+path = "opencode-electron-linux-x86_64.AppImage"
+
+[[artifacts.gui_apps]]
+app_id = "ai.opencode.desktop"
+display_name = "opencode Desktop"
+exec = "opencode-electron-linux-x86_64.AppImage"
+categories = ["Development", "Utility"]
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "opencode-electron-mac-x64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "opencode-desktop"
+path = "opencode.app/Contents/MacOS/opencode"
+
+[[artifacts.gui_apps]]
+app_id = "ai.opencode.desktop"
+display_name = "opencode Desktop"
+exec = "opencode.app"
+categories = ["Development", "Utility"]
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "opencode-electron-mac-arm64.dmg"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "opencode-desktop"
+path = "opencode.app/Contents/MacOS/opencode"
+
+[[artifacts.gui_apps]]
+app_id = "ai.opencode.desktop"
+display_name = "opencode Desktop"
+exec = "opencode.app"
+categories = ["Development", "Utility"]
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "opencode-electron-win-x64.exe"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "opencode-desktop"
+path = "opencode-electron-win-x64.exe"
+
+[[artifacts.gui_apps]]
+app_id = "ai.opencode.desktop"
+display_name = "opencode Desktop"
+exec = "opencode-electron-win-x64.exe"
+categories = ["Development", "Utility"]
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+asset = "opencode-electron-win-arm64.exe"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "opencode-desktop"
+path = "opencode-electron-win-arm64.exe"
+
+[[artifacts.gui_apps]]
+app_id = "ai.opencode.desktop"
+display_name = "opencode Desktop"
+exec = "opencode-electron-win-arm64.exe"
+categories = ["Development", "Utility"]

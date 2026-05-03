@@ -1,0 +1,67 @@
+name = "fastfetch"
+license = "MIT"
+homepage = "https://github.com/fastfetch-cli/fastfetch"
+
+[source.release]
+kind = "github_releases"
+repo = "fastfetch-cli/fastfetch"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "download_sha256"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "fastfetch-linux-amd64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "fastfetch"
+path = "fastfetch"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "fastfetch-linux-aarch64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "fastfetch"
+path = "fastfetch"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "fastfetch-macos-amd64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "fastfetch"
+path = "fastfetch"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "fastfetch-macos-aarch64.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "fastfetch"
+path = "fastfetch"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "fastfetch-windows-amd64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "fastfetch"
+path = "fastfetch.exe"

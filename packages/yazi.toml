@@ -1,0 +1,96 @@
+name = "yazi"
+license = "MIT"
+homepage = "https://github.com/sxyazi/yazi"
+
+[source.release]
+kind = "github_releases"
+repo = "sxyazi/yazi"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "download_sha256"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "yazi-x86_64-unknown-linux-gnu.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "yazi"
+path = "yazi"
+[[artifacts.binaries]]
+name = "ya"
+path = "ya"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "yazi-aarch64-unknown-linux-gnu.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "yazi"
+path = "yazi"
+[[artifacts.binaries]]
+name = "ya"
+path = "ya"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "yazi-x86_64-apple-darwin.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "yazi"
+path = "yazi"
+[[artifacts.binaries]]
+name = "ya"
+path = "ya"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "yazi-aarch64-apple-darwin.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "yazi"
+path = "yazi"
+[[artifacts.binaries]]
+name = "ya"
+path = "ya"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "yazi-x86_64-pc-windows-msvc.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "yazi"
+path = "yazi.exe"
+[[artifacts.binaries]]
+name = "ya"
+path = "ya.exe"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+asset = "yazi-aarch64-pc-windows-msvc.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "yazi"
+path = "yazi.exe"
+[[artifacts.binaries]]
+name = "ya"
+path = "ya.exe"

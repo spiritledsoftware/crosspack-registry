@@ -1,0 +1,68 @@
+name = "tirith"
+license = "MIT"
+homepage = "https://github.com/sheeki03/tirith"
+
+[source.release]
+kind = "github_releases"
+repo = "sheeki03/tirith"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "download_sha256"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "tirith-x86_64-unknown-linux-gnu.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "tirith"
+path = "tirith"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "tirith-aarch64-unknown-linux-gnu.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "tirith"
+path = "tirith"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "tirith-x86_64-apple-darwin.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "tirith"
+path = "tirith"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "tirith-aarch64-apple-darwin.tar.gz"
+archive = "tar.gz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "tirith"
+path = "tirith"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "tirith-x86_64-pc-windows-msvc.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "tirith"
+path = "tirith.exe"

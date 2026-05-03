@@ -1,0 +1,68 @@
+name = "stylua"
+license = "MPL-2.0"
+homepage = "https://github.com/JohnnyMorganz/StyLua"
+
+[source.release]
+kind = "github_releases"
+repo = "JohnnyMorganz/StyLua"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "download_sha256"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "stylua-linux-x86_64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "stylua"
+path = "stylua"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "stylua-linux-aarch64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "stylua"
+path = "stylua"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "stylua-macos-x86_64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "stylua"
+path = "stylua"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "stylua-macos-aarch64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "stylua"
+path = "stylua"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "stylua-windows-x86_64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "stylua"
+path = "stylua.exe"
