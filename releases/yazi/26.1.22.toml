@@ -1,0 +1,32 @@
+name = "yazi"
+version = "26.1.22"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/sxyazi/yazi/releases/download/v26.1.22/yazi-x86_64-unknown-linux-gnu.zip"
+sha256 = "a136269b2d5fbb5fb43f3fac3391446e8fbc72aba1c4bb4fae6e6d1556420750"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/sxyazi/yazi/releases/download/v26.1.22/yazi-aarch64-unknown-linux-gnu.zip"
+sha256 = "f5a9d7062ae30b75c1e0481d3132aa54c14bacf76efb1b39b54b6d5d08b7c537"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/sxyazi/yazi/releases/download/v26.1.22/yazi-x86_64-apple-darwin.zip"
+sha256 = "1e097c015a968aba29bbc11bffdb99a7aedaf92c78df09d00613283dac0f148c"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/sxyazi/yazi/releases/download/v26.1.22/yazi-aarch64-apple-darwin.zip"
+sha256 = "8355ad582dd9f4ef1f88a228080f2b6116bbb483dd48d1bde555d475f4d2afe4"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/sxyazi/yazi/releases/download/v26.1.22/yazi-x86_64-pc-windows-msvc.zip"
+sha256 = "7d6c8e3f596f99dd8f20fc7b806c9195c4746c2b7100d0e90a7ff80c259c899a"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+url = "https://github.com/sxyazi/yazi/releases/download/v26.1.22/yazi-aarch64-pc-windows-msvc.zip"
+sha256 = "9053be6be1d4f8b06395d55af733f247fb060b14410b9165907f279844e7501b"
