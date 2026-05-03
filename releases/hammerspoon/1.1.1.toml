@@ -1,0 +1,7 @@
+name = "hammerspoon"
+version = "1.1.1"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/Hammerspoon/hammerspoon/releases/download/1.1.1/Hammerspoon-1.1.1.zip"
+sha256 = "11bb1c90faf5427f37c7bd4fe7eab9774ae43e1d5cb020c5b3088dac32849efa"
