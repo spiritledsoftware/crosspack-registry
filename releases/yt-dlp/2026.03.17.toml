@@ -1,0 +1,32 @@
+name = "yt-dlp"
+version = "2026.03.17"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp_linux"
+sha256 = "c2b0189f581fe4a2ddd41954f1bcb7d327db04b07ed0dea97e4f1b3e09b5dd8e"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp_linux_aarch64"
+sha256 = "6bfa19736181da9e2e066f9c767da2f24fdcc5e148fa5034d1feb09132f89ad5"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp_macos"
+sha256 = "e80c47b3ce712acee51d5e3d4eace2d181b44d38f1942c3a32e3c7ff53cd9ed5"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp_macos"
+sha256 = "e80c47b3ce712acee51d5e3d4eace2d181b44d38f1942c3a32e3c7ff53cd9ed5"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp.exe"
+sha256 = "3db811b366b2da47337d2fcfdfe5bbd9a258dad3f350c54974f005df115a1545"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+url = "https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp_arm64.exe"
+sha256 = "6cfba1af5147da0196d8c015961b1422bdd47fc2f9bb6df8cb4d1dc029939c51"
