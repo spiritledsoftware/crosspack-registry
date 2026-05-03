@@ -1,0 +1,27 @@
+name = "stylua"
+version = "2.4.1"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/JohnnyMorganz/StyLua/releases/download/v2.4.1/stylua-linux-x86_64.zip"
+sha256 = "a879ee45a2e1ab7d7fe80ae98e5e019349c70c9b3f1b92ad584b38cda1bb68fa"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/JohnnyMorganz/StyLua/releases/download/v2.4.1/stylua-linux-aarch64.zip"
+sha256 = "ce8363cf77fb88f31e5cd8fe4cd8a61ff63ac0483bc5e38a1e24c5a894f04035"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/JohnnyMorganz/StyLua/releases/download/v2.4.1/stylua-macos-x86_64.zip"
+sha256 = "985dc2c791ef5f0bfbaea99f18b01322613f5c6985979a8346c346a341043331"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/JohnnyMorganz/StyLua/releases/download/v2.4.1/stylua-macos-aarch64.zip"
+sha256 = "c1680c337c8d799b4226a10e8ac6744606fd00b01eb3046120b5226e31306809"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/JohnnyMorganz/StyLua/releases/download/v2.4.1/stylua-windows-x86_64.zip"
+sha256 = "9b1627b6034aa7ea0ce80485d2a07e777447548839a40acda6e30824a2bba07a"
