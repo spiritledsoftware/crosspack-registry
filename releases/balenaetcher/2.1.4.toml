@@ -1,0 +1,22 @@
+name = "balenaetcher"
+version = "2.1.4"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/balena-io/etcher/releases/download/v2.1.4/balenaEtcher-linux-x64-2.1.4.zip"
+sha256 = "b0e08f001cc15cb0d648832db1d23273aa6ff25111bc104b8bc1f794aa9616d9"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/balena-io/etcher/releases/download/v2.1.4/balenaEtcher-2.1.4-x64.dmg"
+sha256 = "52d9d20d6e1929f1032d3625361cf46d37d42e928df077746a238abeec412254"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/balena-io/etcher/releases/download/v2.1.4/balenaEtcher-2.1.4-arm64.dmg"
+sha256 = "6196813482f3fe8c329002a46610c7623a7ab8d0e48cdeca21d9dc05eb668dc9"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/balena-io/etcher/releases/download/v2.1.4/balenaEtcher-win32-x64-2.1.4.zip"
+sha256 = "ad0a568f45fcb981173084b4183b684acd6f9dfafbf66b5b04f37627e02c6f91"
