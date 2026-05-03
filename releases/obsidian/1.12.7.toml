@@ -1,0 +1,27 @@
+name = "obsidian"
+version = "1.12.7"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/obsidianmd/obsidian-releases/releases/download/v1.12.7/obsidian-1.12.7.tar.gz"
+sha256 = "fcbe08b111d9c1fdb09b9c08952b06e1c829c62163eba2584c4b4ec859be079d"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/obsidianmd/obsidian-releases/releases/download/v1.12.7/obsidian-1.12.7-arm64.tar.gz"
+sha256 = "6bc8727bfdbb6d731d5af9a06f51d6de7061c68c908c8ae8b43a9ed379a20260"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/obsidianmd/obsidian-releases/releases/download/v1.12.7/Obsidian-1.12.7.dmg"
+sha256 = "3b85c13b4ce55512e86e170a7cd2a494e2db695ac888c0601e153cb85b77881b"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/obsidianmd/obsidian-releases/releases/download/v1.12.7/Obsidian-1.12.7.dmg"
+sha256 = "3b85c13b4ce55512e86e170a7cd2a494e2db695ac888c0601e153cb85b77881b"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/obsidianmd/obsidian-releases/releases/download/v1.12.7/Obsidian-1.12.7.exe"
+sha256 = "f35d2a35061098400a3fafc1bfd38d8bd33f1ad76df8b78b62ccdf20b0a30d26"
