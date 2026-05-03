@@ -1,0 +1,22 @@
+name = "spotify-player"
+version = "0.23.0"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/aome510/spotify-player/releases/download/v0.23.0/spotify_player-x86_64-unknown-linux-gnu.tar.gz"
+sha256 = "0378f89cd7c78e80b4ed1366f034b363a463d8e07685585d0fcd047b580c7fd0"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/aome510/spotify-player/releases/download/v0.23.0/spotify_player-x86_64-apple-darwin.tar.gz"
+sha256 = "00ab1f1054bee86c3b9fadbb90df33bfe44ea3872aa49034713b9832d5491f88"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/aome510/spotify-player/releases/download/v0.23.0/spotify_player-aarch64-apple-darwin.tar.gz"
+sha256 = "6fb88df3c2abde41b6ea89f93eb9e02f02fe41653e0fb63584969c84761e57c3"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/aome510/spotify-player/releases/download/v0.23.0/spotify_player-x86_64-pc-windows-msvc.zip"
+sha256 = "8a85926e4a8cbb77a74e108c9b997f30bb10a805cadbfb46678ddf8233c5381b"
