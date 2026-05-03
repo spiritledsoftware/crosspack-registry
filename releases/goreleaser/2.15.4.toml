@@ -1,0 +1,32 @@
+name = "goreleaser"
+version = "2.15.4"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/goreleaser/goreleaser/releases/download/v2.15.4/goreleaser_Linux_x86_64.tar.gz"
+sha256 = "aae00c71a4a6d55e08cce9273a1516bdce33c1e07cffb7e502fa6fec4377dede"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/goreleaser/goreleaser/releases/download/v2.15.4/goreleaser_Linux_arm64.tar.gz"
+sha256 = "de01ca1497571e9b348413cd2e7f74be49b8d57696ae386f7eedd06176544a88"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/goreleaser/goreleaser/releases/download/v2.15.4/goreleaser_Darwin_x86_64.tar.gz"
+sha256 = "f9096d896139581cb7aeb4abcee1e7280357a3cd525a22440127be5ea52cf901"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/goreleaser/goreleaser/releases/download/v2.15.4/goreleaser_Darwin_arm64.tar.gz"
+sha256 = "d9cd0978d64686eb54e53e9f08b400edc8b1f9034f98fca43ec7a3f641327081"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/goreleaser/goreleaser/releases/download/v2.15.4/goreleaser_Windows_x86_64.zip"
+sha256 = "146695f49717dfd79d64d5d6f4b1d25e2b56d73e723bbf68a8dc13ce5cf69693"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+url = "https://github.com/goreleaser/goreleaser/releases/download/v2.15.4/goreleaser_Windows_arm64.zip"
+sha256 = "10227d9de3eb846f0e58529c22e75dcbd713b67879a7f83912de7abe658c5fd7"
