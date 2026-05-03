@@ -1,0 +1,27 @@
+name = "chezmoi"
+version = "2.70.2"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/twpayne/chezmoi/releases/download/v2.70.2/chezmoi_2.70.2_linux-glibc_amd64.tar.gz"
+sha256 = "dda79928bf8428c1bb3d48497be00237a6ecc95a2bef7ded573608436ec7270b"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/twpayne/chezmoi/releases/download/v2.70.2/chezmoi_2.70.2_linux_arm64.tar.gz"
+sha256 = "99e402af70f457dbf3ad545f62f78892375f2d9361db1c9c354e6d924a3b4fae"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/twpayne/chezmoi/releases/download/v2.70.2/chezmoi_2.70.2_darwin_amd64.tar.gz"
+sha256 = "e421d3941db71242350afe5759e2cc12036b3edc14b9370b51df9109f4065ac5"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/twpayne/chezmoi/releases/download/v2.70.2/chezmoi_2.70.2_darwin_arm64.tar.gz"
+sha256 = "30dd21291a9d623fd334d83d97313660beea86f0053f483a30dbbb7a0d5b78ba"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/twpayne/chezmoi/releases/download/v2.70.2/chezmoi_2.70.2_windows_amd64.zip"
+sha256 = "0dec4f62a04c203da809c670b11c4271315ba1dc3f5d5571883c9d7a6f45bec6"
