@@ -1,0 +1,27 @@
+name = "opencode-desktop"
+version = "1.14.33"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/anomalyco/opencode/releases/download/v1.14.33/opencode-electron-linux-x86_64.AppImage"
+sha256 = "251e33cc3efd116a37902112ac2530a63b539a1cd6b7119913c06ec1d23cab61"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/anomalyco/opencode/releases/download/v1.14.33/opencode-electron-mac-x64.zip"
+sha256 = "6f29a139aab75b34eb1857365d2749138a492e8d6ace6ca0273591160df1b5a8"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/anomalyco/opencode/releases/download/v1.14.33/opencode-electron-mac-arm64.zip"
+sha256 = "38e02d790d4db7188bd65b3bef3015ae9824182585b7d5f5aec6ea2d69b396b4"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/anomalyco/opencode/releases/download/v1.14.33/opencode-electron-win-x64.exe"
+sha256 = "ad40d488fa069d494aebb43e89f395f39606474272dbee75cd1253794faba3f4"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+url = "https://github.com/anomalyco/opencode/releases/download/v1.14.33/opencode-electron-win-arm64.exe"
+sha256 = "dfdc033fa2f624ea776db555cefd2f1ade58e0830662d84769bb249e4a89fa97"
