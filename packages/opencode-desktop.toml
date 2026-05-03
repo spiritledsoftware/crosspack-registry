@@ -50,7 +50,8 @@ categories = ["Development", "Utility"]
 
 [[artifacts]]
 target = "aarch64-apple-darwin"
-asset = "opencode-electron-mac-arm64.dmg"
+asset = "opencode-electron-mac-arm64.zip"
+archive = "zip"
 strip_components = 0
 
 [[artifacts.binaries]]

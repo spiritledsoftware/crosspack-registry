@@ -86,10 +86,10 @@ strip_components = 0
 
 [[artifacts.binaries]]
 name = "obsidian"
-path = "Obsidian-{version}.exe"
+path = "obsidian.exe"
 
 [[artifacts.gui_apps]]
 app_id = "md.obsidian.Obsidian"
 display_name = "Obsidian"
-exec = "Obsidian-{version}.exe"
+exec = "obsidian.exe"
 categories = ["Office", "Utility"]

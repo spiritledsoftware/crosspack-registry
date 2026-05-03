@@ -47,6 +47,16 @@ name = "yt-dlp"
 path = "yt-dlp_macos"
 
 [[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "yt-dlp_macos"
+archive = "bin"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "yt-dlp"
+path = "yt-dlp_macos"
+
+[[artifacts]]
 target = "x86_64-pc-windows-msvc"
 asset = "yt-dlp.exe"
 archive = "bin"
