@@ -1,0 +1,27 @@
+name = "lsd"
+version = "1.2.0"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/lsd-rs/lsd/releases/download/v1.2.0/lsd-v1.2.0-x86_64-unknown-linux-gnu.tar.gz"
+sha256 = "57d3b5859254adcfb8374ce98159cca97a14959997d2ae1176d2cff59556d829"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/lsd-rs/lsd/releases/download/v1.2.0/lsd-v1.2.0-aarch64-unknown-linux-gnu.tar.gz"
+sha256 = "48c069cf73a8ed0851f366afeac86e3a9b7db416133f45d033d31d123f819f26"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/lsd-rs/lsd/releases/download/v1.2.0/lsd-v1.2.0-x86_64-apple-darwin.tar.gz"
+sha256 = "00d3c50551b270bbdf7da97816e5ba7f5fd10294cd310165f7f8b5523e738b9c"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/lsd-rs/lsd/releases/download/v1.2.0/lsd-v1.2.0-aarch64-apple-darwin.tar.gz"
+sha256 = "9e34a5d392ff913302098aad0543dafa1883c531eaf229b82f086c3fca675e3e"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/lsd-rs/lsd/releases/download/v1.2.0/lsd-v1.2.0-x86_64-pc-windows-msvc.zip"
+sha256 = "a65b9f457153934a7ce1f7e0fe1c4922a95bb2822222126e4fbaa6ee9c0d78e5"
