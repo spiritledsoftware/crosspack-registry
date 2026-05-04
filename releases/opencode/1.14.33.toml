@@ -1,0 +1,32 @@
+name = "opencode"
+version = "1.14.33"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/anomalyco/opencode/releases/download/v1.14.33/opencode-linux-x64.tar.gz"
+sha256 = "ab3de3d40a67573419ec74916210cf90dcf8c180dc9d8052db71ac9f55c28810"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/anomalyco/opencode/releases/download/v1.14.33/opencode-linux-arm64.tar.gz"
+sha256 = "3cfa593defe2b8fbfb55f05f1671a64666aeca2cec1be81a9db7d3bb1694b4ed"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/anomalyco/opencode/releases/download/v1.14.33/opencode-darwin-x64.zip"
+sha256 = "56c252b0bd20a430e8b3d39e31763af717540d07a14963fb36421f3abdfe7f86"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/anomalyco/opencode/releases/download/v1.14.33/opencode-darwin-arm64.zip"
+sha256 = "ae9142115ca1998941ce41ee379e502c13a7b4861c80fd5c1a70477a5f85dba3"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/anomalyco/opencode/releases/download/v1.14.33/opencode-windows-x64.zip"
+sha256 = "d2173c38bb7be4a51da4495cc726e5733e4af9a19a45f1c376c409530b8981b0"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+url = "https://github.com/anomalyco/opencode/releases/download/v1.14.33/opencode-windows-arm64.zip"
+sha256 = "639d6d2a914b07b9961c238cf39c6378a35a2f41280103199f97bf2b6dddea0d"
