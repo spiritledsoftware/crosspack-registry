@@ -5,6 +5,7 @@ on:
     paths:
       - 'packages/*.toml'
       - 'packages/*.toml.sig'
+      - 'releases/**'
       - 'releases/**/*.toml'
       - 'releases/**/*.toml.sig'
       - 'scripts/**'

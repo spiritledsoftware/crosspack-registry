@@ -16,6 +16,7 @@ class GitHubWorkflowTests(unittest.TestCase):
         self.assertIn("      - Sign Manifests On Merge", quality_gate)
         self.assertIn("      - completed", quality_gate)
         self.assertIn("      - main", quality_gate)
+        self.assertIn("      - 'releases/**'", quality_gate)
 
     def test_registry_quality_gate_workflow_run_uses_changed_manifests(self) -> None:
         quality_gate = (
