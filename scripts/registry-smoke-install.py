@@ -114,6 +114,19 @@ def artifact_layout_from_package_template(path: Path, doc: dict, target: str) ->
     return {}
 
 
+def integrations_from_manifest_or_package_template(path: Path, doc: dict) -> list[dict]:
+    integrations = doc.get("integrations", [])
+    if integrations:
+        return integrations
+
+    package_template_path = package_template_path_for_release(path, doc)
+    if package_template_path is None or not package_template_path.exists():
+        return []
+
+    package_doc = tomllib.loads(package_template_path.read_text(encoding="utf-8"))
+    return package_doc.get("integrations", [])
+
+
 DOWNLOAD_ATTEMPTS = 3
 TRANSIENT_HTTP_STATUS_CODES = {408, 429, 500, 502, 503, 504}
 
@@ -336,7 +349,7 @@ def smoke_manifest(
             )
 
         missing_integrations = []
-        for integration in doc.get("integrations", []):
+        for integration in integrations_from_manifest_or_package_template(path, doc):
             source = integration.get("source")
             if not isinstance(source, str) or not source.strip():
                 continue

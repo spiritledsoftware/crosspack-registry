@@ -3,6 +3,7 @@ import importlib.util
 import io
 import urllib.error
 import tempfile
+import tarfile
 import textwrap
 import unittest
 import zipfile
@@ -153,6 +154,76 @@ class RegistrySmokeInstallTests(unittest.TestCase):
         self.assertTrue(ok)
         self.assertIn("demo@1.0.0", message)
         self.assertIn("target=fallback-target", message)
+
+    def test_release_manifest_uses_package_template_integrations(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="smoke-test-") as tmp:
+            tmp_path = Path(tmp)
+            payload_path = tmp_path / "demo.tar.gz"
+            payload_root = tmp_path / "payload-root"
+            (payload_root / "demo-1.0.0" / "bin").mkdir(parents=True)
+            (payload_root / "demo-1.0.0" / "etc").mkdir(parents=True)
+            (payload_root / "demo-1.0.0" / "bin" / "demo").write_bytes(b"demo")
+            (payload_root / "demo-1.0.0" / "etc" / "demo.service").write_text(
+                "[Service]\n",
+                encoding="utf-8",
+            )
+            with tarfile.open(payload_path, "w:gz") as tf:
+                tf.add(payload_root / "demo-1.0.0", arcname="demo-1.0.0")
+            payload_bytes = payload_path.read_bytes()
+            payload_sha = hashlib.sha256(payload_bytes).hexdigest()
+
+            packages_dir = tmp_path / "packages"
+            releases_dir = tmp_path / "releases" / "demo"
+            packages_dir.mkdir()
+            releases_dir.mkdir(parents=True)
+            (packages_dir / "demo.toml").write_text(
+                textwrap.dedent(
+                    """
+                    name = "demo"
+
+                    [[integrations]]
+                    kind = "service"
+                    name = "demo"
+                    source = "etc/demo.service"
+
+                    [[artifacts]]
+                    target = "fallback-target"
+                    archive = "tar.gz"
+                    strip_components = 1
+
+                    [[artifacts.binaries]]
+                    name = "demo"
+                    path = "bin/demo"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+            manifest_path = releases_dir / "1.0.0.toml"
+            manifest_path.write_text(
+                textwrap.dedent(
+                    f"""
+                    name = "demo"
+                    version = "1.0.0"
+
+                    [[artifacts]]
+                    target = "fallback-target"
+                    url = "https://example.invalid/demo.tar.gz"
+                    sha256 = "{payload_sha}"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+
+            def fake_download(_url: str, dest: Path) -> None:
+                dest.write_bytes(payload_bytes)
+
+            with mock.patch.object(self.smoke, "download", side_effect=fake_download):
+                ok, message = self.smoke.smoke_manifest(manifest_path)
+
+        self.assertTrue(ok, msg=message)
+        self.assertIn("demo@1.0.0", message)
 
     def test_download_retries_transient_http_error(self) -> None:
         with tempfile.TemporaryDirectory(prefix="smoke-test-") as tmp:
