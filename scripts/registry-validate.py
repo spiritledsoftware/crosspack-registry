@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import argparse
 import re
+import subprocess
 import sys
+import tempfile
 import tomllib
 from pathlib import Path
 
@@ -296,6 +298,13 @@ def validate_package_manifest(path: Path, doc: dict, errors: list[str]) -> None:
                 path,
                 f"package filename `{file_pkg}` does not match `name` `{doc['name']}`",
             )
+        release_dir = path.parent.parent / "releases" / file_pkg
+        if not release_dir.is_dir():
+            err(
+                errors,
+                path,
+                f"missing release directory `{release_dir.as_posix()}` for package template",
+            )
 
     artifacts = doc.get("artifacts")
     if not isinstance(artifacts, list) or not artifacts:
@@ -460,7 +469,9 @@ def validate_release_manifest(path: Path, doc: dict, errors: list[str]) -> None:
             err(errors, path, f"{prefix}.sha256 must be 64 hex characters")
 
 
-def validate_signature_sidecar(path: Path, errors: list[str]) -> None:
+def validate_signature_sidecar(
+    path: Path, errors: list[str], trusted_key_path: Path | None
+) -> None:
     sig_path = path.with_suffix(path.suffix + ".sig")
     if not sig_path.exists():
         err(errors, path, f"missing signature sidecar `{sig_path.name}`")
@@ -478,9 +489,88 @@ def validate_signature_sidecar(path: Path, errors: list[str]) -> None:
             path,
             f"invalid signature format in `{sig_path.name}` (expected 128 hex characters)",
         )
+        return
+
+    if trusted_key_path is not None:
+        verify_signature(path, sig_path, sig_raw, trusted_key_path, errors)
 
 
-def validate_manifest(path: Path, errors: list[str], require_signatures: bool) -> None:
+def verify_signature(
+    path: Path, sig_path: Path, sig_raw: str, trusted_key_path: Path, errors: list[str]
+) -> None:
+    try:
+        public_key_hex = trusted_key_path.read_text(encoding="utf-8").strip()
+    except OSError as exc:
+        err(errors, path, f"cannot read trusted registry key `{trusted_key_path}` ({exc})")
+        return
+
+    if not re.fullmatch(r"^[0-9a-fA-F]{64}$", public_key_hex):
+        err(errors, trusted_key_path, "trusted registry key must be 64 hex characters")
+        return
+
+    try:
+        # RFC 8410 Ed25519 SubjectPublicKeyInfo prefix followed by the 32-byte raw key.
+        public_der = bytes.fromhex("302a300506032b6570032100" + public_key_hex)
+        signature_bytes = bytes.fromhex(sig_raw)
+    except ValueError as exc:
+        err(errors, path, f"cannot decode signature verification material ({exc})")
+        return
+
+    with tempfile.TemporaryDirectory(prefix="registry-validate-sig-") as tmp:
+        tmp_path = Path(tmp)
+        public_der_path = tmp_path / "registry.pub.der"
+        public_pem_path = tmp_path / "registry.pub.pem"
+        signature_bin_path = tmp_path / sig_path.name
+        public_der_path.write_bytes(public_der)
+        signature_bin_path.write_bytes(signature_bytes)
+
+        convert = subprocess.run(
+            [
+                "openssl",
+                "pkey",
+                "-pubin",
+                "-inform",
+                "DER",
+                "-in",
+                str(public_der_path),
+                "-out",
+                str(public_pem_path),
+            ],
+            text=True,
+            capture_output=True,
+        )
+        if convert.returncode != 0:
+            err(errors, trusted_key_path, f"cannot load trusted registry key ({convert.stderr.strip()})")
+            return
+
+        verify = subprocess.run(
+            [
+                "openssl",
+                "pkeyutl",
+                "-verify",
+                "-rawin",
+                "-pubin",
+                "-inkey",
+                str(public_pem_path),
+                "-sigfile",
+                str(signature_bin_path),
+                "-in",
+                str(path),
+            ],
+            text=True,
+            capture_output=True,
+        )
+        if verify.returncode != 0:
+            detail = verify.stderr.strip() or verify.stdout.strip() or "signature verification failed"
+            err(errors, path, f"invalid signature sidecar `{sig_path.name}` ({detail})")
+
+
+def validate_manifest(
+    path: Path,
+    errors: list[str],
+    require_signatures: bool,
+    trusted_key_path: Path | None,
+) -> None:
     doc = load_manifest(path, errors)
     if doc is None:
         return
@@ -501,7 +591,7 @@ def validate_manifest(path: Path, errors: list[str], require_signatures: bool) -
         )
 
     if require_signatures:
-        validate_signature_sidecar(path, errors)
+        validate_signature_sidecar(path, errors, trusted_key_path)
 
 
 def main() -> int:
@@ -513,16 +603,23 @@ def main() -> int:
         action="store_true",
         help="Skip required .toml.sig sidecar checks (for PR pre-merge validation)",
     )
+    parser.add_argument(
+        "--trusted-key",
+        default="registry.pub",
+        help="Trusted registry public key used to verify .toml.sig sidecars",
+    )
     parser.add_argument("manifests", nargs="+", help="Manifest paths to validate")
     args = parser.parse_args()
 
     errors: list[str] = []
     manifest_paths = [Path(p) for p in args.manifests]
+    trusted_key_path = None if args.allow_missing_signatures else Path(args.trusted_key)
     for path in manifest_paths:
         validate_manifest(
             path,
             errors,
             require_signatures=not args.allow_missing_signatures,
+            trusted_key_path=trusted_key_path,
         )
 
     if errors:
@@ -537,7 +634,7 @@ def main() -> int:
         )
     else:
         print(
-            f"Validated {len(manifest_paths)} manifest(s): package/release schema, checksum, and signature format checks passed."
+            f"Validated {len(manifest_paths)} manifest(s): package/release schema, checksum, and signature verification checks passed."
         )
     return 0
 
