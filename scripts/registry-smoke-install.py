@@ -93,6 +93,27 @@ def choose_artifact(
     return artifacts[0]
 
 
+def package_template_path_for_release(path: Path, doc: dict) -> Path | None:
+    name = doc.get("name")
+    if not isinstance(name, str) or not name.strip():
+        return None
+    if path.parent.parent.name != "releases":
+        return None
+    return path.parent.parent.parent / "packages" / f"{name}.toml"
+
+
+def artifact_layout_from_package_template(path: Path, doc: dict, target: str) -> dict:
+    package_template_path = package_template_path_for_release(path, doc)
+    if package_template_path is None or not package_template_path.exists():
+        return {}
+
+    package_doc = tomllib.loads(package_template_path.read_text(encoding="utf-8"))
+    for artifact in package_doc.get("artifacts", []):
+        if artifact.get("target") == target:
+            return artifact
+    return {}
+
+
 DOWNLOAD_ATTEMPTS = 3
 TRANSIENT_HTTP_STATUS_CODES = {408, 429, 500, 502, 503, 504}
 
@@ -233,11 +254,14 @@ def smoke_manifest(
         )
 
     artifact_target = artifact.get("target", "unknown")
+    artifact_layout = artifact_layout_from_package_template(path, doc, artifact_target)
     url = artifact["url"]
     expected_sha = artifact["sha256"].lower()
-    archive = artifact.get("archive")
-    strip_components = int(artifact.get("strip_components", 0))
-    binaries = artifact.get("binaries", [])
+    archive = artifact.get("archive", artifact_layout.get("archive"))
+    strip_components = int(
+        artifact.get("strip_components", artifact_layout.get("strip_components", 0))
+    )
+    binaries = artifact.get("binaries", artifact_layout.get("binaries", []))
 
     with tempfile.TemporaryDirectory(prefix="registry-smoke-") as tmp:
         tmpdir = Path(tmp)
@@ -308,6 +332,27 @@ def smoke_manifest(
                     f"missing extracted binaries for target={artifact_target}: {missing_csv}",
                     failing_binary=missing_csv,
                     hint="verify artifacts[].binaries[].path and strip_components against the extracted archive layout",
+                ),
+            )
+
+        missing_integrations = []
+        for integration in doc.get("integrations", []):
+            source = integration.get("source")
+            if not isinstance(source, str) or not source.strip():
+                continue
+            source_path = install_root / Path(source)
+            if not source_path.exists() or not source_path.is_file():
+                missing_integrations.append(source)
+
+        if missing_integrations:
+            missing_csv = ", ".join(missing_integrations)
+            return (
+                False,
+                failure_message(
+                    path,
+                    package_id,
+                    f"missing extracted integration sources for target={artifact_target}: {missing_csv}",
+                    hint="verify integrations[].source and strip_components against the extracted archive layout",
                 ),
             )
 
