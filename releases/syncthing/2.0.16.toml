@@ -4,7 +4,7 @@ version = "2.0.16"
 [[integrations]]
 kind = "service"
 name = "syncthing"
-source = "etc/linux-systemd/system/syncthing.service"
+source = "etc/linux-systemd/user/syncthing.service"
 enable = false
 
 [[artifacts]]
