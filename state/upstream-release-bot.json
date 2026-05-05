@@ -2,422 +2,422 @@
   "schema_version": 1,
   "sources": {
     "github_releases:BurntSushi/ripgrep": {
-      "etag": "\"6baa41e3e4556a246da5c1e84db1949af2e90132ec28b40beec50615967af6dd\"",
-      "last_checked_at": "2026-05-03T19:19:50Z",
+      "etag": "\"8c604579dd67f0d450cb1ceb47311de64c94f9a0d6075a18449b59021fe20697\"",
+      "last_checked_at": "2026-05-05T06:29:36Z",
       "latest_version": "15.1.0"
     },
     "github_releases:Byron/dua-cli": {
-      "etag": "\"9961eca7fb15ca0608ae859c578da068074c674ac8dcc5a92bd936ddf2ee957a\"",
-      "last_checked_at": "2026-05-03T19:19:18Z",
+      "etag": "\"fa74c4880832e759f6a4007cb2bf1845576c522a6e27238cc343dcfec88a7a00\"",
+      "last_checked_at": "2026-05-05T06:28:55Z",
       "latest_version": "2.34.0"
     },
     "github_releases:ClementTsang/bottom": {
-      "etag": "\"e63a6d6de78aef5a595f60bde2bc2265f957fd506bda49af11fc60565fae00a2\"",
-      "last_checked_at": "2026-05-03T19:19:09Z",
+      "etag": "\"056a3c3416b556dd63d4299d9ca6bba8b618094654fabdf50dca1ffc60e94fd0\"",
+      "last_checked_at": "2026-05-05T06:28:45Z",
       "latest_version": "0.12.3"
     },
     "github_releases:FiloSottile/age": {
-      "etag": "\"79b771160eac05fa6c7be10f11722c78d1804d111fa8be40117e4ba38935b297\"",
-      "last_checked_at": "2026-05-03T19:19:05Z",
+      "etag": "\"17c5b454a5f2e640456c965fd46efc96e59acb54e2e30ecac22767cb9566256b\"",
+      "last_checked_at": "2026-05-05T06:28:40Z",
       "latest_version": "1.3.1"
     },
     "github_releases:Hammerspoon/hammerspoon": {
-      "etag": "\"2c0f439ca5364a35ec6f8ff66be892024f5eebb1e930b5fce1958dcb6bd2ec63\"",
-      "last_checked_at": "2026-05-03T19:19:25Z",
+      "etag": "\"b88ed58ead640066a0fd9950187551cd0efb7c0481e88f75ad7dad1806ffdd23\"",
+      "last_checked_at": "2026-05-05T06:29:04Z",
       "latest_version": "1.1.1"
     },
     "github_releases:JohnnyMorganz/StyLua": {
-      "etag": "\"229532c836bdeed8fdc4fb45580743bc557d7a038957b8eb2d7c3acb1a78e511\"",
-      "last_checked_at": "2026-05-03T19:19:55Z",
+      "etag": "\"cfaa29726dff2aedd2b085ab4a7e35e08544488fadc983432996a0fbd7660684\"",
+      "last_checked_at": "2026-05-05T06:29:42Z",
       "latest_version": "2.4.1"
     },
     "github_releases:Kong/insomnia": {
-      "etag": "\"7c7e88f012c901cb4d56b060e78218a0440bde972b797e43c041c5905ffff43d\"",
-      "last_checked_at": "2026-05-03T19:19:27Z",
+      "etag": "\"06cbef5cc47254709f7ffaa3922c61ac255b214d89bcf85d03a29d244064164b\"",
+      "last_checked_at": "2026-05-05T06:29:07Z",
       "latest_version": "12.5.0"
     },
     "github_releases:Yakitrak/notesmd-cli": {
-      "etag": "\"a9a18f95a6ef8d36ec7bf291bb474a6221b688588cbe245ae4488197c82c8a79\"",
-      "last_checked_at": "2026-05-03T19:19:37Z",
+      "etag": "\"035de89718b2979d9f58e6c14aba48efd7ffb8cd8419066cd261496cccf7aade\"",
+      "last_checked_at": "2026-05-05T06:29:20Z",
       "latest_version": "0.3.5"
     },
     "github_releases:ahmetb/kubectx": {
-      "etag": "\"5efc688e52b5c0f42399b3a0ff3fcd333a970e9d835df2d7d73503f8c586e14a\"",
-      "last_checked_at": "2026-05-03T19:19:31Z",
+      "etag": "\"fdcba483ceb897ff0d66890c7e17212b23cebbef7b99254658b684d603a8d44a\"",
+      "last_checked_at": "2026-05-05T06:29:12Z",
       "latest_version": "0.11.0"
     },
     "github_releases:ajeetdsouza/zoxide": {
-      "etag": "\"d03f291031f9134eb1ea0294976892f3123108b2cf4c4302e477a05d815a1db7\"",
-      "last_checked_at": "2026-05-03T19:20:03Z",
+      "etag": "\"a47a744cbe278f829ea38a0168d980dd8a2688420f8c03634d22a8fc81fcc06e\"",
+      "last_checked_at": "2026-05-05T06:29:53Z",
       "latest_version": "0.9.9"
     },
     "github_releases:alienator88/Pearcleaner": {
-      "etag": "\"d136e22138263f1a9bd4a170baf9f619db1375acb9bb75110b6314d15cc144bd\"",
-      "last_checked_at": "2026-05-03T19:19:41Z",
+      "etag": "\"926cf54953fb36d4e6bfbff0bb338b6ea0261d77ceb70cda0c009d574958ad2e\"",
+      "last_checked_at": "2026-05-05T06:29:24Z",
       "latest_version": "5.4.3"
     },
     "github_releases:aome510/spotify-player": {
-      "etag": "\"7a08986381a233f12e829ee20193c46bb175e6a583852e8afca30d99f9f5f500\"",
-      "last_checked_at": "2026-05-03T19:19:54Z",
+      "etag": "\"07263c9b64b5c71e099d47790d50c961849cc6e70fd14775dabd25cba7e5c024\"",
+      "last_checked_at": "2026-05-05T06:29:40Z",
       "latest_version": "0.23.0"
     },
     "github_releases:ast-grep/ast-grep": {
-      "etag": "\"4614bc314a39cb1b638ff99e22a78d12d221cd8865eb5681b00309548e27c334\"",
-      "last_checked_at": "2026-05-03T19:19:06Z",
+      "etag": "\"34e59bbbe7b8af35e5e001bbe6d1d44b944e26229f4396a4dbc7289161ec079e\"",
+      "last_checked_at": "2026-05-05T06:28:41Z",
       "latest_version": "0.42.1"
     },
     "github_releases:astral-sh/python-build-standalone": {
-      "etag": "\"f337d7b20b487b250d162ee18fc1f43be246252c00c8ffc1954f69ff8d1f1b3f\"",
-      "last_checked_at": "2026-05-03T19:19:50Z",
+      "etag": "\"52d8d54cce620e6280b1219506962d0db5b85df4c2d2bd7533fe08615f60e844\"",
+      "last_checked_at": "2026-05-05T06:29:35Z",
       "latest_version": "3.14.4+20260414"
     },
     "github_releases:astral-sh/ruff": {
-      "etag": "\"0d721d0186ba2fae94bed2d0f1e65bb0738b958175634f5b16afb0345fc26967\"",
-      "last_checked_at": "2026-05-03T19:19:51Z",
+      "etag": "\"387099cbff401f0ca247fc15fcbedd47015cec9450c37ce48244548bc48e316f\"",
+      "last_checked_at": "2026-05-05T06:29:37Z",
       "latest_version": "0.15.12"
     },
     "github_releases:astral-sh/uv": {
-      "etag": "\"f546192cd529cd293caa3a339f7927b5901ee66cfb6f2fe9da8ae57a7d507447\"",
-      "last_checked_at": "2026-05-03T19:19:57Z",
+      "etag": "\"bde0621b5f03aa4242bc14be86d1292ea0200d6ded7f977cd5eebb798c429810\"",
+      "last_checked_at": "2026-05-05T06:29:46Z",
       "latest_version": "0.11.8"
     },
     "github_releases:atuinsh/atuin": {
-      "etag": "\"a2e9e83532b28139049f026db7430c026298366364fd2d5d5ced0a107da7a2fa\"",
-      "last_checked_at": "2026-05-03T19:19:07Z",
+      "etag": "\"35a95cb33007f280547c0c7580bae430427ab361b81585ff9bfa26a98c25abca\"",
+      "last_checked_at": "2026-05-05T06:28:42Z",
       "latest_version": "18.16.0"
     },
     "github_releases:balena-io/etcher": {
-      "etag": "\"8cde2b264403bd847fbdbfddfc82e4a56cd0d7633655296655326fba3611bc99\"",
-      "last_checked_at": "2026-05-03T19:19:07Z",
+      "etag": "\"800d7f7d53c59afaae3b6fd467ce90a1bd6e9127629510e1ccda4d7cfc6f7be4\"",
+      "last_checked_at": "2026-05-05T06:28:42Z",
       "latest_version": "2.1.4"
     },
     "github_releases:beekeeper-studio/beekeeper-studio": {
-      "etag": "\"37c587b1056ba4994b2dfbd8b94709560ef58e9c4c28837f36b2cce2a2729c5e\"",
-      "last_checked_at": "2026-05-03T19:19:09Z",
+      "etag": "\"9f6a004009645fc4ec3a3fcca01dc3b9c5c637fbf5cfd8cff58c001bffe69e0c\"",
+      "last_checked_at": "2026-05-05T06:28:44Z",
       "latest_version": "5.7.2"
     },
     "github_releases:bootandy/dust": {
-      "etag": "\"2a01633264bad55d3dd23aedaacc5df324edd6c8b9d298945c9716d4ae2ccc3d\"",
-      "last_checked_at": "2026-05-03T19:19:18Z",
+      "etag": "\"90549bde3226e26829c6f1019a8195bc911942e1a70b31956db4f4553e620ccd\"",
+      "last_checked_at": "2026-05-05T06:28:56Z",
       "latest_version": "1.2.4"
     },
     "github_releases:cargo-bins/cargo-binstall": {
-      "etag": "\"35dd7c5a3f3b0ade8630ee92905c050f2f9991cbee17c9244691350eeb1de7b9\"",
-      "last_checked_at": "2026-05-03T19:19:11Z",
+      "etag": "\"a5975e2aa6f1a1d91281010b364d30caebbb82e9a0d557fa16cbe991dbac4d88\"",
+      "last_checked_at": "2026-05-05T06:28:47Z",
       "latest_version": "1.19.0"
     },
     "github_releases:casey/just": {
-      "etag": "\"f772c52bea3f2eb7663641c4083e7ee4a0968ef9de4245636c4c1844690e6b98\"",
-      "last_checked_at": "2026-05-03T19:19:29Z",
+      "etag": "\"3ed94539cdd69ea5d971b6ff12f763f8c8f340a3efab16419d33ef9f96ecbf26\"",
+      "last_checked_at": "2026-05-05T06:29:09Z",
       "latest_version": "1.50.0"
     },
     "github_releases:charmbracelet/gum": {
-      "etag": "\"ac4298e40e3d743da46e05396250cc240d729f2399ea75fd413ff23f161717c1\"",
-      "last_checked_at": "2026-05-03T19:19:25Z",
+      "etag": "\"65e2cad8fe861c9fec837ad0e7590dba35b5e29a082e0bacac7f853171ca864c\"",
+      "last_checked_at": "2026-05-05T06:29:04Z",
       "latest_version": "0.17.0"
     },
     "github_releases:chmln/sd": {
-      "etag": "\"35398b1aff02c26b50bb2e3507a6fe8f6f20b2de822cc0da897e044281f98a8e\"",
-      "last_checked_at": "2026-05-03T19:19:52Z",
+      "etag": "\"81ac4dfaea329e25d640c5210c8d2dcbc66226fb5392fb1c685d6dac337fd8ea\"",
+      "last_checked_at": "2026-05-05T06:29:38Z",
       "latest_version": "1.1.0"
     },
     "github_releases:cli/cli": {
-      "etag": "\"15b7c370bd600a523ec1a507490686e27d24e2c2ba527caefbed9361f5fe8bfc\"",
-      "last_checked_at": "2026-05-03T19:19:22Z",
+      "etag": "\"fd8709af4758379259dc8064a5c9e244bc09e8abd15464db1906d56bfe5bb339\"",
+      "last_checked_at": "2026-05-05T06:29:01Z",
       "latest_version": "2.92.0"
     },
     "github_releases:crate-ci/typos": {
-      "etag": "\"099ab798f1326c91cfb6cd8d56818688e31fdce5ad2e1f79e5f6473f2a683f39\"",
-      "last_checked_at": "2026-05-03T19:19:56Z",
+      "etag": "\"be65454f538b338ecdd9c503c087e32d1b88c88be5337ef9c6c2377b86803fbb\"",
+      "last_checked_at": "2026-05-05T06:29:45Z",
       "latest_version": "1.46.0"
     },
     "github_releases:dalance/procs": {
-      "etag": "\"547a2e97df96215a2c75cefbbf551ef221e90f80fe2230370f43ee3414921c07\"",
-      "last_checked_at": "2026-05-03T19:19:41Z",
+      "etag": "\"6e63d2bb1444328279c6da71c01cfb06d59398d54cc963689640d9e037e9665d\"",
+      "last_checked_at": "2026-05-05T06:29:25Z",
       "latest_version": "0.14.11"
     },
     "github_releases:dandavison/delta": {
-      "etag": "\"3e6f8eb69a9f51b34262284763475774778e19a5a491a1382e7e52f06ed9e521\"",
-      "last_checked_at": "2026-05-03T19:19:14Z",
+      "etag": "\"5ff60bac9842a12821b5f004829283e4fa670beb673986ca8f969998cd142aee\"",
+      "last_checked_at": "2026-05-05T06:28:51Z",
       "latest_version": "0.19.2"
     },
     "github_releases:dbeaver/dbeaver": {
-      "etag": "\"aefcae8b6303d65e57dcebe60cf42b9bbd1388d01d72712b8b33256e76b1f560\"",
-      "last_checked_at": "2026-05-03T19:19:14Z",
+      "etag": "\"4022beaecda19be3193afcc0209489918036f355f586f193900e8545d01d0f05\"",
+      "last_checked_at": "2026-05-05T06:28:50Z",
       "latest_version": "26.0.4"
     },
     "github_releases:denoland/deno": {
-      "etag": "\"1244c1e586c4fa7097d63da262a19efa42acb2b582c5ebb10db701c2e3cfe2ea\"",
-      "last_checked_at": "2026-05-03T19:19:15Z",
+      "etag": "\"444a46f153903a6ba781ab381dc389200dbdafd7ee60536bcb1496c8b5cef80f\"",
+      "last_checked_at": "2026-05-05T06:28:52Z",
       "latest_version": "2.7.14"
     },
     "github_releases:derailed/k9s": {
-      "etag": "\"b192acea4635a1f3373808f1ecc31eadf0bcf435ce1648370a88c5d29e67ca9b\"",
-      "last_checked_at": "2026-05-03T19:19:29Z",
+      "etag": "\"8f215cb3f38639dd36670d89e8a8018d2b57b27258a346451b40ab9a459b72c7\"",
+      "last_checked_at": "2026-05-05T06:29:10Z",
       "latest_version": "0.50.18"
     },
     "github_releases:direnv/direnv": {
-      "etag": "\"f37c308cda46c451c3d25323a39783bb121ae24e94483564d059b679bc06ade5\"",
-      "last_checked_at": "2026-05-03T19:19:16Z",
+      "etag": "\"36274516036c616b12e4b11d26edc20184b927af2c3da76e9fcabc351418c8b6\"",
+      "last_checked_at": "2026-05-05T06:28:52Z",
       "latest_version": "2.37.1"
     },
     "github_releases:docker/buildx": {
-      "etag": "\"0232c5e9950e74fd1240a5a0f00298ebededeb5b0f0227d35d2f599171ce81d4\"",
-      "last_checked_at": "2026-05-03T19:19:17Z",
+      "etag": "\"294f71f6cab3f2d73fe6baaab17f9753ea4eb0bb6011cf899d57d6cd79f86b56\"",
+      "last_checked_at": "2026-05-05T06:28:54Z",
       "latest_version": "0.33.0"
     },
     "github_releases:docker/compose": {
-      "etag": "\"42981495f6d21762483d5b1d9ca0e8329c8b9945fa53ae8a5156c148c2b24c3b\"",
-      "last_checked_at": "2026-05-03T19:19:17Z",
+      "etag": "\"0baa4e973ff225719c51f20ed98e5c3278e4bacb3a25e85331b931eb56347907\"",
+      "last_checked_at": "2026-05-05T06:28:55Z",
       "latest_version": "5.1.3"
     },
     "github_releases:ducaale/xh": {
-      "etag": "\"f747f477ca7f78d19a8f9e214f00a853ac4b1bd45d90450ffcb25625f3da6e32\"",
-      "last_checked_at": "2026-05-03T19:19:59Z",
+      "etag": "\"038963051120b8d969aff1c6269a60a7c6f9a97dc26984986e07c2a129123ed4\"",
+      "last_checked_at": "2026-05-05T06:29:48Z",
       "latest_version": "0.25.3"
     },
     "github_releases:eza-community/eza": {
-      "etag": "\"15e730cfedbb9638d7a5085fd074aacb43dedfe818d16d48ec91b610b445fafb\"",
-      "last_checked_at": "2026-05-03T19:19:19Z",
+      "etag": "\"ecb183a452f4e4bbe470cef65debdd8506b5af3d8b5dfdfa0a5d79d90f5d8bfa\"",
+      "last_checked_at": "2026-05-05T06:28:57Z",
       "latest_version": "0.23.4"
     },
     "github_releases:fastfetch-cli/fastfetch": {
-      "etag": "\"acfadbf111963301a4154ac88ba70bf3be35c36c04a6cf48b7655b68309ad228\"",
-      "last_checked_at": "2026-05-03T19:19:20Z",
+      "etag": "\"0d506dbfdc0efed378891818cae33a5e4a249cf9db00a3a93c2f697d3d53254e\"",
+      "last_checked_at": "2026-05-05T06:28:58Z",
       "latest_version": "2.62.1"
     },
     "github_releases:fluxcd/flux2": {
-      "etag": "\"4f9dd5238b083ebd4adca860c9a043b425666f5026d5d500017057ce1be437d4\"",
-      "last_checked_at": "2026-05-03T19:19:21Z",
+      "etag": "\"5c2a6ca05d8964fe10c72544dd7d82373cc89ebd139bf9602340fe287125cc2e\"",
+      "last_checked_at": "2026-05-05T06:28:59Z",
       "latest_version": "2.8.6"
     },
     "github_releases:getsops/sops": {
-      "etag": "\"dae646257ea9c83e881177cce6df3b6a7c535cd4142b8f4b216ecdb698b5ced6\"",
-      "last_checked_at": "2026-05-03T19:19:53Z",
+      "etag": "\"dfd07bd3f8cf12ff7a2a2a1eab278634215032ff1e8d3e7d6250bdebc7feee38\"",
+      "last_checked_at": "2026-05-05T06:29:40Z",
       "latest_version": "3.12.2"
     },
     "github_releases:gitleaks/gitleaks": {
-      "etag": "\"dd6918c45449d470c0ddfa2ed34f28d4542dfe27bad48b33147471fbf47fe7fb\"",
-      "last_checked_at": "2026-05-03T19:19:23Z",
+      "etag": "\"cef8a6c8c9051fde837b419aca2c2f0fc6633a3375b15f917ed310a46f8a1155\"",
+      "last_checked_at": "2026-05-05T06:29:01Z",
       "latest_version": "8.30.1"
     },
     "github_releases:goreleaser/goreleaser": {
-      "etag": "\"7be7e7231bb39e7d174150f2ed0e8135cf4118af0c3eee17443fa9a63a18a78d\"",
-      "last_checked_at": "2026-05-03T19:19:24Z",
+      "etag": "\"6ed6c647aca8e7d345fbe47fd0ec2c0c280122975d15a1539fc6425e25b8a550\"",
+      "last_checked_at": "2026-05-05T06:29:02Z",
       "latest_version": "2.15.4"
     },
     "github_releases:helix-editor/helix": {
-      "etag": "\"33b76002421529e594de7cac2e7392d4d4f801e2b7322dfc5c2ee3335c80f611\"",
-      "last_checked_at": "2026-05-03T19:19:26Z",
+      "etag": "\"b84c8be7cfa37aeaa831999b02b1a6d0e914f15321c26531afd7dce36a8793a4\"",
+      "last_checked_at": "2026-05-05T06:29:05Z",
       "latest_version": "25.07.1"
     },
     "github_releases:helm/helm": {
-      "etag": "\"a0887cd681d03735aeccce055e9698ac434cbd3c162459731391e9410b69242d\"",
-      "last_checked_at": "2026-05-03T19:19:26Z",
+      "etag": "\"d8cec7adeea9251c03a99deec75a733296c907332e3e50116e8ab137150ec5bf\"",
+      "last_checked_at": "2026-05-05T06:29:06Z",
       "latest_version": "4.1.4"
     },
     "github_releases:imsnif/bandwhich": {
-      "etag": "\"b397be4c42e476300aebe85782fd49336bbfb5481df543b6c92c7df2da29716b\"",
-      "last_checked_at": "2026-05-03T19:19:08Z",
+      "etag": "\"921bb457833f258796bfddc0ecd557e9917fe2c12178b1f335b898de210a95b8\"",
+      "last_checked_at": "2026-05-05T06:28:43Z",
       "latest_version": "0.23.1"
     },
     "github_releases:int128/kubelogin": {
-      "etag": "\"00c482e1e413814ec9f6ec6aa8e004ba6990cad6c2d3533f42f49f112c222bfb\"",
-      "last_checked_at": "2026-05-03T19:19:32Z",
+      "etag": "\"c4a07e870574528310ebab1360c2e4a4d04fb6157e252e0be19aec893905c2bf\"",
+      "last_checked_at": "2026-05-05T06:29:12Z",
       "latest_version": "1.36.1"
     },
     "github_releases:jdx/mise": {
-      "etag": "\"84d3276d4ffcc330a4a49b6b64be96a7ee114d79499abe1b46217db2359bace7\"",
-      "last_checked_at": "2026-05-03T19:19:36Z",
+      "etag": "\"9835b8c682565b7786113a74781009c708a6d6061ce33ecb3cb204485f6c5023\"",
+      "last_checked_at": "2026-05-05T06:29:18Z",
       "latest_version": "2026.5.0"
     },
     "github_releases:jesseduffield/lazydocker": {
-      "etag": "\"0ada0003333c28a0d1646dac4423cb9b1bbec6f2df3d9057eeabe20ac13dcc9c\"",
-      "last_checked_at": "2026-05-03T19:19:33Z",
+      "etag": "\"39d3a6cb1d9084ea7c071c617da6e4b6d0863a1cc15dc79fb2217f3fab08dbb1\"",
+      "last_checked_at": "2026-05-05T06:29:14Z",
       "latest_version": "0.25.2"
     },
     "github_releases:jesseduffield/lazygit": {
-      "etag": "\"6379c2ed64e47b1136a761205cf22a1740e7c8838231d1d255e3dc7c323c19fd\"",
-      "last_checked_at": "2026-05-03T19:19:33Z",
+      "etag": "\"dfc2210de29a8583b9c7b2ca55a89ffe6582c6354b8291d995805080f2317f2d\"",
+      "last_checked_at": "2026-05-05T06:29:15Z",
       "latest_version": "0.61.1"
     },
     "github_releases:jj-vcs/jj": {
-      "etag": "\"e0e670b5f1714b6d7ce247346bdfcf782d8d5a984b3cb9905ff6d3cb87860685\"",
-      "last_checked_at": "2026-05-03T19:19:28Z",
+      "etag": "\"085de86df7207fe731addf59f2aacab9313a00078736a496a4a2bc0275f3d451\"",
+      "last_checked_at": "2026-05-05T06:29:08Z",
       "latest_version": "0.40.0"
     },
     "github_releases:jqlang/jq": {
-      "etag": "\"e284fe59d640add77c0f1dc6fb43d483824ebd8e37431600630785f0ebbaf335\"",
-      "last_checked_at": "2026-05-03T19:19:28Z"
+      "etag": "\"07dc182a970914d338d9c0bd94507cd697268bb1a912b2bf1de9bd2a6e130a99\"",
+      "last_checked_at": "2026-05-05T06:29:08Z"
     },
     "github_releases:junegunn/fzf": {
-      "etag": "\"14dc5991fe3b73981200c74c2e0c0a8304ad88285212b294bb3dc0d9fc00c53c\"",
-      "last_checked_at": "2026-05-03T19:19:22Z",
+      "etag": "\"7c1744e4c31d6d1d7c21458ea3ea656f48debd37b1a42c0f60723cfa775cb70e\"",
+      "last_checked_at": "2026-05-05T06:29:00Z",
       "latest_version": "0.72.0"
     },
     "github_releases:koalaman/shellcheck": {
-      "etag": "\"876199a2d92de94bf50be4716741df0e13d08501ceab14dcdf9b30b758d94515\"",
-      "last_checked_at": "2026-05-03T19:19:52Z",
+      "etag": "\"38fe886534febccc65f71f43dc7234308160c522426969b8231c016b463dfb34\"",
+      "last_checked_at": "2026-05-05T06:29:38Z",
       "latest_version": "0.11.0"
     },
     "github_releases:kubecolor/kubecolor": {
-      "etag": "\"fce96ead719b78137cac4db5d61d8af68cb368907dd0c7b9afcc0a98afa27393\"",
-      "last_checked_at": "2026-05-03T19:19:31Z",
+      "etag": "\"bdaf82329543d148a01866758e38fa51c35f91ef1d3311474f642957dfd7ca61\"",
+      "last_checked_at": "2026-05-05T06:29:11Z",
       "latest_version": "0.6.0"
     },
     "github_releases:kubernetes-sigs/kind": {
-      "etag": "\"009bf2e39f0a33ea956063ed4f25a8752d552d6df70c23108a40d1ff3b24b573\"",
-      "last_checked_at": "2026-05-03T19:19:30Z",
+      "etag": "\"cc14f2f99ad7a29bd1a588c7db3dc658dd5c21605e022a029a25de19263ebb9d\"",
+      "last_checked_at": "2026-05-05T06:29:11Z",
       "latest_version": "0.31.0"
     },
     "github_releases:kubernetes-sigs/kustomize": {
-      "etag": "\"e83f71331fde755c9215572eba958be34d7de6303d295f0afac6e1efac7a5c3b\"",
-      "last_checked_at": "2026-05-03T19:19:33Z",
+      "etag": "\"d13817a399ff1fd070bd4b3bd2a264f5d20d36afaeb80df55e125ef112484863\"",
+      "last_checked_at": "2026-05-05T06:29:13Z",
       "latest_version": "5.8.1"
     },
     "github_releases:kubernetes/minikube": {
-      "etag": "\"4475d0f17d03bf8162e8cd47074698de5f045def7fc42c375d4db84a2a362cf3\"",
-      "last_checked_at": "2026-05-03T19:19:35Z",
+      "etag": "\"92e485e4337a8db6ece8b6326e831936cc016375f877cac05bfaf4add984d328\"",
+      "last_checked_at": "2026-05-05T06:29:17Z",
       "latest_version": "1.38.1"
     },
     "github_releases:lsd-rs/lsd": {
-      "etag": "\"142f3ecbe757277a69db9e18f964b5416aa9a283d37372ee3b278cc1ca66ea2a\"",
-      "last_checked_at": "2026-05-03T19:19:35Z",
+      "etag": "\"9144a3419e1a78ca8ebfffa51220f7934b5692f4375cda861662480677277b73\"",
+      "last_checked_at": "2026-05-05T06:29:16Z",
       "latest_version": "1.2.0"
     },
     "github_releases:mikefarah/yq": {
-      "etag": "\"09ff4b0c0e974f959e421624079b5dae8f27885ef885718552d1b9ebf2d4a86e\"",
-      "last_checked_at": "2026-05-03T19:20:01Z",
+      "etag": "\"13a005ec13e684483454dfa4e15a6d93e1d34cbe632ce7c44d65aad3a122005f\"",
+      "last_checked_at": "2026-05-05T06:29:50Z",
       "latest_version": "4.53.2"
     },
     "github_releases:mvdan/sh": {
-      "etag": "\"6268cdda9a6ee0e76869d9f86d865702ed631cd2eeafb8db1a767553e1673e4c\"",
-      "last_checked_at": "2026-05-03T19:19:52Z",
+      "etag": "\"e585ee33a933cbc03bb33b4e67ba367501b5143dd5a20da6642564afeaa6c0f2\"",
+      "last_checked_at": "2026-05-05T06:29:39Z",
       "latest_version": "3.13.1"
     },
     "github_releases:neovide/neovide": {
-      "etag": "\"73b9a17ad871e291c53eb5bba17e4b6c7bda2264c7ca20044625fabbc14be297\"",
-      "last_checked_at": "2026-05-03T19:19:36Z",
+      "etag": "\"936fa1121aa31752fddb41aa4a44f29e1409aba0000959e0af02102cbf4490e7\"",
+      "last_checked_at": "2026-05-05T06:29:19Z",
       "latest_version": "0.16.2"
     },
     "github_releases:neovim/neovim": {
-      "etag": "\"c17990e6e1a0a7f1f69045746f535e17f2bfd99451a8e3cfd2f7a85985808b00\"",
-      "last_checked_at": "2026-05-03T19:19:37Z",
+      "etag": "\"3600ed7e74199790a57929329947b11dad4ce812235a144dad0b737832d41166\"",
+      "last_checked_at": "2026-05-05T06:29:19Z",
       "latest_version": "0.12.2"
     },
     "github_releases:obsidianmd/obsidian-releases": {
-      "etag": "\"7b5e61d3b8ed0de7c074b28566c135684f19c6a3ea9df0b330a5268d70e67aa2\"",
-      "last_checked_at": "2026-05-03T19:19:38Z",
+      "etag": "\"4458d768fc8714dc47770546c7ba2432d196330e7f52f7f6ac5fd3d960bd98b4\"",
+      "last_checked_at": "2026-05-05T06:29:20Z",
       "latest_version": "1.12.7"
     },
     "github_releases:oras-project/oras": {
-      "etag": "\"aa2cfe589ddf564012ab264ddf3706ec64857527a3080d39f7b3787f8da89dc4\"",
-      "last_checked_at": "2026-05-03T19:19:40Z",
+      "etag": "\"25c31d329550b7d81d6b4eeb9e5bdac0be6225182138516cba685f4598e8aabd\"",
+      "last_checked_at": "2026-05-05T06:29:24Z",
       "latest_version": "1.3.2"
     },
     "github_releases:oven-sh/bun": {
-      "etag": "\"50b6f8251566662d6487ee7e17df20b40eaed0b4e54a3eddd1df83cf1883ef11\"",
-      "last_checked_at": "2026-05-03T19:19:11Z",
+      "etag": "\"282e0768eb379f02f5751596d33778cf14bf9152f8e7eef7d4ef54e7e86d0ff8\"",
+      "last_checked_at": "2026-05-05T06:28:46Z",
       "latest_version": "1.3.13"
     },
     "github_releases:pqrs-org/Karabiner-Elements": {
-      "etag": "\"2a090d743197589f63ea84d9dd1865b961f4f3c82a2215acbf5d286ed5ee629a\"",
-      "last_checked_at": "2026-05-03T19:19:30Z",
+      "etag": "\"7d1db3b89ea2e36cd0fffef3e1243db310f2e927e118363326695a29da990836\"",
+      "last_checked_at": "2026-05-05T06:29:10Z",
       "latest_version": "16.0.0"
     },
     "github_releases:redis/RedisInsight": {
-      "etag": "\"0442397df75d1b9ceb64b4cb4ba34fdada041282ec3dbbcfb8d1bfa564c760ea\"",
-      "last_checked_at": "2026-05-03T19:19:50Z",
+      "etag": "\"f736cad583fce3e07044fd70a8556db93e9d643f8b5040baddb886933c765c0e\"",
+      "last_checked_at": "2026-05-05T06:29:36Z",
       "latest_version": "3.4.2"
     },
     "github_releases:rhysd/actionlint": {
-      "etag": "\"f9669ae9d93eb11b03a495507b0b2f4a512a609357c37790650bfb72801615c4\"",
-      "last_checked_at": "2026-05-03T19:19:05Z",
+      "etag": "\"338cf711bae76a574b7e85aecee7f5420b95cfb6a690b3ee98bc7e4f1b37692e\"",
+      "last_checked_at": "2026-05-05T06:28:39Z",
       "latest_version": "1.7.12"
     },
     "github_releases:schpet/linear-cli": {
-      "etag": "\"8efa441eefbf82a6e97a4421a9ff4c54974c12f8e2c7336d1047050bfde777ed\"",
-      "last_checked_at": "2026-05-03T19:19:34Z",
+      "etag": "\"04053373c195d374c84550d47a079b697139cff59a2c626e2761aca87b32ef12\"",
+      "last_checked_at": "2026-05-05T06:29:15Z",
       "latest_version": "2.0.0"
     },
     "github_releases:sharkdp/bat": {
-      "etag": "\"4ca461b5d480da528d37ee64c351968c81b5bf4a81c2eb1530079dd7892abec7\"",
-      "last_checked_at": "2026-05-03T19:19:08Z",
+      "etag": "\"d757bda9ad89ccc989f079aa9b8ac2c462f451cdd6615dec04ed1f9a0ef792d5\"",
+      "last_checked_at": "2026-05-05T06:28:43Z",
       "latest_version": "0.26.1"
     },
     "github_releases:sharkdp/fd": {
-      "etag": "\"fb706c9da9ebbfd4e6f0509981d1a81194752b2ffb0ee600f258a67c6496fea8\"",
-      "last_checked_at": "2026-05-03T19:19:20Z",
+      "etag": "\"8ba0e111861dc4c186770ccfef154306ecf6bdd5234462950494876853861bf4\"",
+      "last_checked_at": "2026-05-05T06:28:59Z",
       "latest_version": "10.4.2"
     },
     "github_releases:sharkdp/hyperfine": {
-      "etag": "\"bc02928cf0d9d2839f5321ae7412db97f2ca9c64ed21df89bcb5299d3c37eec9\"",
-      "last_checked_at": "2026-05-03T19:19:27Z",
+      "etag": "\"a04e9fd5235ae1d2938ef7436a72740cb9a44a0dfe48afc7008bb5d1b19ac74b\"",
+      "last_checked_at": "2026-05-05T06:29:06Z",
       "latest_version": "1.20.0"
     },
     "github_releases:sheeki03/tirith": {
-      "etag": "\"0a8e5c9554e1a6ab07025b786fd627b27510e9a5ba6b50447dddb78213d6a46f\"",
-      "last_checked_at": "2026-05-03T19:19:56Z",
+      "etag": "\"06aec696e7473098426de1cc430a4b4111b867fd96987113d11459441f6ab940\"",
+      "last_checked_at": "2026-05-05T06:29:44Z",
       "latest_version": "0.3.0"
     },
     "github_releases:sigstore/cosign": {
-      "etag": "\"34690abe377744a983a47cab66b4fea15e54746e2dbec9630220b0851b29764a\"",
-      "last_checked_at": "2026-05-03T19:19:13Z",
+      "etag": "\"eca136c8f1d32bdce797aa7fdeb3bb6dd0ff25212d6059707f349daabf2bebd6\"",
+      "last_checked_at": "2026-05-05T06:28:49Z",
       "latest_version": "3.0.6"
     },
     "github_releases:spiritledsoftware/crosspack": {
-      "etag": "\"08a8550e782adeb1efc5a806c82f4ab64fc927ac73ff79890fc434c1827f9988\"",
-      "last_checked_at": "2026-05-03T19:19:13Z",
+      "etag": "\"ccfa3c27ff58f74d58d495e028186b553d535cb029e65498c2c8044ff49d8024\"",
+      "last_checked_at": "2026-05-05T06:28:50Z",
       "latest_version": "0.13.1"
     },
     "github_releases:sst/opencode": {
-      "etag": "\"6d9425261e64bf9c691ca3e501ac81ad8a1d1783999f538048ca6c3d72a4a575\"",
-      "last_checked_at": "2026-05-03T19:19:39Z",
-      "latest_version": "1.14.33"
+      "etag": "\"f455ca8e07b0d5ebf03c7aa67055ebf16f20be8dd1e6dd7da4c7d5567c0fa0a8\"",
+      "last_checked_at": "2026-05-05T06:29:23Z",
+      "latest_version": "1.14.35"
     },
     "github_releases:starship/starship": {
-      "etag": "\"4356191d86c21310124f746ad11ebd5355fd5359945e0d6672a062f9c81bd654\"",
-      "last_checked_at": "2026-05-03T19:19:54Z",
+      "etag": "\"71db30e05813296549154752d8aaf784567dffc42aca3783c62bb5da2a863e4d\"",
+      "last_checked_at": "2026-05-05T06:29:41Z",
       "latest_version": "1.25.1"
     },
     "github_releases:sxyazi/yazi": {
-      "etag": "\"31768b52214e36c06abd7127786f42360802c085c0a325925fb50d7d87a5873c\"",
-      "last_checked_at": "2026-05-03T19:20:00Z",
+      "etag": "\"858cb3b2e6b1fd8c8116aa9cc31d853d4ff966f694a8eadd0e1bf84efebea39f\"",
+      "last_checked_at": "2026-05-05T06:29:49Z",
       "latest_version": "26.1.22"
     },
     "github_releases:syncthing/syncthing": {
-      "etag": "\"7cbcd920053e10a1ac6be1d87289ceecd13cbc678b0e9020021b933e52c54361\"",
-      "last_checked_at": "2026-05-03T19:19:55Z",
+      "etag": "\"9f01c01c739c3d8fafba3c29904eade5acafac29b80fad1670173b84fdf522a0\"",
+      "last_checked_at": "2026-05-05T06:29:43Z",
       "latest_version": "2.0.16"
     },
     "github_releases:tamasfe/taplo": {
-      "etag": "\"b369e17d66c5c1fd01ba144afa25333fdce6a8e1b742a9f510f79bad29545662\"",
-      "last_checked_at": "2026-05-03T19:19:56Z",
+      "etag": "\"69f4b3dc004f4cb117f088764585b15959a32bfc5d4924a5dde60741812e33f6\"",
+      "last_checked_at": "2026-05-05T06:29:43Z",
       "latest_version": "0.10.0"
     },
     "github_releases:twpayne/chezmoi": {
-      "etag": "\"a77399739656ab03ba99bd52b81605f80f092cee52d3c3d4015dd0874bc4a564\"",
-      "last_checked_at": "2026-05-03T19:19:12Z",
+      "etag": "\"ab4e364413f123ef1dcde70e8d72ad4f23148f5a6188ab6a6abf239964241f12\"",
+      "last_checked_at": "2026-05-05T06:28:48Z",
       "latest_version": "2.70.2"
     },
     "github_releases:usebruno/bruno": {
-      "etag": "\"338337f9210bf0c77227422bdac4a0553dae606076f1e22b86a6a4206bb0ec45\"",
-      "last_checked_at": "2026-05-03T19:19:10Z",
+      "etag": "\"e863e275e8f229a4b1e5367912a586d3cbf03b5cd96cc7b58b6eea463b3c3db2\"",
+      "last_checked_at": "2026-05-05T06:28:46Z",
       "latest_version": "3.3.0"
     },
     "github_releases:watchexec/watchexec": {
-      "etag": "\"864c71105aa4183abd8406a544fbee079f5f8e83d728655ae7b12f2dae2e9efe\"",
-      "last_checked_at": "2026-05-03T19:19:59Z",
+      "etag": "\"83d1c6df7831f4742b1ebdbf9f1320cdf7c80e0016b1a508b3be1d22e1aead7e\"",
+      "last_checked_at": "2026-05-05T06:29:47Z",
       "latest_version": "2.5.1"
     },
     "github_releases:yt-dlp/yt-dlp": {
-      "etag": "\"6fb7bf56c6407477c880f9a92e52d3d8a4795c22cc9bc6fde1d018edf30deeaa\"",
-      "last_checked_at": "2026-05-03T19:20:01Z",
+      "etag": "\"b4fd1f85fe8b2ce19d48978a648c6511ba64ec2248a609554c06c125e554c66b\"",
+      "last_checked_at": "2026-05-05T06:29:51Z",
       "latest_version": "2026.03.17"
     },
     "github_releases:zellij-org/zellij": {
-      "etag": "\"2c85caefc890e69e783fb1b511499a251c488f578814a62a7e5b8b1d627c2dde\"",
-      "last_checked_at": "2026-05-03T19:20:02Z",
+      "etag": "\"8ddd0591f0c408769282e8c80483e7781f030fa3c6a7718c51f687ca84884c17\"",
+      "last_checked_at": "2026-05-05T06:29:51Z",
       "latest_version": "0.44.1"
     }
   }
