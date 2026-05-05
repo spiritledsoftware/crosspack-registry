@@ -20,8 +20,9 @@ kind = "release_asset_url"
 [[integrations]]
 kind = "service"
 name = "syncthing"
-source = "etc/linux-systemd/user/syncthing.service"
-enable = false
+linux_systemd_user = "etc/linux-systemd/user/syncthing.service"
+macos_launch_agent = "etc/macos-launchd/user/syncthing.plist"
+windows_service = "etc/windows-service/syncthing.xml"
 
 [[artifacts]]
 target = "x86_64-unknown-linux-gnu"
