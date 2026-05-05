@@ -23,7 +23,7 @@ except ModuleNotFoundError:
 
 
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$")
-STATE_SCHEMA_VERSION = 1
+STATE_SCHEMA_VERSION = 2
 
 
 class PlannedUpdate:
@@ -120,7 +120,36 @@ def _load_generator_module(repo_root: Path):
 
 
 def empty_bot_state() -> dict[str, Any]:
-    return {"schema_version": STATE_SCHEMA_VERSION, "sources": {}}
+    return {"schema_version": STATE_SCHEMA_VERSION, "sources": {}, "packages": {}, "quarantine": {}}
+
+
+def _object_map(value: object) -> dict[str, dict[str, Any]]:
+    if not isinstance(value, dict):
+        return {}
+    return {
+        key: entry
+        for key, entry in value.items()
+        if isinstance(key, str) and isinstance(entry, dict)
+    }
+
+
+def _normalize_bot_state(data: dict[str, Any]) -> dict[str, Any] | None:
+    schema_version = data.get("schema_version")
+    if schema_version == 1:
+        return {
+            "schema_version": STATE_SCHEMA_VERSION,
+            "sources": _object_map(data.get("sources")),
+            "packages": {},
+            "quarantine": {},
+        }
+    if schema_version != STATE_SCHEMA_VERSION:
+        return None
+    return {
+        "schema_version": STATE_SCHEMA_VERSION,
+        "sources": _object_map(data.get("sources")),
+        "packages": _object_map(data.get("packages")),
+        "quarantine": _object_map(data.get("quarantine")),
+    }
 
 
 def load_bot_state(path: Path) -> dict[str, Any]:
@@ -131,40 +160,169 @@ def load_bot_state(path: Path) -> dict[str, Any]:
     except (OSError, json.JSONDecodeError) as exc:
         print(f"Ignoring invalid release bot state at {path}: {exc}", file=sys.stderr)
         return empty_bot_state()
-    if not isinstance(data, dict) or data.get("schema_version") != STATE_SCHEMA_VERSION:
+    if not isinstance(data, dict):
+        print(f"Ignoring invalid release bot state at {path}: root must be an object", file=sys.stderr)
+        return empty_bot_state()
+    normalized = _normalize_bot_state(data)
+    if normalized is None:
         print(f"Ignoring unsupported release bot state at {path}", file=sys.stderr)
         return empty_bot_state()
-    sources = data.get("sources")
-    if not isinstance(sources, dict):
-        print(
-            f"Ignoring invalid release bot state at {path}: sources must be an object",
-            file=sys.stderr,
-        )
-        return empty_bot_state()
-    normalized_sources = {
-        key: value
-        for key, value in sources.items()
-        if isinstance(key, str) and isinstance(value, dict)
-    }
-    return {"schema_version": STATE_SCHEMA_VERSION, "sources": normalized_sources}
+    return normalized
 
 
 def write_bot_state(path: Path, state: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    sources = state.get("sources")
-    if not isinstance(sources, dict):
-        sources = {}
     normalized = {
+        "packages": dict(sorted(_object_map(state.get("packages")).items())),
+        "quarantine": dict(sorted(_object_map(state.get("quarantine")).items())),
         "schema_version": STATE_SCHEMA_VERSION,
-        "sources": dict(sorted(sources.items())),
+        "sources": dict(sorted(_object_map(state.get("sources")).items())),
     }
     path.write_text(
         json.dumps(normalized, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
 
 
+def bot_state_needs_persist(path: Path, state: dict[str, Any]) -> bool:
+    if not path.exists():
+        return False
+    try:
+        current = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return True
+    expected = {
+        "packages": dict(sorted(_object_map(state.get("packages")).items())),
+        "quarantine": dict(sorted(_object_map(state.get("quarantine")).items())),
+        "schema_version": STATE_SCHEMA_VERSION,
+        "sources": dict(sorted(_object_map(state.get("sources")).items())),
+    }
+    return current != expected
+
+
 def utc_now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def iso_from_epoch(epoch: int) -> str:
+    return datetime.fromtimestamp(epoch, timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def iso_after_seconds(now_iso: str, seconds: int) -> str:
+    current = datetime.fromisoformat(now_iso.replace("Z", "+00:00"))
+    return iso_from_epoch(int(current.timestamp()) + seconds)
+
+
+def package_backoff_active(package_state: dict[str, Any], *, now_iso: str | None = None) -> bool:
+    backoff_until = package_state.get("backoff_until")
+    if not isinstance(backoff_until, str) or not backoff_until:
+        return False
+    current = now_iso or utc_now_iso()
+    return backoff_until > current
+
+
+def backoff_from_http_error(error: urllib.error.HTTPError, *, now_epoch: int | None = None) -> dict[str, Any]:
+    reset = error.headers.get("x-ratelimit-reset") if error.headers else None
+    if isinstance(reset, str) and reset.isdigit():
+        reset_epoch = int(reset)
+    else:
+        base = int(time.time() if now_epoch is None else now_epoch)
+        reset_epoch = base + 3600
+    return {
+        "reason_code": "rate-limited",
+        "detail": _format_fetch_error(error),
+        "backoff_until": iso_from_epoch(reset_epoch),
+        "last_failure_reason": "rate-limited",
+        "last_failure_reset_at": iso_from_epoch(reset_epoch),
+        "last_failed_at": utc_now_iso(),
+    }
+
+
+def backoff_from_transient_fetch_error(
+    error: urllib.error.HTTPError | urllib.error.URLError,
+) -> dict[str, Any]:
+    now = utc_now_iso()
+    if isinstance(error, urllib.error.HTTPError) and error.code == 429:
+        reset = error.headers.get("x-ratelimit-reset") if error.headers else None
+        if isinstance(reset, str) and reset.isdigit():
+            backoff_until = iso_from_epoch(int(reset))
+        else:
+            backoff_until = iso_after_seconds(now, 3600)
+        return {
+            "reason_code": "rate-limited",
+            "detail": _format_fetch_error(error),
+            "backoff_until": backoff_until,
+            "last_failure_reason": "rate-limited",
+            "last_failure_reset_at": backoff_until,
+            "last_failed_at": now,
+        }
+
+    backoff_until = iso_after_seconds(now, 3600)
+    return {
+        "reason_code": "upstream-error",
+        "detail": _format_fetch_error(error),
+        "backoff_until": backoff_until,
+        "last_failure_reason": "upstream-error",
+        "last_failure_reset_at": backoff_until,
+        "last_failed_at": now,
+    }
+
+
+def source_identity_for_release(release_kind: object, release_strategy: dict) -> str | None:
+    if release_kind == "github_releases":
+        repo = release_strategy.get("repo")
+        return github_release_state_key(repo) if isinstance(repo, str) else None
+    url = release_strategy.get("url")
+    if isinstance(release_kind, str) and isinstance(url, str):
+        return f"{release_kind}:{url}"
+    return release_kind if isinstance(release_kind, str) else None
+
+
+def apply_package_source_audit(
+    package_state: dict[str, Any], *, source_identity: str | None, source_kind: object
+) -> None:
+    if source_identity is not None:
+        package_state["source_identity"] = source_identity
+    if isinstance(source_kind, str):
+        package_state["source_kind"] = source_kind
+
+
+def quarantine_package(
+    state: dict[str, Any],
+    *,
+    package: str,
+    reason_code: str,
+    detail: str,
+    attempted_version: str,
+    last_good_version: str | None,
+    now_iso: str | None = None,
+) -> bool:
+    quarantine = state.setdefault("quarantine", {})
+    if not isinstance(quarantine, dict):
+        quarantine = {}
+        state["quarantine"] = quarantine
+    now_value = now_iso or utc_now_iso()
+    previous = quarantine.get(package)
+    first_seen = previous.get("first_seen_at") if isinstance(previous, dict) else None
+    next_entry = {
+        "reason_code": reason_code,
+        "detail": detail,
+        "first_seen_at": first_seen if isinstance(first_seen, str) else now_value,
+        "last_seen_at": now_value,
+        "attempted_version": attempted_version,
+    }
+    if last_good_version is not None:
+        next_entry["last_good_version"] = last_good_version
+    changed = previous != next_entry
+    quarantine[package] = next_entry
+    return changed
+
+
+def clear_quarantine(state: dict[str, Any], *, package: str) -> bool:
+    quarantine = state.setdefault("quarantine", {})
+    if not isinstance(quarantine, dict):
+        state["quarantine"] = {}
+        return False
+    return quarantine.pop(package, None) is not None
 
 
 def github_release_state_key(repo: str) -> str:
@@ -260,18 +418,22 @@ def _http_error_body(error: urllib.error.HTTPError) -> str:
 def _is_skippable_release_fetch_error(
     *, error: urllib.error.HTTPError, release_kind: object
 ) -> bool:
+    if error.code == 429 or 500 <= error.code <= 599:
+        return True
     if error.code != 403:
         return False
-    if release_kind == "github_releases":
-        return True
     reason = str(error.reason).lower()
-    if "rate limit" in reason:
+    if "rate limit" in reason or "secondary limit" in reason:
         return True
     remaining = error.headers.get("x-ratelimit-remaining") if error.headers else None
     if remaining == "0":
         return True
     body = _http_error_body(error).lower()
-    return "rate limit" in body
+    return "rate limit" in body or "secondary limit" in body
+
+
+def _is_transient_url_error(_error: urllib.error.URLError) -> bool:
+    return True
 
 
 def fetch_json_index_releases(release_strategy: dict) -> list[dict]:
@@ -562,6 +724,19 @@ def validate_generated_paths(*, repo_root: Path, staged_paths: list[Path]) -> No
         )
 
 
+def validate_package_generated_paths(*, repo_root: Path, package: str, staged_paths: list[Path]) -> None:
+    package_paths = [path for path in staged_paths if path == Path("packages") / f"{package}.toml"]
+    release_paths = [
+        path
+        for path in staged_paths
+        if len(path.parts) == 3
+        and path.parts[0] == "releases"
+        and path.parts[1] == package
+        and path.suffix == ".toml"
+    ]
+    validate_generated_paths(repo_root=repo_root, staged_paths=[*package_paths, *release_paths])
+
+
 def _enable_pr_automerge(*, repo_root: Path, pr_ref: str) -> None:
     _run(["gh", "pr", "merge", pr_ref, "--auto", "--squash"], cwd=repo_root)
 
@@ -588,6 +763,17 @@ def _open_pr_number_for_branch(*, repo_root: Path, branch_name: str) -> int | No
     if not isinstance(number, int):
         raise RuntimeError(f"Unexpected PR lookup response for {branch_name}")
     return number
+
+
+def _remote_branch_exists(*, repo_root: Path, branch_name: str) -> bool:
+    result = subprocess.run(
+        ["git", "ls-remote", "--exit-code", "origin", branch_name],
+        cwd=repo_root,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+    return result.returncode == 0
 
 
 def _stash_paths_for_branch_switch(*, repo_root: Path, paths: list[Path]) -> str | None:
@@ -713,6 +899,117 @@ def _open_or_update_pr(
     _enable_pr_automerge(repo_root=repo_root, pr_ref=branch_name)
 
 
+def _open_or_update_rolling_pr(
+    *,
+    repo_root: Path,
+    staged_paths: list[Path],
+    base_branch: str,
+    branch_name: str,
+    title: str,
+    body: str,
+) -> None:
+    path_snapshot = _snapshot_paths(repo_root, staged_paths)
+    _run(["git", "fetch", "origin", base_branch], cwd=repo_root)
+    _run(["git", "switch", "-C", branch_name, f"origin/{base_branch}"], cwd=repo_root)
+    _restore_path_snapshot(repo_root, path_snapshot)
+    if staged_paths:
+        _run(["git", "add", *(str(path) for path in staged_paths)], cwd=repo_root)
+    validate_generated_paths(repo_root=repo_root, staged_paths=staged_paths)
+    staged = _run(["git", "diff", "--cached", "--name-only"], cwd=repo_root)
+    if not staged.stdout.strip():
+        number = _open_pr_number_for_branch(repo_root=repo_root, branch_name=branch_name)
+        if number is not None:
+            _enable_pr_automerge(repo_root=repo_root, pr_ref=str(number))
+            print(f"PR already open for {branch_name}; enabled automerge")
+        return
+    _run(["git", "commit", "-m", title], cwd=repo_root)
+    push_cmd = ["git", "push", "--force-with-lease", "-u", "origin", branch_name]
+    if _remote_branch_exists(repo_root=repo_root, branch_name=branch_name):
+        _run(
+            [
+                "git",
+                "fetch",
+                "origin",
+                f"+refs/heads/{branch_name}:refs/remotes/origin/{branch_name}",
+            ],
+            cwd=repo_root,
+        )
+        expected = _run(
+            ["git", "rev-parse", f"refs/remotes/origin/{branch_name}"], cwd=repo_root
+        ).stdout.strip()
+        push_cmd = [
+            "git",
+            "push",
+            f"--force-with-lease=refs/heads/{branch_name}:{expected}",
+            "-u",
+            "origin",
+            branch_name,
+        ]
+    _run(push_cmd, cwd=repo_root)
+    number = _open_pr_number_for_branch(repo_root=repo_root, branch_name=branch_name)
+    if number is not None:
+        _run(["gh", "pr", "edit", str(number), "--title", title, "--body", body], cwd=repo_root)
+        _enable_pr_automerge(repo_root=repo_root, pr_ref=str(number))
+        print(f"Updated PR #{number} for {branch_name}; enabled automerge")
+        return
+    _run(
+        [
+            "gh",
+            "pr",
+            "create",
+            "--base",
+            base_branch,
+            "--head",
+            branch_name,
+            "--title",
+            title,
+            "--body",
+            body,
+        ],
+        cwd=repo_root,
+    )
+    _enable_pr_automerge(repo_root=repo_root, pr_ref=branch_name)
+
+
+def render_pr_body(
+    *,
+    updated_packages: list[str],
+    quarantine_added: list[str],
+    quarantine_updated: list[str],
+    quarantine_cleared: list[str],
+    backoff_packages: list[str],
+    state_changed: bool,
+    created_releases: int,
+    written_packages: int,
+    quarantined_count: int,
+    transient_failures: int,
+    skipped_fetches: int,
+) -> str:
+    updated = ", ".join(sorted(updated_packages)) if updated_packages else "none"
+    added = ", ".join(sorted(set(quarantine_added))) if quarantine_added else "none"
+    quarantine_updated_value = ", ".join(sorted(set(quarantine_updated))) if quarantine_updated else "none"
+    cleared = ", ".join(sorted(set(quarantine_cleared))) if quarantine_cleared else "none"
+    backoff = ", ".join(sorted(set(backoff_packages))) if backoff_packages else "none"
+    return (
+        "## Summary\n"
+        f"- updated packages: {updated}\n"
+        f"- quarantined packages: {quarantined_count}\n"
+        f"- release manifests written: {created_releases}\n"
+        f"- package templates updated: {written_packages}\n"
+        f"- transient fetch failures: {transient_failures}\n"
+        f"- release fetches skipped: {skipped_fetches}\n"
+        "\n## Audit\n"
+        f"- state changed: {'yes' if state_changed else 'no'}\n"
+        f"- quarantine added: {added}\n"
+        f"- quarantine updated: {quarantine_updated_value}\n"
+        f"- quarantine cleared: {cleared}\n"
+        f"- backoff packages: {backoff}\n"
+        "\n## Validation\n"
+        "- registry-validate-source.py for changed package templates\n"
+        "- registry-validate.py --allow-missing-signatures for changed metadata\n"
+    )
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(
         description="Generate/update manifests from upstream releases"
@@ -739,7 +1036,8 @@ def main(argv: list[str]) -> int:
         help="Commit changes and open PRs with gh",
     )
     parser.add_argument("--base-branch", default="main")
-    parser.add_argument("--branch-prefix", default="upstream-release")
+    parser.add_argument("--branch-name", default="upstream-release/rolling")
+    parser.add_argument("--branch-prefix", default=None, help=argparse.SUPPRESS)
     parser.add_argument(
         "--state-path",
         type=Path,
@@ -749,6 +1047,10 @@ def main(argv: list[str]) -> int:
     args = parser.parse_args(argv)
 
     repo_root = Path.cwd()
+    if args.create_prs:
+        _run(["git", "fetch", "origin", args.base_branch], cwd=repo_root)
+        _run(["git", "switch", "-C", args.branch_name, f"origin/{args.base_branch}"], cwd=repo_root)
+
     generator = _load_generator_module(repo_root)
 
     package_filter = set(args.package or [])
@@ -766,17 +1068,52 @@ def main(argv: list[str]) -> int:
     if not isinstance(state_sources, dict):
         state_sources = {}
         bot_state["sources"] = state_sources
-    state_changed = False
+    state_packages = bot_state.setdefault("packages", {})
+    if not isinstance(state_packages, dict):
+        state_packages = {}
+        bot_state["packages"] = state_packages
+    state_changed = bot_state_needs_persist(args.state_path, bot_state)
     planned: list[PlannedUpdate] = []
     skipped_fetches = 0
+    transient_fetch_failures = 0
+    up_to_date_packages = 0
+    all_staged_paths: list[Path] = []
+    updated_packages: list[str] = []
+    quarantine_added: list[str] = []
+    quarantine_updated: list[str] = []
+    quarantine_cleared: list[str] = []
+    backoff_packages: list[str] = []
     for config_path in config_paths:
         config = load_config(config_path)
+        package_name = str(config.get("name") or config_path.stem)
+        package_state = state_packages.setdefault(package_name, {})
+        if not isinstance(package_state, dict):
+            package_state = {}
+            state_packages[package_name] = package_state
+        if package_backoff_active(package_state):
+            skipped_fetches += 1
+            backoff_packages.append(
+                f"{package_name}:backoff-active:{package_state.get('backoff_until')}"
+            )
+            print(
+                f"registry_update package={package_name} status=skipped reason=backoff-active "
+                f"reset_at={package_state.get('backoff_until')}",
+                file=sys.stderr,
+            )
+            continue
         source = config.get("source")
         if not isinstance(source, dict):
             raise RuntimeError(f"Missing source table in {config_path}")
         normalized = normalize_source(source)
         release_strategy = normalized["release"]
         release_kind = release_strategy.get("kind")
+        source_identity = source_identity_for_release(release_kind, release_strategy)
+        previous_package_state = dict(package_state)
+        apply_package_source_audit(
+            package_state, source_identity=source_identity, source_kind=release_kind
+        )
+        if package_state != previous_package_state:
+            state_changed = True
         try:
             if release_kind == "json_index":
                 releases = fetch_json_index_releases(release_strategy)
@@ -794,12 +1131,40 @@ def main(argv: list[str]) -> int:
                     repo, token=github_token, state_entry=state_entry
                 )
                 if fetch_result.not_modified:
+                    up_to_date_packages += 1
+                    checked_at = utc_now_iso()
+                    package_state["last_checked_at"] = checked_at
+                    next_entry = dict(state_entry or {})
+                    if source_identity is not None:
+                        next_entry["source_identity"] = source_identity
+                    if isinstance(release_kind, str):
+                        next_entry["source_kind"] = release_kind
+                    next_entry["last_checked_at"] = checked_at
+                    if next_entry != state_sources.get(state_key):
+                        state_sources[state_key] = next_entry
+                        state_changed = True
+                    for key in (
+                        "backoff_until",
+                        "reason_code",
+                        "detail",
+                        "last_failed_at",
+                        "last_failure_reason",
+                        "last_failure_reset_at",
+                    ):
+                        if key in package_state:
+                            package_state.pop(key, None)
+                            state_changed = True
+                    state_changed = True
                     continue
                 releases = fetch_result.releases
                 version_strategy = normalized.get("version")
                 if not isinstance(version_strategy, dict):
                     version_strategy = {"kind": "github_tag"}
                 next_entry = dict(state_entry or {})
+                if source_identity is not None:
+                    next_entry["source_identity"] = source_identity
+                if isinstance(release_kind, str):
+                    next_entry["source_kind"] = release_kind
                 if fetch_result.etag:
                     next_entry["etag"] = fetch_result.etag
                 if fetch_result.last_modified:
@@ -810,35 +1175,76 @@ def main(argv: list[str]) -> int:
                 )
                 if latest_version is not None:
                     next_entry["latest_version"] = latest_version
+                    next_entry["latest_seen_version"] = latest_version
+                    package_state["latest_seen_version"] = latest_version
+                package_state["last_checked_at"] = next_entry["last_checked_at"]
                 if next_entry != state_sources.get(state_key):
                     state_sources[state_key] = next_entry
                     state_changed = True
             else:
                 raise RuntimeError(f"Unsupported source.release.kind in {config_path}")
-        except urllib.error.HTTPError as error:
-            if not _is_skippable_release_fetch_error(
-                error=error, release_kind=release_kind
+            for key in (
+                "backoff_until",
+                "reason_code",
+                "detail",
+                "last_failed_at",
+                "last_failure_reason",
+                "last_failure_reset_at",
             ):
+                if key in package_state:
+                    package_state.pop(key, None)
+                    state_changed = True
+        except (urllib.error.HTTPError, urllib.error.URLError) as error:
+            if isinstance(error, urllib.error.HTTPError):
+                if not _is_skippable_release_fetch_error(
+                    error=error, release_kind=release_kind
+                ):
+                    raise
+            elif not _is_transient_url_error(error):
                 raise
+            if isinstance(error, urllib.error.HTTPError) and error.code == 403:
+                package_state.update(backoff_from_http_error(error))
+            else:
+                package_state.update(backoff_from_transient_fetch_error(error))
+            apply_package_source_audit(
+                package_state, source_identity=source_identity, source_kind=release_kind
+            )
+            state_changed = True
             skipped_fetches += 1
+            transient_fetch_failures += 1
+            backoff_packages.append(
+                f"{package_name}:{package_state.get('reason_code')}:{package_state.get('backoff_until')}"
+            )
             print(
                 f"Skipping {config_path.stem}: failed to fetch upstream releases "
                 f"({_format_fetch_error(error)})",
                 file=sys.stderr,
             )
-            continue
-        planned.extend(
-            plan_updates_for_config(
-                config_path=config_path,
-                releases_root=args.releases_root,
-                releases=releases,
+            print(
+                f"registry_update package={package_name} status=skipped "
+                f"reason={package_state.get('reason_code')} reset_at={package_state.get('backoff_until')}",
+                file=sys.stderr,
             )
+            continue
+        planned_for_config = plan_updates_for_config(
+            config_path=config_path,
+            releases_root=args.releases_root,
+            releases=releases,
         )
+        if planned_for_config:
+            planned.extend(planned_for_config)
+        else:
+            up_to_date_packages += 1
 
-    if not planned:
+    if not planned and not state_changed:
         print(
             "No new releases detected; "
             f"skipped {skipped_fetches} release fetch(es)"
+        )
+        print(
+            f"registry_update_summary updated=0 up_to_date={up_to_date_packages} "
+            "quarantined=0 transient_failed=0 "
+            f"skipped={skipped_fetches}"
         )
         return 0
 
@@ -872,10 +1278,36 @@ def main(argv: list[str]) -> int:
                 shasums_by_name=shasums_by_name,
             )
         except generator.GenerateError as exc:
+            package_state = state_packages.setdefault(update.package, {})
+            if not isinstance(package_state, dict):
+                package_state = {}
+                state_packages[update.package] = package_state
+            last_good_version = package_state.get("last_successful_version")
+            if not isinstance(last_good_version, str):
+                last_good_version = None
+            existing_quarantine = update.package in _object_map(bot_state.get("quarantine"))
+            if quarantine_package(
+                bot_state,
+                package=update.package,
+                reason_code="metadata-malformed",
+                detail=str(exc),
+                attempted_version=update.version,
+                last_good_version=last_good_version,
+            ):
+                state_changed = True
+                if existing_quarantine:
+                    quarantine_updated.append(update.package)
+                else:
+                    quarantine_added.append(update.package)
             skipped_updates += 1
             print(
                 "Skipping "
                 f"{update.package} {update.version}: incomplete upstream release ({exc})",
+                file=sys.stderr,
+            )
+            print(
+                f"registry_update package={update.package} status=quarantined "
+                f"reason=metadata-malformed attempted={update.version}",
                 file=sys.stderr,
             )
             continue
@@ -902,23 +1334,102 @@ def main(argv: list[str]) -> int:
         release_path.parent.mkdir(parents=True, exist_ok=True)
         release_path.write_text(release_text, encoding="utf-8")
         print(f"Generated {release_path}")
-        created_releases += 1
         staged_paths.append(release_path)
 
-        if state_changed:
-            write_bot_state(args.state_path, bot_state)
-            if args.state_path not in staged_paths:
-                staged_paths.append(args.state_path)
-
-        if args.create_prs:
-            _open_or_update_pr(
+        package_state = state_packages.setdefault(update.package, {})
+        if not isinstance(package_state, dict):
+            package_state = {}
+            state_packages[update.package] = package_state
+        try:
+            validate_package_generated_paths(
                 repo_root=repo_root,
-                staged_paths=staged_paths,
                 package=update.package,
-                version=update.version,
-                base_branch=args.base_branch,
-                branch_prefix=args.branch_prefix,
+                staged_paths=staged_paths,
             )
+        except Exception as exc:
+            if package_path in staged_paths and written_packages > 0:
+                written_packages -= 1
+            for generated_path in staged_paths:
+                full_path = repo_root / generated_path
+                if generated_path == package_path and current_package_text is not None:
+                    full_path.write_text(current_package_text, encoding="utf-8")
+                elif full_path.exists():
+                    full_path.unlink()
+            last_good_version = package_state.get("last_successful_version")
+            if not isinstance(last_good_version, str):
+                last_good_version = None
+            existing_quarantine = update.package in _object_map(bot_state.get("quarantine"))
+            if quarantine_package(
+                bot_state,
+                package=update.package,
+                reason_code="metadata-malformed",
+                detail=str(exc),
+                attempted_version=update.version,
+                last_good_version=last_good_version,
+            ):
+                state_changed = True
+                if existing_quarantine:
+                    quarantine_updated.append(update.package)
+                else:
+                    quarantine_added.append(update.package)
+            skipped_updates += 1
+            print(
+                "Skipping "
+                f"{update.package} {update.version}: incomplete upstream release ({exc})",
+                file=sys.stderr,
+            )
+            print(
+                f"registry_update package={update.package} status=quarantined "
+                f"reason=metadata-malformed attempted={update.version}",
+                file=sys.stderr,
+            )
+            continue
+
+        created_releases += 1
+        package_state["last_successful_version"] = update.version
+        package_state["last_generated_at"] = utc_now_iso()
+        state_changed = True
+        if clear_quarantine(bot_state, package=update.package):
+            state_changed = True
+            quarantine_cleared.append(update.package)
+        updated_packages.append(f"{update.package}@{update.version}")
+        for path in staged_paths:
+            if path not in all_staged_paths:
+                all_staged_paths.append(path)
+
+    if state_changed and not args.dry_run:
+        write_bot_state(args.state_path, bot_state)
+        if args.state_path not in all_staged_paths:
+            all_staged_paths.append(args.state_path)
+
+    if args.create_prs and all_staged_paths:
+        body = render_pr_body(
+            updated_packages=updated_packages,
+            quarantine_added=quarantine_added,
+            quarantine_updated=quarantine_updated,
+            quarantine_cleared=quarantine_cleared,
+            backoff_packages=backoff_packages,
+            state_changed=state_changed,
+            created_releases=created_releases,
+            written_packages=written_packages,
+            quarantined_count=len(set([*quarantine_added, *quarantine_updated])),
+            transient_failures=transient_fetch_failures,
+            skipped_fetches=skipped_fetches,
+        )
+        _open_or_update_rolling_pr(
+            repo_root=repo_root,
+            staged_paths=all_staged_paths,
+            base_branch=args.base_branch,
+            branch_name=args.branch_name,
+            title="chore(registry): update upstream releases",
+            body=body,
+        )
+
+    if not planned:
+        print(
+            "No new releases detected; "
+            f"skipped {skipped_fetches} release fetch(es)"
+        )
 
     print(
         "Planned "
@@ -926,6 +1437,14 @@ def main(argv: list[str]) -> int:
         f"updated {written_packages} package template(s), "
         f"skipped {skipped_updates} incomplete update(s), "
         f"skipped {skipped_fetches} release fetch(es)"
+    )
+    print(
+        "registry_update_summary "
+        f"updated={created_releases} "
+        f"up_to_date={up_to_date_packages} "
+        f"quarantined={len(set([*quarantine_added, *quarantine_updated]))} "
+        f"transient_failed={transient_fetch_failures} "
+        f"skipped={skipped_fetches}"
     )
     return 0
 

@@ -77,7 +77,10 @@ class UpstreamReleaseBotTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="release-bot-state-") as tmp:
             state = self.bot.load_bot_state(Path(tmp) / "state" / "upstream-release-bot.json")
 
-        self.assertEqual(state, {"schema_version": 1, "sources": {}})
+        self.assertEqual(
+            state,
+            {"schema_version": 2, "sources": {}, "packages": {}, "quarantine": {}},
+        )
 
     def test_load_bot_state_warns_and_rebuilds_when_invalid(self) -> None:
         with tempfile.TemporaryDirectory(prefix="release-bot-state-") as tmp:
@@ -89,7 +92,10 @@ class UpstreamReleaseBotTests(unittest.TestCase):
             with contextlib.redirect_stderr(stderr):
                 state = self.bot.load_bot_state(state_path)
 
-        self.assertEqual(state, {"schema_version": 1, "sources": {}})
+        self.assertEqual(
+            state,
+            {"schema_version": 2, "sources": {}, "packages": {}, "quarantine": {}},
+        )
         self.assertIn("Ignoring invalid release bot state", stderr.getvalue())
 
     def test_write_bot_state_sorts_keys_and_creates_parent(self) -> None:
@@ -99,24 +105,140 @@ class UpstreamReleaseBotTests(unittest.TestCase):
             self.bot.write_bot_state(
                 state_path,
                 {
-                    "schema_version": 1,
+                    "schema_version": 2,
                     "sources": {
                         "github_releases:z/z": {"etag": "z"},
                         "github_releases:a/a": {"etag": "a"},
                     },
+                    "packages": {},
+                    "quarantine": {},
                 },
             )
 
             self.assertEqual(
                 json.loads(state_path.read_text(encoding="utf-8")),
                 {
-                    "schema_version": 1,
+                    "packages": {},
+                    "quarantine": {},
+                    "schema_version": 2,
                     "sources": {
                         "github_releases:a/a": {"etag": "a"},
                         "github_releases:z/z": {"etag": "z"},
                     },
                 },
             )
+
+    def test_load_bot_state_migrates_v1_sources_to_v2(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="release-bot-state-") as tmp:
+            state_path = Path(tmp) / "state" / "upstream-release-bot.json"
+            state_path.parent.mkdir(parents=True)
+            state_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "sources": {
+                            "github_releases:BurntSushi/ripgrep": {
+                                "etag": "abc",
+                                "latest_version": "15.2.0",
+                            }
+                        },
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            state = self.bot.load_bot_state(state_path)
+
+        self.assertEqual(state["schema_version"], 2)
+        self.assertEqual(
+            state["sources"]["github_releases:BurntSushi/ripgrep"]["etag"], "abc"
+        )
+        self.assertEqual(state["packages"], {})
+        self.assertEqual(state["quarantine"], {})
+
+    def test_write_bot_state_v2_sorts_all_top_level_maps(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="release-bot-state-") as tmp:
+            state_path = Path(tmp) / "state" / "upstream-release-bot.json"
+
+            self.bot.write_bot_state(
+                state_path,
+                {
+                    "schema_version": 2,
+                    "sources": {"z": {"etag": "z"}, "a": {"etag": "a"}},
+                    "packages": {"zpkg": {"latest_version": "2.0.0"}, "apkg": {}},
+                    "quarantine": {"zpkg": {"reason_code": "metadata-malformed"}, "apkg": {}},
+                },
+            )
+
+            written = json.loads(state_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(
+            list(written.keys()), ["packages", "quarantine", "schema_version", "sources"]
+        )
+        self.assertEqual(list(written["sources"].keys()), ["a", "z"])
+        self.assertEqual(list(written["packages"].keys()), ["apkg", "zpkg"])
+        self.assertEqual(list(written["quarantine"].keys()), ["apkg", "zpkg"])
+
+    def test_rate_limit_reset_header_sets_backoff_until(self) -> None:
+        headers = Message()
+        headers["x-ratelimit-reset"] = "1770000000"
+        error = urllib.error.HTTPError(
+            "https://api.github.com/repos/o/r/releases", 403, "rate limit", headers, None
+        )
+
+        backoff = self.bot.backoff_from_http_error(error, now_epoch=1769999900)
+
+        self.assertEqual(backoff["reason_code"], "rate-limited")
+        self.assertEqual(backoff["backoff_until"], "2026-02-02T02:40:00Z")
+
+    def test_should_skip_package_when_backoff_is_active(self) -> None:
+        entry = {"backoff_until": "2099-01-01T00:00:00Z"}
+
+        self.assertTrue(
+            self.bot.package_backoff_active(entry, now_iso="2026-05-04T12:00:00Z")
+        )
+
+    def test_should_not_skip_package_when_backoff_expired(self) -> None:
+        entry = {"backoff_until": "2026-05-04T11:59:59Z"}
+
+        self.assertFalse(
+            self.bot.package_backoff_active(entry, now_iso="2026-05-04T12:00:00Z")
+        )
+
+    def test_quarantine_update_preserves_first_seen(self) -> None:
+        state = self.bot.empty_bot_state()
+        quarantine = state["quarantine"]
+        quarantine["zig"] = {
+            "reason_code": "metadata-malformed",
+            "first_seen_at": "2026-05-04T10:00:00Z",
+            "last_seen_at": "2026-05-04T10:00:00Z",
+            "attempted_version": "0.16.0",
+            "last_good_version": "0.15.2",
+        }
+
+        changed = self.bot.quarantine_package(
+            state,
+            package="zig",
+            reason_code="metadata-malformed",
+            detail="missing artifact url",
+            attempted_version="0.16.1",
+            last_good_version="0.15.2",
+            now_iso="2026-05-04T11:00:00Z",
+        )
+
+        self.assertTrue(changed)
+        self.assertEqual(quarantine["zig"]["first_seen_at"], "2026-05-04T10:00:00Z")
+        self.assertEqual(quarantine["zig"]["last_seen_at"], "2026-05-04T11:00:00Z")
+        self.assertEqual(quarantine["zig"]["attempted_version"], "0.16.1")
+
+    def test_clear_quarantine_returns_true_only_when_entry_exists(self) -> None:
+        state = self.bot.empty_bot_state()
+        state["quarantine"]["zig"] = {"reason_code": "metadata-malformed"}
+
+        self.assertTrue(self.bot.clear_quarantine(state, package="zig"))
+        self.assertFalse(self.bot.clear_quarantine(state, package="zig"))
+        self.assertNotIn("zig", state["quarantine"])
 
     def test_fetch_github_releases_sends_conditional_headers(self) -> None:
         captured: dict[str, str | None] = {}
@@ -293,6 +415,69 @@ class UpstreamReleaseBotTests(unittest.TestCase):
 
         self.assertEqual(planned, [])
 
+    def test_main_counts_checked_package_with_no_planned_update_as_up_to_date(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="release-bot-") as tmp:
+            tmp_path = Path(tmp)
+            packages_dir = tmp_path / "packages"
+            packages_dir.mkdir(parents=True)
+            (packages_dir / "ripgrep.toml").write_text(
+                textwrap.dedent(
+                    """
+                    name = "ripgrep"
+                    license = "MIT OR Unlicense"
+                    homepage = "https://github.com/BurntSushi/ripgrep"
+
+                    [source.release]
+                    kind = "github_releases"
+                    repo = "BurntSushi/ripgrep"
+
+                    [source.checksum]
+                    kind = "asset_digest"
+
+                    [source.asset]
+                    kind = "release_asset_url"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+            existing_manifest = tmp_path / "releases" / "ripgrep" / "15.2.0.toml"
+            existing_manifest.parent.mkdir(parents=True)
+            existing_manifest.write_text('name = "ripgrep"\nversion = "15.2.0"\n', encoding="utf-8")
+
+            stdout = io.StringIO()
+            generator = load_generator_module()
+            previous_cwd = Path.cwd()
+            os.chdir(tmp_path)
+            try:
+                with (
+                    mock.patch.object(self.bot, "_load_generator_module", return_value=generator),
+                    mock.patch.object(
+                        self.bot,
+                        "fetch_github_releases",
+                        return_value=self.bot.GithubReleaseFetchResult(
+                            releases=[
+                                {
+                                    "tag_name": "15.2.0",
+                                    "draft": False,
+                                    "prerelease": False,
+                                    "assets": [],
+                                }
+                            ]
+                        ),
+                    ),
+                    contextlib.redirect_stdout(stdout),
+                ):
+                    result = self.bot.main(["--package", "ripgrep"])
+            finally:
+                os.chdir(previous_cwd)
+
+        self.assertEqual(result, 0)
+        self.assertIn(
+            "registry_update_summary updated=0 up_to_date=1 quarantined=0 transient_failed=0 skipped=0",
+            stdout.getvalue(),
+        )
+
     def test_plan_updates_python_build_standalone_from_asset_version(self) -> None:
         with tempfile.TemporaryDirectory(prefix="release-bot-") as tmp:
             tmp_path = Path(tmp)
@@ -429,6 +614,10 @@ class UpstreamReleaseBotTests(unittest.TestCase):
             self.assertIn("Skipping fd 10.4.1: incomplete upstream release", stderr.getvalue())
             self.assertIn("skipped 1 incomplete update(s)", stdout.getvalue())
             self.assertIn("wrote 0 release manifest(s)", stdout.getvalue())
+            self.assertIn(
+                "registry_update_summary updated=0 up_to_date=0 quarantined=1 transient_failed=0 skipped=0",
+                stdout.getvalue(),
+            )
 
     def test_skips_release_fetch_http_error_instead_of_failing(self) -> None:
         with tempfile.TemporaryDirectory(prefix="release-bot-") as tmp:
@@ -462,6 +651,7 @@ class UpstreamReleaseBotTests(unittest.TestCase):
             generator = load_generator_module()
             headers = Message()
             headers["x-ratelimit-remaining"] = "0"
+            headers["x-ratelimit-reset"] = "1770000000"
             previous_cwd = Path.cwd()
             os.chdir(tmp_path)
             try:
@@ -497,6 +687,192 @@ class UpstreamReleaseBotTests(unittest.TestCase):
             )
             self.assertIn("skipped 1 release fetch(es)", stdout.getvalue())
             self.assertIn("No new releases detected", stdout.getvalue())
+            self.assertIn(
+                "registry_update package=trivy status=skipped reason=rate-limited reset_at=2026-02-02T02:40:00Z",
+                stderr.getvalue(),
+            )
+            self.assertIn(
+                "registry_update_summary updated=0 up_to_date=0 quarantined=0 transient_failed=1 skipped=1",
+                stdout.getvalue(),
+            )
+
+    def test_transient_fetch_failure_is_package_scoped_and_continues(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="release-bot-") as tmp:
+            tmp_path = Path(tmp)
+            packages_dir = tmp_path / "packages"
+            packages_dir.mkdir(parents=True)
+            (packages_dir / "trivy.toml").write_text(
+                textwrap.dedent(
+                    """
+                    name = "trivy"
+                    license = "Apache-2.0"
+                    homepage = "https://github.com/aquasecurity/trivy"
+
+                    [source.release]
+                    kind = "github_releases"
+                    repo = "aquasecurity/trivy"
+
+                    [source.checksum]
+                    kind = "asset_digest"
+
+                    [source.asset]
+                    kind = "release_asset_url"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+            (packages_dir / "ripgrep.toml").write_text(
+                textwrap.dedent(
+                    """
+                    name = "ripgrep"
+                    license = "MIT OR Unlicense"
+                    homepage = "https://github.com/BurntSushi/ripgrep"
+
+                    [source.release]
+                    kind = "github_releases"
+                    repo = "BurntSushi/ripgrep"
+
+                    [source.checksum]
+                    kind = "asset_digest"
+
+                    [source.asset]
+                    kind = "release_asset_url"
+
+                    [[artifacts]]
+                    target = "x86_64-unknown-linux-gnu"
+                    asset = "ripgrep-{version}-x86_64-unknown-linux-musl.tar.gz"
+                    archive = "tar.gz"
+                    strip_components = 1
+
+                    [[artifacts.binaries]]
+                    name = "rg"
+                    path = "rg"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            generator = load_generator_module()
+            previous_cwd = Path.cwd()
+            os.chdir(tmp_path)
+            try:
+                with (
+                    mock.patch.object(self.bot, "_load_generator_module", return_value=generator),
+                    mock.patch.object(self.bot, "utc_now_iso", return_value="2026-05-04T12:00:00Z"),
+                    mock.patch.object(self.bot, "validate_package_generated_paths"),
+                    mock.patch.object(
+                        self.bot,
+                        "fetch_github_releases",
+                        side_effect=[
+                            self.bot.GithubReleaseFetchResult(
+                                releases=[
+                                    {
+                                        "tag_name": "15.2.0",
+                                        "draft": False,
+                                        "prerelease": False,
+                                        "assets": [
+                                            {
+                                                "name": "ripgrep-15.2.0-x86_64-unknown-linux-musl.tar.gz",
+                                                "browser_download_url": "https://example.invalid/ripgrep.tar.gz",
+                                                "digest": "sha256:88fd1ce767091fd8d4a99fdb2356e98c819f93f3b1f8663853a2dee9b438068a",
+                                            }
+                                        ],
+                                    }
+                                ]
+                            ),
+                            urllib.error.HTTPError(
+                                "https://api.github.com/repos/aquasecurity/trivy/releases?per_page=20",
+                                500,
+                                "Server Error",
+                                Message(),
+                                None,
+                            ),
+                        ],
+                    ),
+                    contextlib.redirect_stdout(stdout),
+                    contextlib.redirect_stderr(stderr),
+                ):
+                    result = self.bot.main([])
+            finally:
+                os.chdir(previous_cwd)
+
+            state = json.loads((tmp_path / "state" / "upstream-release-bot.json").read_text(encoding="utf-8"))
+            ripgrep_release_exists = (tmp_path / "releases" / "ripgrep" / "15.2.0.toml").exists()
+
+        self.assertEqual(result, 0)
+        self.assertTrue(ripgrep_release_exists)
+        self.assertIn(
+            "registry_update package=trivy status=skipped reason=upstream-error reset_at=2026-05-04T13:00:00Z",
+            stderr.getvalue(),
+        )
+        self.assertIn(
+            "registry_update_summary updated=1 up_to_date=0 quarantined=0 transient_failed=1 skipped=1",
+            stdout.getvalue(),
+        )
+        self.assertEqual(state["packages"]["trivy"]["reason_code"], "upstream-error")
+        self.assertEqual(state["packages"]["trivy"]["backoff_until"], "2026-05-04T13:00:00Z")
+
+    def test_url_timeout_fetch_failure_is_package_scoped(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="release-bot-") as tmp:
+            tmp_path = Path(tmp)
+            packages_dir = tmp_path / "packages"
+            packages_dir.mkdir(parents=True)
+            (packages_dir / "trivy.toml").write_text(
+                textwrap.dedent(
+                    """
+                    name = "trivy"
+                    license = "Apache-2.0"
+                    homepage = "https://github.com/aquasecurity/trivy"
+
+                    [source.release]
+                    kind = "github_releases"
+                    repo = "aquasecurity/trivy"
+
+                    [source.checksum]
+                    kind = "asset_digest"
+
+                    [source.asset]
+                    kind = "release_asset_url"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            generator = load_generator_module()
+            previous_cwd = Path.cwd()
+            os.chdir(tmp_path)
+            try:
+                with (
+                    mock.patch.object(self.bot, "_load_generator_module", return_value=generator),
+                    mock.patch.object(self.bot, "utc_now_iso", return_value="2026-05-04T12:00:00Z"),
+                    mock.patch.object(
+                        self.bot,
+                        "fetch_github_releases",
+                        side_effect=urllib.error.URLError("timed out"),
+                    ),
+                    contextlib.redirect_stdout(stdout),
+                    contextlib.redirect_stderr(stderr),
+                ):
+                    result = self.bot.main(["--package", "trivy"])
+            finally:
+                os.chdir(previous_cwd)
+
+        self.assertEqual(result, 0)
+        self.assertIn(
+            "registry_update package=trivy status=skipped reason=upstream-error reset_at=2026-05-04T13:00:00Z",
+            stderr.getvalue(),
+        )
+        self.assertIn(
+            "registry_update_summary updated=0 up_to_date=0 quarantined=0 transient_failed=1 skipped=1",
+            stdout.getvalue(),
+        )
 
     def test_release_fetch_non_rate_http_error_still_fails(self) -> None:
         with tempfile.TemporaryDirectory(prefix="release-bot-") as tmp:
@@ -552,6 +928,110 @@ class UpstreamReleaseBotTests(unittest.TestCase):
             finally:
                 os.chdir(previous_cwd)
 
+    def test_github_403_without_rate_limit_signal_still_fails(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="release-bot-") as tmp:
+            tmp_path = Path(tmp)
+            packages_dir = tmp_path / "packages"
+            packages_dir.mkdir(parents=True)
+            (packages_dir / "private.toml").write_text(
+                textwrap.dedent(
+                    """
+                    name = "private"
+                    license = "MIT"
+                    homepage = "https://github.com/example/private"
+
+                    [source.release]
+                    kind = "github_releases"
+                    repo = "example/private"
+
+                    [source.checksum]
+                    kind = "asset_digest"
+
+                    [source.asset]
+                    kind = "release_asset_url"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+
+            generator = load_generator_module()
+            previous_cwd = Path.cwd()
+            os.chdir(tmp_path)
+            try:
+                with (
+                    mock.patch.object(self.bot, "_load_generator_module", return_value=generator),
+                    mock.patch.object(self.bot, "utc_now_iso", return_value="2026-05-04T12:00:00Z"),
+                    mock.patch.object(
+                        self.bot,
+                        "fetch_github_releases",
+                        side_effect=urllib.error.HTTPError(
+                            "https://api.github.com/repos/example/private/releases?per_page=20",
+                            403,
+                            "Forbidden",
+                            Message(),
+                            None,
+                        ),
+                    ),
+                ):
+                    with self.assertRaises(urllib.error.HTTPError):
+                        self.bot.main(["--package", "private"])
+            finally:
+                os.chdir(previous_cwd)
+
+    def test_github_403_with_reset_but_no_rate_limit_signal_still_fails(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="release-bot-") as tmp:
+            tmp_path = Path(tmp)
+            packages_dir = tmp_path / "packages"
+            packages_dir.mkdir(parents=True)
+            (packages_dir / "private.toml").write_text(
+                textwrap.dedent(
+                    """
+                    name = "private"
+                    license = "MIT"
+                    homepage = "https://github.com/example/private"
+
+                    [source.release]
+                    kind = "github_releases"
+                    repo = "example/private"
+
+                    [source.checksum]
+                    kind = "asset_digest"
+
+                    [source.asset]
+                    kind = "release_asset_url"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+
+            headers = Message()
+            headers["x-ratelimit-reset"] = "1770000000"
+            headers["x-ratelimit-remaining"] = "42"
+            generator = load_generator_module()
+            previous_cwd = Path.cwd()
+            os.chdir(tmp_path)
+            try:
+                with (
+                    mock.patch.object(self.bot, "_load_generator_module", return_value=generator),
+                    mock.patch.object(
+                        self.bot,
+                        "fetch_github_releases",
+                        side_effect=urllib.error.HTTPError(
+                            "https://api.github.com/repos/example/private/releases?per_page=20",
+                            403,
+                            "Forbidden",
+                            headers,
+                            None,
+                        ),
+                    ),
+                ):
+                    with self.assertRaises(urllib.error.HTTPError):
+                        self.bot.main(["--package", "private"])
+            finally:
+                os.chdir(previous_cwd)
+
     def test_main_skips_planning_when_github_release_not_modified(self) -> None:
         with tempfile.TemporaryDirectory(prefix="release-bot-") as tmp:
             tmp_path = Path(tmp)
@@ -579,12 +1059,16 @@ class UpstreamReleaseBotTests(unittest.TestCase):
                 encoding="utf-8",
             )
             state_path = tmp_path / "state" / "upstream-release-bot.json"
-            self.bot.write_bot_state(
-                state_path,
-                {
-                    "schema_version": 1,
-                    "sources": {"github_releases:aquasecurity/trivy": {"etag": "abc"}},
-                },
+            state_path.parent.mkdir(parents=True)
+            state_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "sources": {"github_releases:aquasecurity/trivy": {"etag": "abc"}},
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
             )
             stdout = io.StringIO()
             generator = load_generator_module()
@@ -593,6 +1077,7 @@ class UpstreamReleaseBotTests(unittest.TestCase):
             try:
                 with (
                     mock.patch.object(self.bot, "_load_generator_module", return_value=generator),
+                    mock.patch.object(self.bot, "utc_now_iso", return_value="2026-05-04T12:00:00Z"),
                     mock.patch.object(
                         self.bot,
                         "fetch_github_releases",
@@ -605,10 +1090,33 @@ class UpstreamReleaseBotTests(unittest.TestCase):
                     result = self.bot.main(["--package", "trivy"])
             finally:
                 os.chdir(previous_cwd)
+            persisted_state = json.loads(state_path.read_text(encoding="utf-8"))
 
         self.assertEqual(result, 0)
         fetch.assert_called_once()
         self.assertIn("No new releases detected", stdout.getvalue())
+        self.assertEqual(
+            persisted_state,
+            {
+                "packages": {
+                    "trivy": {
+                        "last_checked_at": "2026-05-04T12:00:00Z",
+                        "source_identity": "github_releases:aquasecurity/trivy",
+                        "source_kind": "github_releases",
+                    }
+                },
+                "quarantine": {},
+                "schema_version": 2,
+                "sources": {
+                    "github_releases:aquasecurity/trivy": {
+                        "etag": "abc",
+                        "last_checked_at": "2026-05-04T12:00:00Z",
+                        "source_identity": "github_releases:aquasecurity/trivy",
+                        "source_kind": "github_releases",
+                    }
+                },
+            },
+        )
 
     def test_main_refreshes_state_after_successful_github_fetch_with_update(self) -> None:
         with tempfile.TemporaryDirectory(prefix="release-bot-") as tmp:
@@ -646,6 +1154,27 @@ class UpstreamReleaseBotTests(unittest.TestCase):
                 + "\n",
                 encoding="utf-8",
             )
+            state_path = tmp_path / "state" / "upstream-release-bot.json"
+            state_path.parent.mkdir(parents=True)
+            state_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 2,
+                        "sources": {},
+                        "packages": {
+                            "ripgrep": {
+                                "reason_code": "rate-limited",
+                                "backoff_until": "2026-04-28T11:00:00Z",
+                                "detail": "HTTP 403 rate limit",
+                                "last_failed_at": "2026-04-28T10:00:00Z",
+                            }
+                        },
+                        "quarantine": {},
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
             generator = load_generator_module()
             previous_cwd = Path.cwd()
             os.chdir(tmp_path)
@@ -653,6 +1182,7 @@ class UpstreamReleaseBotTests(unittest.TestCase):
                 with (
                     mock.patch.object(self.bot, "_load_generator_module", return_value=generator),
                     mock.patch.object(self.bot, "utc_now_iso", return_value="2026-04-28T12:00:00Z"),
+                    mock.patch.object(self.bot, "validate_package_generated_paths"),
                     mock.patch.object(
                         self.bot,
                         "fetch_github_releases",
@@ -694,6 +1224,20 @@ class UpstreamReleaseBotTests(unittest.TestCase):
                 "last_modified": "Tue, 28 Apr 2026 12:00:00 GMT",
                 "last_checked_at": "2026-04-28T12:00:00Z",
                 "latest_version": "15.2.0",
+                "latest_seen_version": "15.2.0",
+                "source_identity": "github_releases:BurntSushi/ripgrep",
+                "source_kind": "github_releases",
+            },
+        )
+        self.assertEqual(
+            state["packages"]["ripgrep"],
+            {
+                "last_checked_at": "2026-04-28T12:00:00Z",
+                "last_generated_at": "2026-04-28T12:00:00Z",
+                "last_successful_version": "15.2.0",
+                "latest_seen_version": "15.2.0",
+                "source_identity": "github_releases:BurntSushi/ripgrep",
+                "source_kind": "github_releases",
             },
         )
 
@@ -784,6 +1328,35 @@ class UpstreamReleaseBotTests(unittest.TestCase):
                     staged_paths=[Path("scripts/upstream-release-bot.py")],
                 )
 
+    def test_render_pr_body_includes_deterministic_audit_details(self) -> None:
+        body = self.bot.render_pr_body(
+            updated_packages=["ripgrep@15.2.0"],
+            quarantine_added=["zig"],
+            quarantine_updated=["fd"],
+            quarantine_cleared=["node"],
+            backoff_packages=["trivy:rate-limited:2026-02-02T02:40:00Z"],
+            state_changed=True,
+            created_releases=1,
+            written_packages=1,
+            quarantined_count=2,
+            transient_failures=1,
+            skipped_fetches=1,
+        )
+
+        self.assertIn("- state changed: yes", body)
+        self.assertIn("- quarantine added: zig", body)
+        self.assertIn("- quarantine updated: fd", body)
+        self.assertIn("- quarantine cleared: node", body)
+        self.assertIn("- backoff packages: trivy:rate-limited:2026-02-02T02:40:00Z", body)
+
+    def test_workflow_serializes_fixed_rolling_branch_runs(self) -> None:
+        workflow = (REPO_ROOT / ".github" / "workflows" / "upstream-release-bot.yml").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("group: upstream-release-bot-upstream-release-rolling", workflow)
+        self.assertNotIn("github.ref", workflow)
+
     def test_open_or_update_pr_enables_automerge_for_new_pr(self) -> None:
         with tempfile.TemporaryDirectory(prefix="release-bot-pr-") as tmp:
             repo = Path(tmp)
@@ -822,6 +1395,344 @@ class UpstreamReleaseBotTests(unittest.TestCase):
 
         self.assertIn(
             ["gh", "pr", "merge", "upstream-release/ripgrep/15.2.0", "--auto", "--squash"],
+            calls,
+        )
+
+    def test_open_or_update_rolling_pr_regenerates_branch_from_base(self) -> None:
+        calls: list[list[str]] = []
+
+        def fake_run(cmd, *, cwd):
+            calls.append(cmd)
+            stdout = ""
+            if cmd[:4] == ["gh", "pr", "list", "--head"]:
+                stdout = "[]"
+            if cmd == ["git", "diff", "--cached", "--name-only"]:
+                stdout = "packages/ripgrep.toml\n"
+            if cmd == ["git", "rev-parse", "refs/remotes/origin/upstream-release/rolling"]:
+                stdout = "abc123\n"
+            return subprocess.CompletedProcess(cmd, 0, stdout=stdout, stderr="")
+
+        with tempfile.TemporaryDirectory(prefix="release-bot-pr-") as tmp:
+            repo = Path(tmp)
+            (repo / "packages").mkdir()
+            (repo / "packages" / "ripgrep.toml").write_text(
+                'name = "ripgrep"\n', encoding="utf-8"
+            )
+            with mock.patch.object(self.bot, "_run", side_effect=fake_run), mock.patch.object(
+                self.bot, "validate_generated_paths"
+            ), mock.patch.object(self.bot, "_remote_branch_exists", return_value=True):
+                self.bot._open_or_update_rolling_pr(
+                    repo_root=repo,
+                    staged_paths=[Path("packages/ripgrep.toml")],
+                    base_branch="main",
+                    branch_name="upstream-release/rolling",
+                    title="chore(registry): update upstream releases",
+                    body="## Summary\n- test\n",
+                )
+
+        self.assertIn(["git", "fetch", "origin", "main"], calls)
+        self.assertIn(
+            ["git", "switch", "-C", "upstream-release/rolling", "origin/main"], calls
+        )
+        self.assertIn(
+            [
+                "git",
+                "push",
+                "--force-with-lease=refs/heads/upstream-release/rolling:abc123",
+                "-u",
+                "origin",
+                "upstream-release/rolling",
+            ],
+            calls,
+        )
+
+    def test_open_or_update_rolling_pr_fetches_branch_before_force_with_lease(self) -> None:
+        calls: list[list[str]] = []
+
+        def fake_run(cmd, *, cwd):
+            calls.append(cmd)
+            stdout = ""
+            if cmd[:4] == ["gh", "pr", "list", "--head"]:
+                stdout = "[]"
+            if cmd == ["git", "diff", "--cached", "--name-only"]:
+                stdout = "packages/ripgrep.toml\n"
+            if cmd == ["git", "rev-parse", "refs/remotes/origin/upstream-release/rolling"]:
+                stdout = "abc123\n"
+            return subprocess.CompletedProcess(cmd, 0, stdout=stdout, stderr="")
+
+        with tempfile.TemporaryDirectory(prefix="release-bot-pr-") as tmp:
+            repo = Path(tmp)
+            (repo / "packages").mkdir()
+            (repo / "packages" / "ripgrep.toml").write_text(
+                'name = "ripgrep"\n', encoding="utf-8"
+            )
+            with mock.patch.object(self.bot, "_run", side_effect=fake_run), mock.patch.object(
+                self.bot, "validate_generated_paths"
+            ), mock.patch.object(self.bot, "_remote_branch_exists", return_value=True):
+                self.bot._open_or_update_rolling_pr(
+                    repo_root=repo,
+                    staged_paths=[Path("packages/ripgrep.toml")],
+                    base_branch="main",
+                    branch_name="upstream-release/rolling",
+                    title="chore(registry): update upstream releases",
+                    body="## Summary\n- test\n",
+                )
+
+        push_index = calls.index(
+            [
+                "git",
+                "push",
+                "--force-with-lease=refs/heads/upstream-release/rolling:abc123",
+                "-u",
+                "origin",
+                "upstream-release/rolling",
+            ]
+        )
+        self.assertIn(
+            [
+                "git",
+                "fetch",
+                "origin",
+                "+refs/heads/upstream-release/rolling:refs/remotes/origin/upstream-release/rolling",
+            ],
+            calls[:push_index],
+        )
+
+    def test_open_or_update_rolling_pr_force_with_lease_works_without_tracking_ref(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="release-bot-git-") as tmp:
+            tmp_path = Path(tmp)
+            remote = tmp_path / "remote.git"
+            seed = tmp_path / "seed"
+            repo = tmp_path / "repo"
+            subprocess.run(["git", "init", "--bare", remote], check=True)
+            subprocess.run(["git", "init", "-b", "main", seed], check=True)
+
+            self._git(seed, "config", "user.name", "Test User")
+            self._git(seed, "config", "user.email", "test@example.com")
+            self._git(seed, "remote", "add", "origin", str(remote))
+            (seed / "README.md").write_text("base\n", encoding="utf-8")
+            self._git(seed, "add", "README.md")
+            self._git(seed, "commit", "-m", "base")
+            self._git(seed, "push", "-u", "origin", "main")
+
+            self._git(seed, "switch", "-c", "upstream-release/rolling")
+            (seed / "packages").mkdir()
+            (seed / "packages" / "old.toml").write_text('name = "old"\n', encoding="utf-8")
+            self._git(seed, "add", "packages/old.toml")
+            self._git(seed, "commit", "-m", "old rolling branch")
+            self._git(seed, "push", "-u", "origin", "upstream-release/rolling")
+
+            subprocess.run(
+                [
+                    "git",
+                    "clone",
+                    "--single-branch",
+                    "--branch",
+                    "main",
+                    str(remote),
+                    str(repo),
+                ],
+                check=True,
+            )
+            self._git(repo, "config", "user.name", "Test User")
+            self._git(repo, "config", "user.email", "test@example.com")
+            self.assertNotIn(
+                "origin/upstream-release/rolling",
+                self._git(repo, "branch", "-r"),
+            )
+
+            package_path = repo / "packages" / "ripgrep.toml"
+            package_path.parent.mkdir()
+            package_path.write_text('name = "ripgrep"\n', encoding="utf-8")
+
+            fake_bin = tmp_path / "bin"
+            fake_bin.mkdir()
+            gh = fake_bin / "gh"
+            gh.write_text(
+                textwrap.dedent(
+                    """
+                    #!/usr/bin/env python3
+                    import sys
+
+                    if sys.argv[1:4] == ["pr", "list", "--head"]:
+                        print("[]")
+                    elif sys.argv[1:3] == ["pr", "create"]:
+                        print("created")
+                    elif sys.argv[1:3] == ["pr", "merge"]:
+                        print("automerge enabled")
+                    else:
+                        raise SystemExit(f"unexpected gh args: {sys.argv[1:]}")
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+            gh.chmod(0o755)
+
+            previous_path = os.environ.get("PATH", "")
+            os.environ["PATH"] = f"{fake_bin}:{previous_path}"
+            try:
+                with mock.patch.object(self.bot, "validate_generated_paths"):
+                    self.bot._open_or_update_rolling_pr(
+                        repo_root=repo,
+                        staged_paths=[package_path.relative_to(repo)],
+                        base_branch="main",
+                        branch_name="upstream-release/rolling",
+                        title="chore(registry): update upstream releases",
+                        body="## Summary\n- test\n",
+                    )
+            finally:
+                os.environ["PATH"] = previous_path
+
+            self.assertIn(
+                "origin/upstream-release/rolling",
+                self._git(repo, "branch", "-r"),
+            )
+            remote_package = subprocess.run(
+                [
+                    "git",
+                    f"--git-dir={remote}",
+                    "show",
+                    "refs/heads/upstream-release/rolling:packages/ripgrep.toml",
+                ],
+                check=True,
+                text=True,
+                capture_output=True,
+            ).stdout
+            self.assertEqual(
+                'name = "ripgrep"\n',
+                remote_package,
+            )
+
+    def test_open_or_update_rolling_pr_refreshes_stale_tracking_ref_with_force_fetch(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="release-bot-git-") as tmp:
+            tmp_path = Path(tmp)
+            remote = tmp_path / "remote.git"
+            seed = tmp_path / "seed"
+            repo = tmp_path / "repo"
+            subprocess.run(["git", "init", "--bare", remote], check=True)
+            subprocess.run(["git", "init", "-b", "main", seed], check=True)
+
+            self._git(seed, "config", "user.name", "Test User")
+            self._git(seed, "config", "user.email", "test@example.com")
+            self._git(seed, "remote", "add", "origin", str(remote))
+            (seed / "README.md").write_text("base\n", encoding="utf-8")
+            self._git(seed, "add", "README.md")
+            self._git(seed, "commit", "-m", "base")
+            self._git(seed, "push", "-u", "origin", "main")
+
+            self._git(seed, "switch", "-c", "upstream-release/rolling")
+            (seed / "packages").mkdir()
+            (seed / "packages" / "old.toml").write_text('name = "old"\n', encoding="utf-8")
+            self._git(seed, "add", "packages/old.toml")
+            self._git(seed, "commit", "-m", "old rolling branch")
+            self._git(seed, "push", "-u", "origin", "upstream-release/rolling")
+
+            subprocess.run(["git", "clone", str(remote), str(repo)], check=True)
+            self._git(repo, "config", "user.name", "Test User")
+            self._git(repo, "config", "user.email", "test@example.com")
+            self.assertIn("origin/upstream-release/rolling", self._git(repo, "branch", "-r"))
+
+            self._git(seed, "switch", "upstream-release/rolling")
+            self._git(seed, "reset", "--hard", "origin/main")
+            (seed / "packages").mkdir()
+            (seed / "packages" / "new-remote.toml").write_text(
+                'name = "new-remote"\n', encoding="utf-8"
+            )
+            self._git(seed, "add", "packages/new-remote.toml")
+            self._git(seed, "commit", "-m", "rewritten rolling branch")
+            self._git(seed, "push", "--force", "origin", "upstream-release/rolling")
+
+            package_path = repo / "packages" / "ripgrep.toml"
+            package_path.parent.mkdir()
+            package_path.write_text('name = "ripgrep"\n', encoding="utf-8")
+
+            fake_bin = tmp_path / "bin"
+            fake_bin.mkdir()
+            gh = fake_bin / "gh"
+            gh.write_text(
+                textwrap.dedent(
+                    """
+                    #!/usr/bin/env python3
+                    import sys
+
+                    if sys.argv[1:4] == ["pr", "list", "--head"]:
+                        print("[]")
+                    elif sys.argv[1:3] == ["pr", "create"]:
+                        print("created")
+                    elif sys.argv[1:3] == ["pr", "merge"]:
+                        print("automerge enabled")
+                    else:
+                        raise SystemExit(f"unexpected gh args: {sys.argv[1:]}")
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+            gh.chmod(0o755)
+
+            previous_path = os.environ.get("PATH", "")
+            os.environ["PATH"] = f"{fake_bin}:{previous_path}"
+            try:
+                with mock.patch.object(self.bot, "validate_generated_paths"):
+                    self.bot._open_or_update_rolling_pr(
+                        repo_root=repo,
+                        staged_paths=[package_path.relative_to(repo)],
+                        base_branch="main",
+                        branch_name="upstream-release/rolling",
+                        title="chore(registry): update upstream releases",
+                        body="## Summary\n- test\n",
+                    )
+            finally:
+                os.environ["PATH"] = previous_path
+
+            remote_package = subprocess.run(
+                [
+                    "git",
+                    f"--git-dir={remote}",
+                    "show",
+                    "refs/heads/upstream-release/rolling:packages/ripgrep.toml",
+                ],
+                check=True,
+                text=True,
+                capture_output=True,
+            ).stdout
+            self.assertEqual('name = "ripgrep"\n', remote_package)
+
+    def test_open_or_update_rolling_pr_does_not_fetch_missing_remote_branch(self) -> None:
+        calls: list[list[str]] = []
+
+        def fake_run(cmd, *, cwd):
+            calls.append(cmd)
+            if cmd == ["git", "fetch", "origin", "upstream-release/rolling"]:
+                self.fail("missing rolling branch should not be fetched")
+            stdout = ""
+            if cmd[:4] == ["gh", "pr", "list", "--head"]:
+                stdout = "[]"
+            if cmd == ["git", "diff", "--cached", "--name-only"]:
+                stdout = "packages/ripgrep.toml\n"
+            return subprocess.CompletedProcess(cmd, 0, stdout=stdout, stderr="")
+
+        with tempfile.TemporaryDirectory(prefix="release-bot-pr-") as tmp:
+            repo = Path(tmp)
+            (repo / "packages").mkdir()
+            (repo / "packages" / "ripgrep.toml").write_text(
+                'name = "ripgrep"\n', encoding="utf-8"
+            )
+            with mock.patch.object(self.bot, "_run", side_effect=fake_run), mock.patch.object(
+                self.bot, "validate_generated_paths"
+            ), mock.patch.object(self.bot, "_remote_branch_exists", return_value=False):
+                self.bot._open_or_update_rolling_pr(
+                    repo_root=repo,
+                    staged_paths=[Path("packages/ripgrep.toml")],
+                    base_branch="main",
+                    branch_name="upstream-release/rolling",
+                    title="chore(registry): update upstream releases",
+                    body="## Summary\n- test\n",
+                )
+
+        self.assertIn(
+            ["git", "push", "--force-with-lease", "-u", "origin", "upstream-release/rolling"],
             calls,
         )
 
