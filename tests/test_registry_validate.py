@@ -1,3 +1,4 @@
+import json
 import subprocess
 import tempfile
 import textwrap
@@ -85,6 +86,132 @@ class RegistryValidateTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         self.assertIn("Validated 2 manifest(s)", result.stdout)
+
+    def test_service_integration_platform_sources_pass(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="registry-validate-") as tmp:
+            tmp_path = Path(tmp)
+            package = tmp_path / "packages" / "demo.toml"
+            release = tmp_path / "releases" / "demo" / "1.2.3.toml"
+            package.parent.mkdir(parents=True, exist_ok=True)
+            release.parent.mkdir(parents=True, exist_ok=True)
+
+            package.write_text(
+                textwrap.dedent(
+                    """
+                    name = "demo"
+                    license = "MIT"
+                    homepage = "https://example.com/demo"
+
+                    [[integrations]]
+                    kind = "service"
+                    name = "demo"
+                    linux_systemd_user = "etc/linux-systemd/user/demo.service"
+                    macos_launch_agent = "etc/macos-launchd/user/demo.plist"
+                    windows_service = "etc/windows-service/demo.xml"
+
+                    [source]
+                    provider = "github"
+                    repo = "example/demo"
+
+                    [[artifacts]]
+                    target = "x86_64-unknown-linux-gnu"
+                    asset = "demo-{version}.tar.gz"
+                    archive = "tar.gz"
+
+                    [[artifacts.binaries]]
+                    name = "demo"
+                    path = "demo"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+
+            release.write_text(
+                textwrap.dedent(
+                    """
+                    name = "demo"
+                    version = "1.2.3"
+
+                    [[integrations]]
+                    kind = "service"
+                    name = "demo"
+                    linux_systemd_user = "etc/linux-systemd/user/demo.service"
+                    macos_launch_agent = "etc/macos-launchd/user/demo.plist"
+                    windows_service = "etc/windows-service/demo.xml"
+
+                    [[artifacts]]
+                    target = "x86_64-unknown-linux-gnu"
+                    url = "https://example.com/demo-1.2.3.tar.gz"
+                    sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+
+            result = subprocess.run(
+                ["python3", str(SCRIPT), "--allow-missing-signatures", str(package), str(release)],
+                cwd=REPO_ROOT,
+                text=True,
+                capture_output=True,
+            )
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("Validated 2 manifest(s)", result.stdout)
+
+    def test_integration_sources_reject_unsafe_paths(self) -> None:
+        invalid_paths = [
+            ".",
+            "etc//demo.service",
+            "./etc/demo.service",
+            "etc\\demo.service",
+            "C:/etc/demo.service",
+            "etc/demo\x07.service",
+            "../etc/demo.service",
+        ]
+        for invalid_path in invalid_paths:
+            with self.subTest(invalid_path=invalid_path):
+                with tempfile.TemporaryDirectory(prefix="registry-validate-") as tmp:
+                    tmp_path = Path(tmp)
+                    package = tmp_path / "packages" / "demo.toml"
+                    package.parent.mkdir(parents=True, exist_ok=True)
+                    source_literal = json.dumps(invalid_path)
+                    package.write_text(
+                        textwrap.dedent(
+                            f"""
+                            name = "demo"
+                            license = "MIT"
+                            homepage = "https://example.com/demo"
+
+                            [[integrations]]
+                            kind = "service"
+                            name = "demo"
+                            linux_systemd_user = {source_literal}
+
+                            [source]
+                            provider = "github"
+                            repo = "example/demo"
+
+                            [[artifacts]]
+                            target = "x86_64-unknown-linux-gnu"
+                            asset = "demo-{{version}}.tar.gz"
+                            archive = "tar.gz"
+                            """
+                        ).strip()
+                        + "\n",
+                        encoding="utf-8",
+                    )
+
+                    result = subprocess.run(
+                        ["python3", str(SCRIPT), "--allow-missing-signatures", str(package)],
+                        cwd=REPO_ROOT,
+                        text=True,
+                        capture_output=True,
+                    )
+
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("must be a normalized relative path", result.stderr)
 
     def test_release_path_name_mismatch_fails(self) -> None:
         with tempfile.TemporaryDirectory(prefix="registry-validate-") as tmp:
