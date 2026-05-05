@@ -4,6 +4,7 @@ import importlib.util
 import io
 import json
 import os
+import socket
 import subprocess
 import tempfile
 import textwrap
@@ -874,6 +875,52 @@ class UpstreamReleaseBotTests(unittest.TestCase):
             stdout.getvalue(),
         )
 
+    def test_url_dns_fetch_failure_is_not_package_scoped(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="release-bot-") as tmp:
+            tmp_path = Path(tmp)
+            packages_dir = tmp_path / "packages"
+            packages_dir.mkdir(parents=True)
+            (packages_dir / "trivy.toml").write_text(
+                textwrap.dedent(
+                    """
+                    name = "trivy"
+                    license = "Apache-2.0"
+                    homepage = "https://github.com/aquasecurity/trivy"
+
+                    [source.release]
+                    kind = "github_releases"
+                    repo = "aquasecurity/trivy"
+
+                    [source.checksum]
+                    kind = "asset_digest"
+
+                    [source.asset]
+                    kind = "release_asset_url"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+
+            generator = load_generator_module()
+            previous_cwd = Path.cwd()
+            os.chdir(tmp_path)
+            try:
+                with (
+                    mock.patch.object(self.bot, "_load_generator_module", return_value=generator),
+                    mock.patch.object(
+                        self.bot,
+                        "fetch_github_releases",
+                        side_effect=urllib.error.URLError(
+                            socket.gaierror(socket.EAI_NONAME, "Name or service not known")
+                        ),
+                    ),
+                ):
+                    with self.assertRaises(urllib.error.URLError):
+                        self.bot.main(["--package", "trivy"])
+            finally:
+                os.chdir(previous_cwd)
+
     def test_release_fetch_non_rate_http_error_still_fails(self) -> None:
         with tempfile.TemporaryDirectory(prefix="release-bot-") as tmp:
             tmp_path = Path(tmp)
@@ -1496,6 +1543,80 @@ class UpstreamReleaseBotTests(unittest.TestCase):
                 "+refs/heads/upstream-release/rolling:refs/remotes/origin/upstream-release/rolling",
             ],
             calls[:push_index],
+        )
+
+    def test_open_or_update_rolling_pr_skips_validation_when_no_staged_changes(self) -> None:
+        calls: list[list[str]] = []
+
+        def fake_run(cmd, *, cwd):
+            calls.append(cmd)
+            stdout = ""
+            if cmd == ["git", "diff", "--cached", "--name-only"]:
+                stdout = ""
+            if cmd[:4] == ["gh", "pr", "list", "--head"]:
+                stdout = '[{"number": 12}]'
+            return subprocess.CompletedProcess(cmd, 0, stdout=stdout, stderr="")
+
+        with tempfile.TemporaryDirectory(prefix="release-bot-pr-") as tmp:
+            repo = Path(tmp)
+            with mock.patch.object(self.bot, "_run", side_effect=fake_run), mock.patch.object(
+                self.bot, "validate_generated_paths"
+            ) as validate_generated_paths:
+                self.bot._open_or_update_rolling_pr(
+                    repo_root=repo,
+                    staged_paths=[Path("state/upstream-release-bot.json")],
+                    base_branch="main",
+                    branch_name="upstream-release/rolling",
+                    title="chore(registry): update upstream releases",
+                    body="## Summary\n- test\n",
+                )
+
+        validate_generated_paths.assert_not_called()
+        self.assertIn(["gh", "pr", "merge", "12", "--auto", "--squash"], calls)
+
+    def test_reconcile_empty_rolling_pr_resets_branch_and_closes_stale_pr(self) -> None:
+        calls: list[list[str]] = []
+
+        def fake_run(cmd, *, cwd):
+            calls.append(cmd)
+            stdout = ""
+            if cmd == ["git", "rev-parse", "refs/remotes/origin/upstream-release/rolling"]:
+                stdout = "abc123\n"
+            if cmd[:4] == ["gh", "pr", "list", "--head"]:
+                stdout = '[{"number": 12}]'
+            return subprocess.CompletedProcess(cmd, 0, stdout=stdout, stderr="")
+
+        with tempfile.TemporaryDirectory(prefix="release-bot-pr-") as tmp:
+            repo = Path(tmp)
+            with mock.patch.object(self.bot, "_run", side_effect=fake_run), mock.patch.object(
+                self.bot, "_remote_branch_exists", return_value=True
+            ):
+                self.bot._reconcile_empty_rolling_pr(
+                    repo_root=repo,
+                    base_branch="main",
+                    branch_name="upstream-release/rolling",
+                )
+
+        self.assertIn(
+            [
+                "git",
+                "push",
+                "--force-with-lease=refs/heads/upstream-release/rolling:abc123",
+                "origin",
+                "origin/main:refs/heads/upstream-release/rolling",
+            ],
+            calls,
+        )
+        self.assertIn(
+            [
+                "gh",
+                "pr",
+                "close",
+                "12",
+                "--comment",
+                "Closing stale rolling release PR: no generated changes remain.",
+            ],
+            calls,
         )
 
     def test_open_or_update_rolling_pr_force_with_lease_works_without_tracking_ref(self) -> None:

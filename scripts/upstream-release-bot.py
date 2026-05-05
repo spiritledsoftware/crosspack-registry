@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import argparse
+import errno
 import http.client
 import importlib.util
 import json
 import re
+import socket
 import subprocess
 import sys
 import time
@@ -432,8 +434,18 @@ def _is_skippable_release_fetch_error(
     return "rate limit" in body or "secondary limit" in body
 
 
-def _is_transient_url_error(_error: urllib.error.URLError) -> bool:
-    return True
+def _is_transient_url_error(error: urllib.error.URLError) -> bool:
+    reason = getattr(error, "reason", None)
+    if isinstance(reason, TimeoutError | socket.timeout):
+        return True
+    if isinstance(reason, str) and "timed out" in reason.lower():
+        return True
+    reason_errno = getattr(reason, "errno", None)
+    return reason_errno in {
+        errno.EAGAIN,
+        errno.ECONNRESET,
+        errno.ETIMEDOUT,
+    }
 
 
 def fetch_json_index_releases(release_strategy: dict) -> list[dict]:
@@ -862,7 +874,6 @@ def _open_or_update_pr(
     _restore_path_snapshot(repo_root, path_snapshot)
     if staged_paths:
         _run(["git", "add", *(str(path) for path in staged_paths)], cwd=repo_root)
-    validate_generated_paths(repo_root=repo_root, staged_paths=staged_paths)
     staged = _run(["git", "diff", "--cached", "--name-only"], cwd=repo_root)
     if not staged.stdout.strip():
         number = _open_pr_number_for_branch(repo_root=repo_root, branch_name=branch_name)
@@ -870,6 +881,7 @@ def _open_or_update_pr(
             _enable_pr_automerge(repo_root=repo_root, pr_ref=str(number))
             print(f"PR already open for {branch_name}; enabled automerge")
         return
+    validate_generated_paths(repo_root=repo_root, staged_paths=staged_paths)
 
     _run(["git", "commit", "-m", title], cwd=repo_root)
     _run(["git", "push", "-u", "origin", branch_name], cwd=repo_root)
@@ -914,7 +926,6 @@ def _open_or_update_rolling_pr(
     _restore_path_snapshot(repo_root, path_snapshot)
     if staged_paths:
         _run(["git", "add", *(str(path) for path in staged_paths)], cwd=repo_root)
-    validate_generated_paths(repo_root=repo_root, staged_paths=staged_paths)
     staged = _run(["git", "diff", "--cached", "--name-only"], cwd=repo_root)
     if not staged.stdout.strip():
         number = _open_pr_number_for_branch(repo_root=repo_root, branch_name=branch_name)
@@ -922,6 +933,7 @@ def _open_or_update_rolling_pr(
             _enable_pr_automerge(repo_root=repo_root, pr_ref=str(number))
             print(f"PR already open for {branch_name}; enabled automerge")
         return
+    validate_generated_paths(repo_root=repo_root, staged_paths=staged_paths)
     _run(["git", "commit", "-m", title], cwd=repo_root)
     push_cmd = ["git", "push", "--force-with-lease", "-u", "origin", branch_name]
     if _remote_branch_exists(repo_root=repo_root, branch_name=branch_name):
@@ -969,6 +981,43 @@ def _open_or_update_rolling_pr(
         cwd=repo_root,
     )
     _enable_pr_automerge(repo_root=repo_root, pr_ref=branch_name)
+
+
+def _reconcile_empty_rolling_pr(
+    *, repo_root: Path, base_branch: str, branch_name: str
+) -> None:
+    if not _remote_branch_exists(repo_root=repo_root, branch_name=branch_name):
+        return
+    _run(
+        ["git", "fetch", "origin", f"+refs/heads/{branch_name}:refs/remotes/origin/{branch_name}"],
+        cwd=repo_root,
+    )
+    expected = _run(
+        ["git", "rev-parse", f"refs/remotes/origin/{branch_name}"], cwd=repo_root
+    ).stdout.strip()
+    _run(
+        [
+            "git",
+            "push",
+            f"--force-with-lease=refs/heads/{branch_name}:{expected}",
+            "origin",
+            f"origin/{base_branch}:refs/heads/{branch_name}",
+        ],
+        cwd=repo_root,
+    )
+    number = _open_pr_number_for_branch(repo_root=repo_root, branch_name=branch_name)
+    if number is not None:
+        _run(
+            [
+                "gh",
+                "pr",
+                "close",
+                str(number),
+                "--comment",
+                "Closing stale rolling release PR: no generated changes remain.",
+            ],
+            cwd=repo_root,
+        )
 
 
 def render_pr_body(
@@ -1236,6 +1285,12 @@ def main(argv: list[str]) -> int:
             up_to_date_packages += 1
 
     if not planned and not state_changed:
+        if args.create_prs:
+            _reconcile_empty_rolling_pr(
+                repo_root=repo_root,
+                base_branch=args.base_branch,
+                branch_name=args.branch_name,
+            )
         print(
             "No new releases detected; "
             f"skipped {skipped_fetches} release fetch(es)"
@@ -1347,7 +1402,7 @@ def main(argv: list[str]) -> int:
             )
         # Keep package validation failures isolated: restore staged writes,
         # record the error, quarantine this package, and continue others.
-        except Exception as exc:
+        except (subprocess.CalledProcessError, RuntimeError) as exc:
             if package_path in staged_paths and written_packages > 0:
                 written_packages -= 1
             for generated_path in staged_paths:
