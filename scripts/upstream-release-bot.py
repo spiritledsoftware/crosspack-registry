@@ -1154,7 +1154,6 @@ def main(argv: list[str]) -> int:
                         if key in package_state:
                             package_state.pop(key, None)
                             state_changed = True
-                    state_changed = True
                     continue
                 releases = fetch_result.releases
                 version_strategy = normalized.get("version")
@@ -1346,6 +1345,8 @@ def main(argv: list[str]) -> int:
                 package=update.package,
                 staged_paths=staged_paths,
             )
+        # Keep package validation failures isolated: restore staged writes,
+        # record the error, quarantine this package, and continue others.
         except Exception as exc:
             if package_path in staged_paths and written_packages > 0:
                 written_packages -= 1
