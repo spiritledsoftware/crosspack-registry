@@ -1554,6 +1554,22 @@ class UpstreamReleaseBotTests(unittest.TestCase):
             ["git", "switch", "-C", "upstream-release/rolling", "origin/main"], calls
         )
         self.assertIn(
+            ["git", "fetch", "origin", "main"],
+            calls,
+        )
+        self.assertLess(
+            calls.index(["git", "fetch", "origin", "main"]),
+            calls.index(
+                [
+                    "git",
+                    "push",
+                    "--force-with-lease=refs/heads/upstream-release/rolling:abc123",
+                    "origin",
+                    "origin/main:refs/heads/upstream-release/rolling",
+                ]
+            ),
+        )
+        self.assertIn(
             [
                 "git",
                 "push",

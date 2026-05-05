@@ -988,6 +988,7 @@ def _reconcile_empty_rolling_pr(
 ) -> None:
     if not _remote_branch_exists(repo_root=repo_root, branch_name=branch_name):
         return
+    _run(["git", "fetch", "origin", base_branch], cwd=repo_root)
     _run(
         ["git", "fetch", "origin", f"+refs/heads/{branch_name}:refs/remotes/origin/{branch_name}"],
         cwd=repo_root,

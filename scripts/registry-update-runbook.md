@@ -72,5 +72,7 @@ Recovery commands:
 python3 scripts/upstream-release-bot.py --dry-run --package <package>
 python3 scripts/registry-validate-source.py packages/<package>.toml
 python3 scripts/registry-validate.py --allow-missing-signatures packages/<package>.toml releases/<package>/<version>.toml
-git push --force-with-lease origin upstream-release/rolling
+git fetch origin main
+git switch -C upstream-release/rolling origin/main
+git push --force-with-lease -u origin HEAD:upstream-release/rolling
 ```
