@@ -1132,6 +1132,7 @@ def main(argv: list[str]) -> int:
     quarantine_updated: list[str] = []
     quarantine_cleared: list[str] = []
     backoff_packages: list[str] = []
+    pr_material_state_changed = False
     for config_path in config_paths:
         config = load_config(config_path)
         package_name = str(config.get("name") or config_path.stem)
@@ -1258,6 +1259,7 @@ def main(argv: list[str]) -> int:
                 package_state, source_identity=source_identity, source_kind=release_kind
             )
             state_changed = True
+            pr_material_state_changed = True
             skipped_fetches += 1
             transient_fetch_failures += 1
             backoff_packages.append(
@@ -1349,6 +1351,7 @@ def main(argv: list[str]) -> int:
                 last_good_version=last_good_version,
             ):
                 state_changed = True
+                pr_material_state_changed = True
                 if existing_quarantine:
                     quarantine_updated.append(update.package)
                 else:
@@ -1424,6 +1427,7 @@ def main(argv: list[str]) -> int:
                 last_good_version=last_good_version,
             ):
                 state_changed = True
+                pr_material_state_changed = True
                 if existing_quarantine:
                     quarantine_updated.append(update.package)
                 else:
@@ -1445,13 +1449,32 @@ def main(argv: list[str]) -> int:
         package_state["last_successful_version"] = update.version
         package_state["last_generated_at"] = utc_now_iso()
         state_changed = True
+        pr_material_state_changed = True
         if clear_quarantine(bot_state, package=update.package):
             state_changed = True
+            pr_material_state_changed = True
             quarantine_cleared.append(update.package)
         updated_packages.append(f"{update.package}@{update.version}")
         for path in staged_paths:
             if path not in all_staged_paths:
                 all_staged_paths.append(path)
+
+    if args.create_prs and not planned and not pr_material_state_changed:
+        _reconcile_empty_rolling_pr(
+            repo_root=repo_root,
+            base_branch=args.base_branch,
+            branch_name=args.branch_name,
+        )
+        print(
+            "No new releases detected; "
+            f"skipped {skipped_fetches} release fetch(es)"
+        )
+        print(
+            f"registry_update_summary updated=0 up_to_date={up_to_date_packages} "
+            "quarantined=0 transient_failed=0 "
+            f"skipped={skipped_fetches}"
+        )
+        return 0
 
     if state_changed and not args.dry_run:
         write_bot_state(args.state_path, bot_state)

@@ -1165,6 +1165,78 @@ class UpstreamReleaseBotTests(unittest.TestCase):
             },
         )
 
+    def test_create_prs_reconciles_stale_rolling_pr_for_audit_only_state_change(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="release-bot-") as tmp:
+            tmp_path = Path(tmp)
+            packages_dir = tmp_path / "packages"
+            packages_dir.mkdir(parents=True)
+            (packages_dir / "trivy.toml").write_text(
+                textwrap.dedent(
+                    """
+                    name = "trivy"
+                    license = "Apache-2.0"
+                    homepage = "https://github.com/aquasecurity/trivy"
+
+                    [source.release]
+                    kind = "github_releases"
+                    repo = "aquasecurity/trivy"
+
+                    [source.checksum]
+                    kind = "asset_digest"
+
+                    [source.asset]
+                    kind = "release_asset_url"
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+            state_path = tmp_path / "state" / "upstream-release-bot.json"
+            state_path.parent.mkdir(parents=True)
+            original_state = {
+                "schema_version": 2,
+                "sources": {"github_releases:aquasecurity/trivy": {"etag": "abc"}},
+                "packages": {},
+                "quarantine": {},
+            }
+            state_path.write_text(json.dumps(original_state) + "\n", encoding="utf-8")
+            stdout = io.StringIO()
+            generator = load_generator_module()
+            previous_cwd = Path.cwd()
+            os.chdir(tmp_path)
+            try:
+                with (
+                    mock.patch.object(self.bot, "_load_generator_module", return_value=generator),
+                    mock.patch.object(self.bot, "_run") as run,
+                    mock.patch.object(self.bot, "utc_now_iso", return_value="2026-05-04T12:00:00Z"),
+                    mock.patch.object(
+                        self.bot,
+                        "fetch_github_releases",
+                        return_value=self.bot.GithubReleaseFetchResult(
+                            releases=[], not_modified=True
+                        ),
+                    ),
+                    mock.patch.object(self.bot, "_reconcile_empty_rolling_pr") as reconcile,
+                    mock.patch.object(self.bot, "_open_or_update_rolling_pr") as open_or_update,
+                    contextlib.redirect_stdout(stdout),
+                ):
+                    result = self.bot.main(["--package", "trivy", "--create-prs"])
+            finally:
+                os.chdir(previous_cwd)
+
+            persisted_state = json.loads(state_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(result, 0)
+        run.assert_any_call(["git", "fetch", "origin", "main"], cwd=tmp_path)
+        reconcile.assert_called_once_with(
+            repo_root=tmp_path,
+            base_branch="main",
+            branch_name="upstream-release/rolling",
+        )
+        open_or_update.assert_not_called()
+        self.assertEqual(persisted_state, original_state)
+        self.assertIn("No new releases detected", stdout.getvalue())
+
     def test_main_refreshes_state_after_successful_github_fetch_with_update(self) -> None:
         with tempfile.TemporaryDirectory(prefix="release-bot-") as tmp:
             tmp_path = Path(tmp)
