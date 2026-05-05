@@ -158,6 +158,7 @@ class RegistryValidateTests(unittest.TestCase):
             )
 
         self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("Validated 2 manifest(s)", result.stdout)
 
     def test_integration_sources_reject_unsafe_paths(self) -> None:
         invalid_paths = [
