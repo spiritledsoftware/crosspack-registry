@@ -1,0 +1,27 @@
+name = "zellij"
+version = "0.44.2"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/zellij-org/zellij/releases/download/v0.44.2/zellij-x86_64-unknown-linux-musl.tar.gz"
+sha256 = "26e1753b4c8451912523c7d8700c5aed75392ea57f0b1c988560f3bbc7775744"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/zellij-org/zellij/releases/download/v0.44.2/zellij-aarch64-unknown-linux-musl.tar.gz"
+sha256 = "e0b2ddbf050d58577b09b2a032a54f1a3fac0e214d1605c5969e8936340fff6b"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/zellij-org/zellij/releases/download/v0.44.2/zellij-x86_64-apple-darwin.tar.gz"
+sha256 = "1150710e3f78211144a7b0e58235b8fa459ea3797b2063cfa03b183487298cd0"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/zellij-org/zellij/releases/download/v0.44.2/zellij-aarch64-apple-darwin.tar.gz"
+sha256 = "2f914c95d9d57e15573cbfb3848071b8f34a0b7f3f8951876b3de20ec9e32ac7"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/zellij-org/zellij/releases/download/v0.44.2/zellij-x86_64-pc-windows-msvc.zip"
+sha256 = "9e5c90d99d8def4042dd2b464dc62db7cbcb496353525c3321fc57eb4f83a306"
