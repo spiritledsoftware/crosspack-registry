@@ -1,10 +1,10 @@
 name = "opencode"
 license = "MIT"
-homepage = "https://github.com/sst/opencode"
+homepage = "https://github.com/anomalyco/opencode"
 
 [source.release]
 kind = "github_releases"
-repo = "sst/opencode"
+repo = "anomalyco/opencode"
 tag_prefix = "v"
 include_prereleases = false
 
