@@ -14,7 +14,7 @@ Official Crosspack registry source.
   - package identity (`name`, `license`, `homepage`)
   - upstream source metadata (`[source]`)
   - artifact template metadata (`target`, `asset`, archive hints, binaries/completions/gui metadata)
-  - typed host integrations (`docker_cli_plugin`, `path_plugin`, or `service`) without arbitrary install scripts
+  - typed host integrations (`docker_cli_plugin`, `man_page`, `path_plugin`, or `service`) without arbitrary install scripts
 - `releases/<package>/<version>.toml` stores version-specific resolved artifact data:
   - `name`, `version`
   - per-target `url` + `sha256`
@@ -85,6 +85,7 @@ Legacy `provider = "github"` and `provider = "nodejs-dist"` source definitions a
 `[[integrations]]` entries declare host-visible integration metadata. Sources are artifact-relative paths and must not be absolute or contain `..` segments.
 
 - `kind = "docker_cli_plugin"` requires `name` and `source`; install projects the source under the Crosspack prefix, while host activation is explicit through `crosspack integrations enable`.
+- `kind = "man_page"` requires `section` and `source`, with optional `name` for single-file declarations and optional `platforms = ["linux", "macos", "windows"]`; install projects matched files under `share/man/man<section>/`, and Unix shell init exposes the Crosspack man root through `MANPATH`.
 - `kind = "path_plugin"` requires `host`, `name`, and `source`; install projects the source under the Crosspack prefix, while host activation is explicit through `crosspack integrations enable`.
 - `kind = "service"` requires `name` and at least one service source: legacy `source`/`linux_systemd_user`, `macos_launch_agent`, or `windows_service`. Service host activation is explicit-only today; registry entries should not set `enable = true`.
 

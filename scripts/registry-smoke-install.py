@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import gzip
 import hashlib
 import platform
@@ -125,6 +126,15 @@ def integrations_from_manifest_or_package_template(path: Path, doc: dict) -> lis
 
     package_doc = tomllib.loads(package_template_path.read_text(encoding="utf-8"))
     return package_doc.get("integrations", [])
+
+
+def current_host_platform() -> str:
+    system = platform.system().lower()
+    if system == "darwin":
+        return "macos"
+    if system == "windows":
+        return "windows"
+    return "linux"
 
 
 DOWNLOAD_ATTEMPTS = 3
@@ -349,12 +359,39 @@ def smoke_manifest(
             )
 
         missing_integrations = []
+        host_platform = current_host_platform()
         for integration in integrations_from_manifest_or_package_template(path, doc):
+            platforms = integration.get("platforms", [])
+            if isinstance(platforms, list) and platforms and host_platform not in platforms:
+                continue
             source = integration.get("source")
             if not isinstance(source, str) or not source.strip():
                 continue
-            source_path = install_root / Path(source)
-            if not source_path.exists() or not source_path.is_file():
+            section = integration.get("section")
+            section_suffixes = []
+            if integration.get("kind") == "man_page" and isinstance(section, str):
+                section_suffixes = [f".{section}", f".{section}.gz"]
+            if any(ch in source for ch in "*?["):
+                matched = any(
+                    item.is_file()
+                    and fnmatch.fnmatch(item.relative_to(install_root).as_posix(), source)
+                    and (
+                        not section_suffixes
+                        or any(item.name.endswith(suffix) for suffix in section_suffixes)
+                    )
+                    for item in install_root.rglob("*")
+                )
+            else:
+                source_path = install_root / Path(source)
+                matched = (
+                    source_path.exists()
+                    and source_path.is_file()
+                    and (
+                        not section_suffixes
+                        or any(source_path.name.endswith(suffix) for suffix in section_suffixes)
+                    )
+                )
+            if not matched:
                 missing_integrations.append(source)
 
         if missing_integrations:

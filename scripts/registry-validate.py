@@ -23,8 +23,10 @@ RELEASE_KIND_VALUES = {
 VERSION_KIND_VALUES = {"asset_name_regex", "github_tag", "prefixed_semver_field", "regex_capture", "semver_field"}
 CHECKSUM_KIND_VALUES = {"asset_digest", "download_sha256", "download_index", "shasums256", "url_sha256"}
 ASSET_KIND_VALUES = {"json_index_asset", "release_asset_url", "templated"}
-INTEGRATION_KIND_VALUES = {"docker_cli_plugin", "path_plugin", "service"}
+INTEGRATION_KIND_VALUES = {"docker_cli_plugin", "man_page", "path_plugin", "service"}
 SERVICE_SOURCE_FIELDS = {"source", "linux_systemd_user", "macos_launch_agent", "windows_service"}
+MAN_PAGE_SECTIONS = {str(section) for section in range(1, 10)}
+MAN_PAGE_PLATFORMS = {"linux", "macos", "windows"}
 
 
 def err(errors: list[str], path: Path, message: str) -> None:
@@ -120,9 +122,29 @@ def validate_integrations(path: Path, doc: dict, errors: list[str]) -> None:
                 err(errors, path, f"{prefix}.source must be a non-empty string")
             elif not is_safe_relative_source_path(source):
                 err(errors, path, f"{prefix}.source must be a normalized relative path")
+            elif kind == "man_page":
+                section = integration.get("section")
+                if not isinstance(section, str) or section not in MAN_PAGE_SECTIONS:
+                    err(errors, path, f"{prefix}.section must be one of {', '.join(sorted(MAN_PAGE_SECTIONS))}")
+                platforms = integration.get("platforms", [])
+                if not isinstance(platforms, list) or not all(
+                    isinstance(platform, str) and platform in MAN_PAGE_PLATFORMS
+                    for platform in platforms
+                ):
+                    err(errors, path, f"{prefix}.platforms must contain only {', '.join(sorted(MAN_PAGE_PLATFORMS))}")
+                elif not (
+                    source.endswith(f".{section}")
+                    or source.endswith(f".{section}.gz")
+                    or source.endswith(f".*{section}")
+                    or source.endswith(f".*{section}.gz")
+                ):
+                    err(errors, path, f"{prefix}.source must end with .{section} or .{section}.gz")
         name = integration.get("name")
-        if not isinstance(name, str) or not name.strip():
+        if kind != "man_page" and (not isinstance(name, str) or not name.strip()):
             err(errors, path, f"{prefix}.name must be a non-empty string")
+            continue
+        if kind == "man_page" and name is not None and (not isinstance(name, str) or not name.strip()):
+            err(errors, path, f"{prefix}.name must be a non-empty string when present")
             continue
         if kind == "path_plugin":
             host = integration.get("host")
@@ -130,6 +152,11 @@ def validate_integrations(path: Path, doc: dict, errors: list[str]) -> None:
                 err(errors, path, f"{prefix}.host must be a non-empty string")
                 continue
             key = f"{kind}:{host}:{name}"
+        elif kind == "man_page":
+            section = integration.get("section")
+            if not isinstance(section, str) or section not in MAN_PAGE_SECTIONS:
+                continue
+            key = f"{kind}:{section}:{name or integration.get('source')}"
         else:
             key = f"{kind}:{name}"
         if kind == "service":
