@@ -1,0 +1,27 @@
+name = "uv"
+version = "0.11.9"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/astral-sh/uv/releases/download/0.11.9/uv-x86_64-unknown-linux-gnu.tar.gz"
+sha256 = "5c43f82077ff0cd5aec588286cbabd89913e4d045bd4e8aa60b20b3ecffc36e3"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/astral-sh/uv/releases/download/0.11.9/uv-aarch64-unknown-linux-gnu.tar.gz"
+sha256 = "6d22be8d0d675668f657cee802a1344ea7941403f59eb2a6645ef316f69b4309"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/astral-sh/uv/releases/download/0.11.9/uv-x86_64-apple-darwin.tar.gz"
+sha256 = "a974a0226ac5d3706ebaf660d3587b0dfb93ef9cf1fd146f97d40cd4ad69db98"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/astral-sh/uv/releases/download/0.11.9/uv-aarch64-apple-darwin.tar.gz"
+sha256 = "7d02e5f206dcfb555284f8f6b8547890f0b8eb8987f44e9a0a2378cd23338733"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/astral-sh/uv/releases/download/0.11.9/uv-x86_64-pc-windows-msvc.zip"
+sha256 = "facbf9637c373761a96fa63c537d6c46581d357a65af01eacfd8c6319e6fb14e"
