@@ -1,0 +1,37 @@
+name = "crosspack"
+version = "0.15.1"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/spiritledsoftware/crosspack/releases/download/v0.15.1/crosspack-v0.15.1-x86_64-unknown-linux-gnu.tar.gz"
+sha256 = "4531273cb24d2e7ef7451c0b629473480cbb5e6bb5fcf23682e9200b271dff6f"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/spiritledsoftware/crosspack/releases/download/v0.15.1/crosspack-v0.15.1-aarch64-unknown-linux-gnu.tar.gz"
+sha256 = "98a3a58ed8a3bfc7345518238317ff22f3e57c66f7ddaf445acf32249758989b"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-musl"
+url = "https://github.com/spiritledsoftware/crosspack/releases/download/v0.15.1/crosspack-v0.15.1-x86_64-unknown-linux-musl.tar.gz"
+sha256 = "ba5d554707c98a0b438e9875b31da6b4bf5fe4a66b7b3dc1e479b4da02b6803e"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-musl"
+url = "https://github.com/spiritledsoftware/crosspack/releases/download/v0.15.1/crosspack-v0.15.1-aarch64-unknown-linux-musl.tar.gz"
+sha256 = "80d0be606c02ab39381bc023c69a38c318c25b32410ccce88af1e7cda7bfc6ea"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+url = "https://github.com/spiritledsoftware/crosspack/releases/download/v0.15.1/crosspack-v0.15.1-x86_64-apple-darwin.tar.gz"
+sha256 = "7b01bb6982e5affdc0e676ee53bdc17ab18284e6cd65159f20e97bab4bafa378"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+url = "https://github.com/spiritledsoftware/crosspack/releases/download/v0.15.1/crosspack-v0.15.1-aarch64-apple-darwin.tar.gz"
+sha256 = "5d96d2873026fc84227eaedec014ed80e28037a5f6bbb5b897a42a9df3bbe35f"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+url = "https://github.com/spiritledsoftware/crosspack/releases/download/v0.15.1/crosspack-v0.15.1-x86_64-pc-windows-msvc.zip"
+sha256 = "2e0c0f1bdbe3485ff6fa7cb1aae52c2c0b5973ef27d9efed2e7f7fcd20bf234f"
