@@ -20,8 +20,8 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: upstream-release-bot
-  cancel-in-progress: false
+  group: upstream-release-bot-upstream-release-rolling
+  cancel-in-progress: true
 
 jobs:
   update-registry-metadata:
@@ -77,7 +77,7 @@ jobs:
           PACKAGE_INPUT: ${{ inputs.package }}
         run: |
           set -euo pipefail
-          args=(--create-prs)
+          args=(--create-prs --branch-name upstream-release/rolling)
           if [ -n "$PACKAGE_INPUT" ]; then
             args+=(--package "$PACKAGE_INPUT")
           fi
