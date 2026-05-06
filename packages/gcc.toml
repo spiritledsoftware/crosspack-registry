@@ -1,0 +1,68 @@
+name = "gcc"
+license = "GPL-3.0-or-later WITH GCC-exception-3.1"
+homepage = "https://xpack.github.io/dev-tools/gcc/"
+provides = ["c-compiler", "cxx-compiler"]
+
+[source.release]
+kind = "github_releases"
+repo = "xpack-dev-tools/gcc-xpack"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "url_sha256"
+url_template = "{url}.sha"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "xpack-gcc-{version}-linux-x64.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "gcc"
+path = "bin/gcc"
+[[artifacts.binaries]]
+name = "g++"
+path = "bin/g++"
+[[artifacts.binaries]]
+name = "cpp"
+path = "bin/cpp"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "xpack-gcc-{version}-linux-arm64.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "gcc"
+path = "bin/gcc"
+[[artifacts.binaries]]
+name = "g++"
+path = "bin/g++"
+[[artifacts.binaries]]
+name = "cpp"
+path = "bin/cpp"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "xpack-gcc-{version}-win32-x64.zip"
+archive = "zip"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "gcc"
+path = "bin/gcc.exe"
+[[artifacts.binaries]]
+name = "g++"
+path = "bin/g++.exe"
+[[artifacts.binaries]]
+name = "cpp"
+path = "bin/cpp.exe"

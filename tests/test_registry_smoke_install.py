@@ -225,6 +225,28 @@ class RegistrySmokeInstallTests(unittest.TestCase):
         self.assertTrue(ok, msg=message)
         self.assertIn("demo@1.0.0", message)
 
+    def test_tar_extraction_rewrites_stripped_hardlink_targets(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="smoke-test-") as tmp:
+            tmp_path = Path(tmp)
+            payload_path = tmp_path / "payload.tar.gz"
+            install_root = tmp_path / "install"
+            with tarfile.open(payload_path, "w:gz") as tf:
+                binary = b"clang"
+                clang = tarfile.TarInfo("xpack-clang-1/bin/clang")
+                clang.size = len(binary)
+                clang.mode = 0o755
+                tf.addfile(clang, io.BytesIO(binary))
+
+                llvm_ml = tarfile.TarInfo("xpack-clang-1/bin/llvm-ml")
+                llvm_ml.type = tarfile.LNKTYPE
+                llvm_ml.linkname = "xpack-clang-1/bin/clang"
+                tf.addfile(llvm_ml)
+
+            self.smoke.extract_archive(payload_path, install_root, "tar.gz", 1)
+
+            self.assertEqual((install_root / "bin" / "clang").read_bytes(), b"clang")
+            self.assertTrue((install_root / "bin" / "llvm-ml").exists())
+
     def test_download_retries_transient_http_error(self) -> None:
         with tempfile.TemporaryDirectory(prefix="smoke-test-") as tmp:
             dest = Path(tmp) / "payload"

@@ -1564,21 +1564,11 @@ class UpstreamReleaseBotTests(unittest.TestCase):
                     "git",
                     "push",
                     "--force-with-lease=refs/heads/upstream-release/rolling:abc123",
+                    "-u",
                     "origin",
-                    "origin/main:refs/heads/upstream-release/rolling",
+                    "upstream-release/rolling",
                 ]
             ),
-        )
-        self.assertIn(
-            [
-                "git",
-                "push",
-                "--force-with-lease=refs/heads/upstream-release/rolling:abc123",
-                "-u",
-                "origin",
-                "upstream-release/rolling",
-            ],
-            calls,
         )
 
     def test_open_or_update_rolling_pr_fetches_branch_before_force_with_lease(self) -> None:

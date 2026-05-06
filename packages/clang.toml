@@ -1,0 +1,130 @@
+name = "clang"
+license = "Apache-2.0 WITH LLVM-exception"
+homepage = "https://xpack.github.io/dev-tools/clang/"
+provides = ["c-compiler", "cxx-compiler", "llvm"]
+
+[source.release]
+kind = "github_releases"
+repo = "xpack-dev-tools/clang-xpack"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "url_sha256"
+url_template = "{url}.sha"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "xpack-clang-{version}-linux-x64.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "clang"
+path = "bin/clang"
+[[artifacts.binaries]]
+name = "clang++"
+path = "bin/clang++"
+[[artifacts.binaries]]
+name = "lld"
+path = "bin/lld"
+[[artifacts.binaries]]
+name = "llvm-ar"
+path = "bin/llvm-ar"
+[[artifacts.binaries]]
+name = "llvm-ranlib"
+path = "bin/llvm-ranlib"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "xpack-clang-{version}-linux-arm64.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "clang"
+path = "bin/clang"
+[[artifacts.binaries]]
+name = "clang++"
+path = "bin/clang++"
+[[artifacts.binaries]]
+name = "lld"
+path = "bin/lld"
+[[artifacts.binaries]]
+name = "llvm-ar"
+path = "bin/llvm-ar"
+[[artifacts.binaries]]
+name = "llvm-ranlib"
+path = "bin/llvm-ranlib"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "xpack-clang-{version}-darwin-x64.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "clang"
+path = "bin/clang"
+[[artifacts.binaries]]
+name = "clang++"
+path = "bin/clang++"
+[[artifacts.binaries]]
+name = "lld"
+path = "bin/lld"
+[[artifacts.binaries]]
+name = "llvm-ar"
+path = "bin/llvm-ar"
+[[artifacts.binaries]]
+name = "llvm-ranlib"
+path = "bin/llvm-ranlib"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "xpack-clang-{version}-darwin-arm64.tar.gz"
+archive = "tar.gz"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "clang"
+path = "bin/clang"
+[[artifacts.binaries]]
+name = "clang++"
+path = "bin/clang++"
+[[artifacts.binaries]]
+name = "lld"
+path = "bin/lld"
+[[artifacts.binaries]]
+name = "llvm-ar"
+path = "bin/llvm-ar"
+[[artifacts.binaries]]
+name = "llvm-ranlib"
+path = "bin/llvm-ranlib"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "xpack-clang-{version}-win32-x64.zip"
+archive = "zip"
+strip_components = 1
+
+[[artifacts.binaries]]
+name = "clang"
+path = "bin/clang.exe"
+[[artifacts.binaries]]
+name = "clang++"
+path = "bin/clang++.exe"
+[[artifacts.binaries]]
+name = "lld"
+path = "bin/lld.exe"
+[[artifacts.binaries]]
+name = "llvm-ar"
+path = "bin/llvm-ar.exe"
+[[artifacts.binaries]]
+name = "llvm-ranlib"
+path = "bin/llvm-ranlib.exe"

@@ -1,0 +1,78 @@
+name = "ninja"
+license = "Apache-2.0"
+homepage = "https://github.com/ninja-build/ninja"
+
+[source.release]
+kind = "github_releases"
+repo = "ninja-build/ninja"
+tag_prefix = "v"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "asset_digest"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "ninja-linux.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "ninja"
+path = "ninja"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "ninja-linux-aarch64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "ninja"
+path = "ninja"
+
+[[artifacts]]
+target = "x86_64-apple-darwin"
+asset = "ninja-mac.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "ninja"
+path = "ninja"
+
+[[artifacts]]
+target = "aarch64-apple-darwin"
+asset = "ninja-mac.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "ninja"
+path = "ninja"
+
+[[artifacts]]
+target = "x86_64-pc-windows-msvc"
+asset = "ninja-win.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "ninja"
+path = "ninja.exe"
+
+[[artifacts]]
+target = "aarch64-pc-windows-msvc"
+asset = "ninja-winarm64.zip"
+archive = "zip"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "ninja"
+path = "ninja.exe"

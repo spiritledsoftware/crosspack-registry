@@ -153,3 +153,45 @@ jobs:
       - name: App-bundle smoke canary (macOS)
         if: runner.os == 'macOS'
         run: python3 ./scripts/registry-smoke-install.py --app-bundle-canary
+
+  pr-crosspack-native:
+    name: PR Crosspack Native Validation
+    if: github.event_name == 'pull_request'
+    needs:
+      - detect-pr-manifests
+      - preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout registry
+        uses: actions/checkout@v4
+        with:
+          path: registry
+          fetch-depth: 0
+
+      - name: Checkout Crosspack
+        uses: actions/checkout@v4
+        with:
+          repository: spiritledsoftware/crosspack
+          submodules: false
+          path: crosspack
+
+      - name: Crosspack native validation (changed packages)
+        if: needs.detect-pr-manifests.outputs.manifest_count != '0'
+        shell: bash
+        env:
+          MANIFESTS_JSON: ${{ needs.detect-pr-manifests.outputs.manifests_json }}
+          CROSSPACK_REPO_ROOT: ${{ github.workspace }}/crosspack
+          CROSSPACK_NATIVE_TARGETS: x86_64-unknown-linux-gnu x86_64-pc-windows-msvc
+        run: |
+          cd registry
+          mapfile -t manifests < <(
+            MANIFESTS_JSON="$MANIFESTS_JSON" python3 -c 'import json, os; print("\n".join(json.loads(os.environ["MANIFESTS_JSON"])))'
+          )
+          ./scripts/registry-crosspack-native-check.sh "${manifests[@]}"
+
+      - name: Skip Crosspack native validation (none changed)
+        if: needs.detect-pr-manifests.outputs.manifest_count == '0'
+        shell: bash
+        run: echo "No changed manifests in this PR."

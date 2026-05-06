@@ -176,6 +176,59 @@ def strip_name(name: str, strip_components: int) -> str | None:
     return str(PurePosixPath(*parts[strip_components:]))
 
 
+def stripped_tar_member(member: tarfile.TarInfo, strip_components: int) -> tarfile.TarInfo | None:
+    stripped = strip_name(member.name, strip_components)
+    if not stripped:
+        return None
+    clone = member.replace(deep=False)
+    clone.name = stripped
+    if clone.linkname:
+        stripped_link = strip_name(clone.linkname, strip_components)
+        if stripped_link:
+            clone.linkname = stripped_link
+        else:
+            link_parts = PurePosixPath(clone.linkname).parts
+            if not link_parts or link_parts[0] == "/" or ".." in link_parts:
+                return None
+    return clone
+
+
+def extract_tar_member_file(
+    tf: tarfile.TarFile,
+    member: tarfile.TarInfo,
+    target: Path,
+) -> None:
+    source = tf.extractfile(member)
+    if source is None:
+        return
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with source, target.open("wb") as out:
+        shutil.copyfileobj(source, out)
+    target.chmod(member.mode or target.stat().st_mode)
+
+
+def tar_link_target(root: Path, target: Path, linkname: str) -> Path:
+    if "/" in linkname:
+        return root / linkname
+    return target.parent / linkname
+
+
+def materialize_tar_link(
+    root: Path, target: Path, linkname: str, *, symlink: bool
+) -> bool:
+    if target.exists() or target.is_symlink():
+        return True
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if symlink:
+        target.symlink_to(linkname)
+    else:
+        link_target = tar_link_target(root, target, linkname)
+        if not link_target.exists():
+            return False
+        target.hardlink_to(link_target)
+    return True
+
+
 def extract_archive(src: Path, dest: Path, archive: str, strip_components: int) -> None:
     if archive in {"tar.gz", "tgz", "tar.xz"}:
         if archive in {"tar.gz", "tgz"}:
@@ -183,26 +236,27 @@ def extract_archive(src: Path, dest: Path, archive: str, strip_components: int) 
         else:
             mode = "r:xz"
         with tarfile.open(src, mode) as tf:
+            pending_links: list[tuple[Path, Path, bool]] = []
             for member in tf.getmembers():
                 if not member.name:
                     continue
-                stripped = strip_name(member.name, strip_components)
-                if not stripped:
+                stripped_member = stripped_tar_member(member, strip_components)
+                if stripped_member is None:
                     continue
-                target = dest / stripped
-                if member.isdir():
+                target = dest / stripped_member.name
+                if stripped_member.isdir():
                     target.mkdir(parents=True, exist_ok=True)
-                    continue
+                elif stripped_member.isfile():
+                    extract_tar_member_file(tf, member, target)
+                elif stripped_member.issym() or stripped_member.islnk():
+                    link = (target, stripped_member.linkname, stripped_member.issym())
+                    if not materialize_tar_link(
+                        dest, link[0], link[1], symlink=link[2]
+                    ):
+                        pending_links.append(link)
 
-                parent = target.parent
-                parent.mkdir(parents=True, exist_ok=True)
-                extracted = tf.extractfile(member)
-                if extracted is None:
-                    continue
-                with extracted, target.open("wb") as out:
-                    shutil.copyfileobj(extracted, out)
-                if member.mode & 0o111:
-                    target.chmod(target.stat().st_mode | 0o755)
+            for link in pending_links:
+                materialize_tar_link(dest, link[0], link[1], symlink=link[2])
     elif archive == "zip":
         with zipfile.ZipFile(src) as zf:
             for member in zf.infolist():
