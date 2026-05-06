@@ -24,6 +24,7 @@ VERSION_KIND_VALUES = {"asset_name_regex", "github_tag", "prefixed_semver_field"
 CHECKSUM_KIND_VALUES = {"asset_digest", "download_sha256", "download_index", "shasums256", "url_sha256"}
 ASSET_KIND_VALUES = {"json_index_asset", "release_asset_url", "templated"}
 INTEGRATION_KIND_VALUES = {"docker_cli_plugin", "path_plugin", "service"}
+SERVICE_SOURCE_FIELDS = {"source", "linux_systemd_user", "macos_launch_agent", "windows_service"}
 
 
 def err(errors: list[str], path: Path, message: str) -> None:
@@ -47,9 +48,17 @@ def expect_nonempty_str(value, field: str, errors: list[str], path: Path) -> boo
     return True
 
 
-def is_relative_without_parent_segments(value: str) -> bool:
-    candidate = Path(value)
-    return not candidate.is_absolute() and ".." not in candidate.parts
+def is_safe_relative_source_path(value: str) -> bool:
+    if (
+        not value
+        or value == "."
+        or value.startswith(("/", "\\", "./"))
+        or "\\" in value
+        or re.match(r"^[A-Za-z]:", value)
+        or any(ord(ch) < 32 or ord(ch) == 127 for ch in value)
+    ):
+        return False
+    return all(part not in {"", ".", ".."} for part in value.split("/"))
 
 
 def validate_common_artifact_template_fields(
@@ -92,11 +101,25 @@ def validate_integrations(path: Path, doc: dict, errors: list[str]) -> None:
         if not isinstance(kind, str) or kind not in INTEGRATION_KIND_VALUES:
             err(errors, path, f"{prefix}.kind must be a supported integration kind")
             continue
-        source = integration.get("source")
-        if not isinstance(source, str) or not source.strip():
-            err(errors, path, f"{prefix}.source must be a non-empty string")
-        elif not is_relative_without_parent_segments(source):
-            err(errors, path, f"{prefix}.source must be relative and must not contain '..'")
+        if kind == "service":
+            service_sources = [
+                (field, integration.get(field))
+                for field in sorted(SERVICE_SOURCE_FIELDS)
+                if integration.get(field) is not None
+            ]
+            if not service_sources:
+                err(errors, path, f"{prefix} must declare at least one service source")
+            for field, source in service_sources:
+                if not isinstance(source, str) or not source.strip():
+                    err(errors, path, f"{prefix}.{field} must be a non-empty string")
+                elif not is_safe_relative_source_path(source):
+                    err(errors, path, f"{prefix}.{field} must be a normalized relative path")
+        else:
+            source = integration.get("source")
+            if not isinstance(source, str) or not source.strip():
+                err(errors, path, f"{prefix}.source must be a non-empty string")
+            elif not is_safe_relative_source_path(source):
+                err(errors, path, f"{prefix}.source must be a normalized relative path")
         name = integration.get("name")
         if not isinstance(name, str) or not name.strip():
             err(errors, path, f"{prefix}.name must be a non-empty string")
@@ -344,7 +367,7 @@ def validate_package_manifest(path: Path, doc: dict, errors: list[str]) -> None:
                     err(errors, path, f"{bprefix}.name must be a non-empty string")
                 if not isinstance(bpath, str) or not bpath.strip():
                     err(errors, path, f"{bprefix}.path must be a non-empty string")
-                elif not is_relative_without_parent_segments(bpath):
+                elif not is_safe_relative_source_path(bpath):
                     err(
                         errors,
                         path,
@@ -368,7 +391,7 @@ def validate_package_manifest(path: Path, doc: dict, errors: list[str]) -> None:
                 completion_path = completion.get("path")
                 if not isinstance(completion_path, str) or not completion_path.strip():
                     err(errors, path, f"{cprefix}.path must be a non-empty string")
-                elif not is_relative_without_parent_segments(completion_path):
+                elif not is_safe_relative_source_path(completion_path):
                     err(
                         errors,
                         path,

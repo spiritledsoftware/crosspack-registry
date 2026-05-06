@@ -14,6 +14,7 @@ Official Crosspack registry source.
   - package identity (`name`, `license`, `homepage`)
   - upstream source metadata (`[source]`)
   - artifact template metadata (`target`, `asset`, archive hints, binaries/completions/gui metadata)
+  - typed host integrations (`docker_cli_plugin`, `path_plugin`, or `service`) without arbitrary install scripts
 - `releases/<package>/<version>.toml` stores version-specific resolved artifact data:
   - `name`, `version`
   - per-target `url` + `sha256`
@@ -78,6 +79,14 @@ Current supported strategies:
   - `kind = "templated"` with `base_url` for deterministic URL construction from artifact templates
 
 Legacy `provider = "github"` and `provider = "nodejs-dist"` source definitions are still normalized by tooling for compatibility during migration, but new configs should prefer the generalized `[source.release]`, `[source.version]`, `[source.checksum]`, and `[source.asset]` tables.
+
+### Typed host integrations
+
+`[[integrations]]` entries declare host-visible integration metadata. Sources are artifact-relative paths and must not be absolute or contain `..` segments.
+
+- `kind = "docker_cli_plugin"` requires `name` and `source`; install projects the source under the Crosspack prefix, while host activation is explicit through `crosspack integrations enable`.
+- `kind = "path_plugin"` requires `host`, `name`, and `source`; install projects the source under the Crosspack prefix, while host activation is explicit through `crosspack integrations enable`.
+- `kind = "service"` requires `name` and at least one service source: legacy `source`/`linux_systemd_user`, `macos_launch_agent`, or `windows_service`. Service host activation is explicit-only today; registry entries should not set `enable = true`.
 
 Useful commands:
 
