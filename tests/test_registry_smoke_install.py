@@ -247,6 +247,38 @@ class RegistrySmokeInstallTests(unittest.TestCase):
             self.assertEqual((install_root / "bin" / "clang").read_bytes(), b"clang")
             self.assertTrue((install_root / "bin" / "llvm-ml").exists())
 
+    def test_stripped_tar_member_clones_without_replace(self) -> None:
+        member = tarfile.TarInfo("root/bin/tool")
+        member.type = tarfile.SYMTYPE
+        member.linkname = "tool-real"
+        member.mode = 0o755
+        member.size = 123
+        member.mtime = 456
+        member.uid = 7
+        member.gid = 8
+        member.uname = "builder"
+        member.gname = "builders"
+        member.devmajor = 9
+        member.devminor = 10
+        member.pax_headers = {"comment": "metadata"}
+
+        stripped = self.smoke.stripped_tar_member(member, 1)
+
+        self.assertIsNot(stripped, member)
+        self.assertEqual(stripped.name, "bin/tool")
+        self.assertEqual(stripped.type, tarfile.SYMTYPE)
+        self.assertEqual(stripped.linkname, "tool-real")
+        self.assertEqual(stripped.mode, 0o755)
+        self.assertEqual(stripped.size, 123)
+        self.assertEqual(stripped.mtime, 456)
+        self.assertEqual(stripped.uid, 7)
+        self.assertEqual(stripped.gid, 8)
+        self.assertEqual(stripped.uname, "builder")
+        self.assertEqual(stripped.gname, "builders")
+        self.assertEqual(stripped.devmajor, 9)
+        self.assertEqual(stripped.devminor, 10)
+        self.assertEqual(stripped.pax_headers, {"comment": "metadata"})
+
     def test_download_retries_transient_http_error(self) -> None:
         with tempfile.TemporaryDirectory(prefix="smoke-test-") as tmp:
             dest = Path(tmp) / "payload"

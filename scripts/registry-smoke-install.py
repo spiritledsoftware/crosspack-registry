@@ -176,11 +176,31 @@ def strip_name(name: str, strip_components: int) -> str | None:
     return str(PurePosixPath(*parts[strip_components:]))
 
 
+def clone_tar_member(member: tarfile.TarInfo) -> tarfile.TarInfo:
+    clone = tarfile.TarInfo(member.name)
+    for attr in (
+        "type",
+        "linkname",
+        "size",
+        "mode",
+        "mtime",
+        "uid",
+        "gid",
+        "uname",
+        "gname",
+        "devmajor",
+        "devminor",
+    ):
+        setattr(clone, attr, getattr(member, attr))
+    clone.pax_headers = dict(member.pax_headers)
+    return clone
+
+
 def stripped_tar_member(member: tarfile.TarInfo, strip_components: int) -> tarfile.TarInfo | None:
     stripped = strip_name(member.name, strip_components)
     if not stripped:
         return None
-    clone = member.replace(deep=False)
+    clone = clone_tar_member(member)
     clone.name = stripped
     if clone.linkname:
         stripped_link = strip_name(clone.linkname, strip_components)

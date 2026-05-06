@@ -243,6 +243,37 @@ class RegistryGenerateManifestTests(unittest.TestCase):
         self.assertIn('[replaces]\nllvm-toolchain = "<2.0.0"', package_text)
         self.assertLess(package_text.index("provides ="), package_text.index("[source.release]"))
 
+    def test_package_policy_rejects_malformed_conflicts(self) -> None:
+        doc = {
+            "name": "clang",
+            "license": "Apache-2.0 WITH LLVM-exception",
+            "homepage": "https://xpack.github.io/dev-tools/clang/",
+            "conflicts": ["old-clang"],
+            "source": {
+                "release": {
+                    "kind": "github_releases",
+                    "repo": "xpack-dev-tools/clang-xpack",
+                },
+                "version": {"kind": "github_tag"},
+                "checksum": {"kind": "url_sha256", "url_template": "{url}.sha"},
+                "asset": {"kind": "release_asset_url"},
+            },
+            "artifacts": [
+                {
+                    "target": "x86_64-unknown-linux-gnu",
+                    "asset": "xpack-clang-{version}-linux-x64.tar.gz",
+                    "archive": "tar.gz",
+                    "binaries": [{"name": "clang", "path": "bin/clang"}],
+                }
+            ],
+        }
+
+        with self.assertRaisesRegex(
+            self.generator.GenerateError,
+            "package policy field conflicts must be a table",
+        ):
+            self.generator.render_package_text(doc)
+
     def test_download_retries_transient_http_error(self) -> None:
         with tempfile.TemporaryDirectory(prefix="manifest-gen-") as tmp:
             dest = Path(tmp) / "artifact.tar.gz"

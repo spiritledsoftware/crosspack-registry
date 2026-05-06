@@ -19,6 +19,23 @@ if [[ ! -f "$crosspack_root/Cargo.toml" || ! -d "$crosspack_root/crates/crosspac
   exit 1
 fi
 
+for tool in openssl python3 cargo; do
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    echo "$tool is required" >&2
+    exit 1
+  fi
+done
+
+python3 - <<'PY'
+import sys
+
+if sys.version_info < (3, 11):
+    raise SystemExit(
+        "python3 3.11+ is required for registry native validation "
+        f"(found {sys.version_info.major}.{sys.version_info.minor})"
+    )
+PY
+
 if [[ "$#" -gt 0 ]]; then
   changed_manifests=("$@")
 else
@@ -55,13 +72,6 @@ if [[ "${#package_names[@]}" -eq 0 ]]; then
   echo "No changed package or release manifests require Crosspack native validation."
   exit 0
 fi
-
-for tool in openssl python3 cargo; do
-  if ! command -v "$tool" >/dev/null 2>&1; then
-    echo "$tool is required" >&2
-    exit 1
-  fi
-done
 
 temp_registry="$(mktemp -d)"
 temp_prefix="$(mktemp -d)"

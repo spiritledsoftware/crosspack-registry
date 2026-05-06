@@ -65,8 +65,12 @@ def _render_package_policy(chunks: list[str], doc: dict) -> None:
         chunks.append(_line("provides", doc["provides"]))
         chunks.append("")
     for key in ("conflicts", "replaces"):
-        value = doc.get(key)
-        if isinstance(value, dict) and value:
+        if key not in doc:
+            continue
+        value = doc[key]
+        if not isinstance(value, dict):
+            raise GenerateError(f"package policy field {key} must be a table")
+        if value:
             _render_table(chunks, f"[{key}]", value)
 
 
