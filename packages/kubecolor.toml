@@ -2,6 +2,12 @@ name = "kubecolor"
 license = "MIT"
 homepage = "https://github.com/kubecolor/kubecolor"
 
+[[integrations]]
+kind = "path_plugin"
+host = "kubectl"
+name = "color"
+source = "kubecolor"
+
 [source.release]
 kind = "github_releases"
 repo = "kubecolor/kubecolor"

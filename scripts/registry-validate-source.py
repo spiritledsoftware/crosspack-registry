@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse
 import re
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 try:
     import tomllib
@@ -28,6 +28,8 @@ VERSION_KIND_VALUES = {"asset_name_regex", "github_tag", "prefixed_semver_field"
 CHECKSUM_KIND_VALUES = {"asset_digest", "download_sha256", "download_index", "shasums256", "url_sha256"}
 ASSET_KIND_VALUES = {"json_index_asset", "release_asset_url", "templated"}
 INTEGRATION_KIND_VALUES = {"docker_cli_plugin", "path_plugin", "service"}
+SHELL_INIT_STRATEGY_VALUES = {"eval_stdout"}
+SHELL_INIT_FIELDS = ("bash", "zsh", "fish", "powershell")
 
 
 def _expect_non_empty_str(obj: dict, key: str, ctx: str) -> str:
@@ -54,13 +56,24 @@ def _expect_optional_str_array(obj: dict, key: str, ctx: str) -> None:
     if key not in obj:
         return
     value = obj[key]
-    if not isinstance(value, list) or not all(isinstance(item, str) and item for item in value):
-        raise ValidationError(f"{ctx}.{key} must be a string array")
+    if not isinstance(value, list) or not value or not all(isinstance(item, str) and item for item in value):
+        raise ValidationError(f"{ctx}.{key} must be a non-empty string array")
 
 
 def _is_relative_without_parent_segments(value: str) -> bool:
-    candidate = Path(value)
-    return not candidate.is_absolute() and ".." not in candidate.parts
+    posix = PurePosixPath(value)
+    windows = PureWindowsPath(value)
+    return (
+        not posix.is_absolute()
+        and not windows.is_absolute()
+        and ".." not in posix.parts
+        and ".." not in windows.parts
+    )
+
+
+def _validate_integration_source(value: str, ctx: str) -> None:
+    if not _is_relative_without_parent_segments(value):
+        raise ValidationError(f"{ctx} must be relative and must not contain '..'")
 
 
 def _validate_integrations(doc: dict) -> None:
@@ -76,10 +89,10 @@ def _validate_integrations(doc: dict) -> None:
         kind = _expect_non_empty_str(integration, "kind", prefix)
         if kind not in INTEGRATION_KIND_VALUES:
             raise ValidationError(f"{prefix}.kind must be a supported integration kind")
-        source = _expect_non_empty_str(integration, "source", prefix)
-        if not _is_relative_without_parent_segments(source):
-            raise ValidationError(f"{prefix}.source must be relative and must not contain '..'")
         name = _expect_non_empty_str(integration, "name", prefix)
+        if kind in {"docker_cli_plugin", "path_plugin"}:
+            source = _expect_non_empty_str(integration, "source", prefix)
+            _validate_integration_source(source, f"{prefix}.source")
         if kind == "path_plugin":
             host = _expect_non_empty_str(integration, "host", prefix)
             key = f"{kind}:{host}:{name}"
@@ -87,9 +100,59 @@ def _validate_integrations(doc: dict) -> None:
             key = f"{kind}:{name}"
         if kind == "service":
             _expect_optional_bool(integration, "enable", prefix)
+            if not any(field in integration for field in ("source", "linux_systemd_user", "macos_launch_agent", "windows_service")):
+                raise ValidationError(f"{prefix} must declare at least one service source")
+            for field in ("source", "linux_systemd_user", "macos_launch_agent", "windows_service"):
+                if field in integration:
+                    source = _expect_non_empty_str(integration, field, prefix)
+                    _validate_integration_source(source, f"{prefix}.{field}")
         if key in seen:
             raise ValidationError(f"duplicate integration declaration {key}")
         seen.add(key)
+
+
+def _validate_shell_init(doc: dict) -> None:
+    shell_init = doc.get("shell_init", [])
+    if not isinstance(shell_init, list):
+        raise ValidationError("manifest.shell_init must be an array when present")
+    artifact_binary_sets: list[set[str]] = []
+    artifacts = doc.get("artifacts", [])
+    if isinstance(artifacts, list):
+        for artifact in artifacts:
+            if not isinstance(artifact, dict):
+                continue
+            artifact_binaries = artifact.get("binaries", [])
+            if not isinstance(artifact_binaries, list):
+                continue
+            artifact_binary_names: set[str] = set()
+            for binary_item in artifact_binaries:
+                if not isinstance(binary_item, dict):
+                    continue
+                binary_name = binary_item.get("name")
+                if isinstance(binary_name, str):
+                    artifact_binary_names.add(binary_name)
+            artifact_binary_sets.append(artifact_binary_names)
+    seen: set[str] = set()
+    for idx, item in enumerate(shell_init, start=1):
+        if not isinstance(item, dict):
+            raise ValidationError(f"manifest.shell_init[{idx}] must be a table")
+        prefix = f"manifest.shell_init[{idx}]"
+        name = _expect_non_empty_str(item, "name", prefix)
+        binary = _expect_non_empty_str(item, "binary", prefix)
+        strategy = _expect_non_empty_str(item, "strategy", prefix)
+        if strategy not in SHELL_INIT_STRATEGY_VALUES:
+            raise ValidationError(f"{prefix}.strategy must be a supported shell init strategy")
+        if any(binary not in binary_names for binary_names in artifact_binary_sets):
+            raise ValidationError(f"{prefix}.binary must match an artifact binary in every artifact")
+        has_shell_args = False
+        for field in SHELL_INIT_FIELDS:
+            _expect_optional_str_array(item, field, prefix)
+            has_shell_args = has_shell_args or field in item
+        if not has_shell_args:
+            raise ValidationError(f"{prefix} must declare at least one shell args field")
+        if name in seen:
+            raise ValidationError(f"duplicate shell init declaration {name}")
+        seen.add(name)
 
 
 def validate_source_config(doc: dict) -> None:
@@ -282,6 +345,8 @@ def validate_source_config(doc: dict) -> None:
                     raise ValidationError(
                         f"{gprefix}.categories[{cat_idx}] must be a non-empty string"
                     )
+
+    _validate_shell_init(doc)
 
 
 def main(argv: list[str]) -> int:

@@ -2,6 +2,15 @@ name = "zoxide"
 license = "MIT"
 homepage = "https://github.com/ajeetdsouza/zoxide"
 
+[[shell_init]]
+name = "zoxide"
+binary = "zoxide"
+strategy = "eval_stdout"
+bash = ["init", "bash"]
+zsh = ["init", "zsh"]
+fish = ["init", "fish"]
+powershell = ["init", "powershell"]
+
 [source]
 provider = "github"
 repo = "ajeetdsouza/zoxide"

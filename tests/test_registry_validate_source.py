@@ -9,6 +9,60 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = REPO_ROOT / "scripts" / "registry-validate-source.py"
 
 
+def run_source_validator(content: str) -> subprocess.CompletedProcess[str]:
+    with tempfile.TemporaryDirectory(prefix="source-config-") as tmp:
+        config = Path(tmp) / "package.toml"
+        config.write_text(textwrap.dedent(content).strip() + "\n", encoding="utf-8")
+        return subprocess.run(
+            ["python3", str(SCRIPT), str(config)],
+            cwd=REPO_ROOT,
+            text=True,
+            capture_output=True,
+        )
+
+
+def shell_init_manifest(shell_init: str, first_artifact_extra: str = "") -> str:
+    return f"""
+        name = "starship"
+        license = "ISC"
+        homepage = "https://github.com/starship/starship"
+
+        [source.release]
+        kind = "github_releases"
+        repo = "starship/starship"
+
+        [source.checksum]
+        kind = "asset_digest"
+
+        [source.asset]
+        kind = "release_asset_url"
+
+        {shell_init}
+
+        [[artifacts]]
+        target = "x86_64-unknown-linux-gnu"
+        asset = "starship-x86_64-unknown-linux-gnu.tar.gz"
+        archive = "tar.gz"
+        strip_components = 0
+
+        [[artifacts.binaries]]
+        name = "starship"
+        path = "starship"
+
+        {first_artifact_extra}
+
+        [[artifacts]]
+        target = "aarch64-apple-darwin"
+        asset = "starship-aarch64-apple-darwin.tar.gz"
+        archive = "tar.gz"
+        strip_components = 0
+
+        [[artifacts.binaries]]
+        name = "starship"
+        path = "starship"
+    """
+
+
 class RegistryValidateSourceTests(unittest.TestCase):
     def test_valid_zoxide_style_source_config_passes(self) -> None:
         with tempfile.TemporaryDirectory(prefix="source-config-") as tmp:
@@ -153,6 +207,100 @@ class RegistryValidateSourceTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         self.assertIn("Validation passed", result.stdout)
+
+    def test_valid_source_config_with_shell_init_passes(self) -> None:
+        result = run_source_validator(
+            shell_init_manifest(
+                """
+                [[shell_init]]
+                name = "starship"
+                binary = "starship"
+                strategy = "eval_stdout"
+                bash = ["init", "bash"]
+                zsh = ["init", "zsh"]
+                fish = ["init", "fish"]
+                powershell = ["init", "powershell"]
+                """
+            )
+        )
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("Validation passed", result.stdout)
+
+    def test_shell_init_rejects_missing_binary(self) -> None:
+        result = run_source_validator(
+            shell_init_manifest(
+                """
+                [[shell_init]]
+                name = "starship"
+                binary = "missing"
+                strategy = "eval_stdout"
+                bash = ["init", "bash"]
+                """
+            )
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("binary must match an artifact binary", result.stderr)
+
+    def test_shell_init_rejects_binary_missing_from_one_artifact(self) -> None:
+        result = run_source_validator(
+            shell_init_manifest(
+                """
+                [[shell_init]]
+                name = "starship-alt"
+                binary = "starship-alt"
+                strategy = "eval_stdout"
+                bash = ["init", "bash"]
+                """
+                ,
+                first_artifact_extra="""
+                    [[artifacts.binaries]]
+                    name = "starship-alt"
+                    path = "starship"
+                """,
+            )
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("binary must match an artifact binary in every artifact", result.stderr)
+
+    def test_shell_init_rejects_duplicate_names(self) -> None:
+        result = run_source_validator(
+            shell_init_manifest(
+                """
+                [[shell_init]]
+                name = "starship"
+                binary = "starship"
+                strategy = "eval_stdout"
+                bash = ["init", "bash"]
+
+                [[shell_init]]
+                name = "starship"
+                binary = "starship"
+                strategy = "eval_stdout"
+                zsh = ["init", "zsh"]
+                """
+            )
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("duplicate shell init declaration starship", result.stderr)
+
+    def test_shell_init_rejects_missing_shell_args(self) -> None:
+        result = run_source_validator(
+            shell_init_manifest(
+                """
+                [[shell_init]]
+                name = "starship"
+                binary = "starship"
+                strategy = "eval_stdout"
+                """
+            )
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("must declare at least one shell args field", result.stderr)
 
     def test_integration_source_path_rejects_parent_segments(self) -> None:
         with tempfile.TemporaryDirectory(prefix="source-config-") as tmp:

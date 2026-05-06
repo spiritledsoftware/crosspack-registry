@@ -2,6 +2,15 @@ name = "atuin"
 license = "MIT"
 homepage = "https://github.com/atuinsh/atuin"
 
+[[shell_init]]
+name = "atuin"
+binary = "atuin"
+strategy = "eval_stdout"
+bash = ["init", "bash"]
+zsh = ["init", "zsh"]
+fish = ["init", "fish"]
+powershell = ["init", "powershell"]
+
 [source.release]
 kind = "github_releases"
 repo = "atuinsh/atuin"

@@ -2,6 +2,15 @@ name = "starship"
 license = "ISC"
 homepage = "https://github.com/starship/starship"
 
+[[shell_init]]
+name = "starship"
+binary = "starship"
+strategy = "eval_stdout"
+bash = ["init", "bash"]
+zsh = ["init", "zsh"]
+fish = ["init", "fish"]
+powershell = ["init", "powershell"]
+
 [source.release]
 kind = "github_releases"
 repo = "starship/starship"

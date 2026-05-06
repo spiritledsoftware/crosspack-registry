@@ -2,6 +2,15 @@ name = "mise"
 license = "MIT"
 homepage = "https://github.com/jdx/mise"
 
+[[shell_init]]
+name = "mise"
+binary = "mise"
+strategy = "eval_stdout"
+bash = ["activate", "bash"]
+zsh = ["activate", "zsh"]
+fish = ["activate", "fish"]
+powershell = ["activate", "pwsh"]
+
 [source.release]
 kind = "github_releases"
 repo = "jdx/mise"
