@@ -225,6 +225,60 @@ class RegistrySmokeInstallTests(unittest.TestCase):
         self.assertTrue(ok, msg=message)
         self.assertIn("demo@1.0.0", message)
 
+    def test_tar_extraction_rewrites_stripped_hardlink_targets(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="smoke-test-") as tmp:
+            tmp_path = Path(tmp)
+            payload_path = tmp_path / "payload.tar.gz"
+            install_root = tmp_path / "install"
+            with tarfile.open(payload_path, "w:gz") as tf:
+                binary = b"clang"
+                clang = tarfile.TarInfo("xpack-clang-1/bin/clang")
+                clang.size = len(binary)
+                clang.mode = 0o755
+                tf.addfile(clang, io.BytesIO(binary))
+
+                llvm_ml = tarfile.TarInfo("xpack-clang-1/bin/llvm-ml")
+                llvm_ml.type = tarfile.LNKTYPE
+                llvm_ml.linkname = "xpack-clang-1/bin/clang"
+                tf.addfile(llvm_ml)
+
+            self.smoke.extract_archive(payload_path, install_root, "tar.gz", 1)
+
+            self.assertEqual((install_root / "bin" / "clang").read_bytes(), b"clang")
+            self.assertTrue((install_root / "bin" / "llvm-ml").exists())
+
+    def test_stripped_tar_member_clones_without_replace(self) -> None:
+        member = tarfile.TarInfo("root/bin/tool")
+        member.type = tarfile.SYMTYPE
+        member.linkname = "tool-real"
+        member.mode = 0o755
+        member.size = 123
+        member.mtime = 456
+        member.uid = 7
+        member.gid = 8
+        member.uname = "builder"
+        member.gname = "builders"
+        member.devmajor = 9
+        member.devminor = 10
+        member.pax_headers = {"comment": "metadata"}
+
+        stripped = self.smoke.stripped_tar_member(member, 1)
+
+        self.assertIsNot(stripped, member)
+        self.assertEqual(stripped.name, "bin/tool")
+        self.assertEqual(stripped.type, tarfile.SYMTYPE)
+        self.assertEqual(stripped.linkname, "tool-real")
+        self.assertEqual(stripped.mode, 0o755)
+        self.assertEqual(stripped.size, 123)
+        self.assertEqual(stripped.mtime, 456)
+        self.assertEqual(stripped.uid, 7)
+        self.assertEqual(stripped.gid, 8)
+        self.assertEqual(stripped.uname, "builder")
+        self.assertEqual(stripped.gname, "builders")
+        self.assertEqual(stripped.devmajor, 9)
+        self.assertEqual(stripped.devminor, 10)
+        self.assertEqual(stripped.pax_headers, {"comment": "metadata"})
+
     def test_download_retries_transient_http_error(self) -> None:
         with tempfile.TemporaryDirectory(prefix="smoke-test-") as tmp:
             dest = Path(tmp) / "payload"

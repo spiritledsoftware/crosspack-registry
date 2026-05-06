@@ -1,0 +1,12 @@
+name = "fish"
+version = "4.7.0"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+url = "https://github.com/fish-shell/fish-shell/releases/download/4.7.0/fish-4.7.0-linux-x86_64.tar.xz"
+sha256 = "5a3e4551f8aca94d829727f74001823f2035551a9a36345142bef0f64205d62e"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+url = "https://github.com/fish-shell/fish-shell/releases/download/4.7.0/fish-4.7.0-linux-aarch64.tar.xz"
+sha256 = "6e6e89aa42bfa09160a97ff68c242b3c0e109d12bc62d5a3802298b3653c3602"

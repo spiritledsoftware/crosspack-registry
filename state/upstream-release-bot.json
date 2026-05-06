@@ -1,5 +1,64 @@
 {
-  "schema_version": 1,
+  "packages": {
+    "clang": {
+      "last_checked_at": "2026-05-06T18:31:32Z",
+      "last_generated_at": "2026-05-06T18:29:38Z",
+      "last_successful_version": "21.1.8-1",
+      "latest_seen_version": "21.1.8-1",
+      "source_identity": "github_releases:xpack-dev-tools/clang-xpack",
+      "source_kind": "github_releases"
+    },
+    "cmake": {
+      "last_checked_at": "2026-05-06T18:29:35Z",
+      "last_generated_at": "2026-05-06T18:29:35Z",
+      "last_successful_version": "4.3.2",
+      "latest_seen_version": "4.3.2",
+      "source_identity": "github_releases:Kitware/CMake",
+      "source_kind": "github_releases"
+    },
+    "fish": {
+      "last_checked_at": "2026-05-06T18:29:33Z",
+      "last_generated_at": "2026-05-06T18:29:33Z",
+      "last_successful_version": "4.7.0",
+      "latest_seen_version": "4.7.0",
+      "source_identity": "github_releases:fish-shell/fish-shell",
+      "source_kind": "github_releases"
+    },
+    "gcc": {
+      "last_checked_at": "2026-05-06T18:31:33Z",
+      "last_generated_at": "2026-05-06T18:29:41Z",
+      "last_successful_version": "15.2.0-1",
+      "latest_seen_version": "15.2.0-1",
+      "source_identity": "github_releases:xpack-dev-tools/gcc-xpack",
+      "source_kind": "github_releases"
+    },
+    "ninja": {
+      "last_checked_at": "2026-05-06T18:29:34Z",
+      "last_generated_at": "2026-05-06T18:29:34Z",
+      "last_successful_version": "1.13.2",
+      "latest_seen_version": "1.13.2",
+      "source_identity": "github_releases:ninja-build/ninja",
+      "source_kind": "github_releases"
+    },
+    "nushell": {
+      "last_checked_at": "2026-05-06T18:29:31Z",
+      "last_generated_at": "2026-05-06T18:29:31Z",
+      "last_successful_version": "0.112.2",
+      "latest_seen_version": "0.112.2",
+      "source_identity": "github_releases:nushell/nushell",
+      "source_kind": "github_releases"
+    },
+    "powershell": {
+      "last_checked_at": "2026-05-06T18:29:32Z",
+      "last_generated_at": "2026-05-06T18:29:32Z",
+      "last_successful_version": "7.6.1",
+      "latest_seen_version": "7.6.1",
+      "source_identity": "github_releases:PowerShell/PowerShell",
+      "source_kind": "github_releases"
+    }
+  },
+  "quarantine": {},
+  "schema_version": 2,
   "sources": {
     "github_releases:BurntSushi/ripgrep": {
       "etag": "\"ea00f8f1cc306c039a694edc219a7767d92476bc442cadfc1f36ad594e6abcfd\"",
@@ -31,10 +90,26 @@
       "last_checked_at": "2026-05-05T11:40:15Z",
       "latest_version": "2.4.1"
     },
+    "github_releases:Kitware/CMake": {
+      "etag": "W/\"dcfc1a89ad4611c11841955f37b850c3f079fce224cc71a17c633949414ee100\"",
+      "last_checked_at": "2026-05-06T18:29:35Z",
+      "latest_seen_version": "4.3.2",
+      "latest_version": "4.3.2",
+      "source_identity": "github_releases:Kitware/CMake",
+      "source_kind": "github_releases"
+    },
     "github_releases:Kong/insomnia": {
       "etag": "\"8fa75e754e42d10d4869fdd2da178a3d39cf48a06e8f390b259a75bc95c6d033\"",
       "last_checked_at": "2026-05-05T11:39:26Z",
       "latest_version": "12.5.0"
+    },
+    "github_releases:PowerShell/PowerShell": {
+      "etag": "W/\"eb101e6988d771eb709072415290cb09e2e3f00213977fc2ba99e1501c68c741\"",
+      "last_checked_at": "2026-05-06T18:29:32Z",
+      "latest_seen_version": "7.6.1",
+      "latest_version": "7.6.1",
+      "source_identity": "github_releases:PowerShell/PowerShell",
+      "source_kind": "github_releases"
     },
     "github_releases:Yakitrak/notesmd-cli": {
       "etag": "\"7b9e186781a45b086f2e9d6452a1b49f05be41195ea79f2b32be820e42a42d82\"",
@@ -55,6 +130,11 @@
       "etag": "\"d8a04945e1efb828f4069bc3ad2d080fceccd9aa2e7f2c20e738c0680fca005c\"",
       "last_checked_at": "2026-05-05T11:39:55Z",
       "latest_version": "5.4.3"
+    },
+    "github_releases:anomalyco/opencode": {
+      "etag": "\"64af373b9102be56aa1d7dfea9042b2ee87d0ff99fdead70fda651229285191c\"",
+      "last_checked_at": "2026-05-05T11:39:51Z",
+      "latest_version": "1.14.39"
     },
     "github_releases:aome510/spotify-player": {
       "etag": "\"6fa8c3fd4eeb321d581bb5caf5c037aaa1b4a3936b844c81c3e267a95889d7b6\"",
@@ -186,6 +266,14 @@
       "last_checked_at": "2026-05-05T11:39:11Z",
       "latest_version": "2.62.1"
     },
+    "github_releases:fish-shell/fish-shell": {
+      "etag": "W/\"3dc8eb635e782d3449cfe0f74b949693f47eb3dcd3fb3f20128f54af4b979c53\"",
+      "last_checked_at": "2026-05-06T18:29:33Z",
+      "latest_seen_version": "4.7.0",
+      "latest_version": "4.7.0",
+      "source_identity": "github_releases:fish-shell/fish-shell",
+      "source_kind": "github_releases"
+    },
     "github_releases:fluxcd/flux2": {
       "etag": "\"d0164ebac18bbb7e529866853dc349c17f7e6bfce36f6b274a9caa3351cbe1f0\"",
       "last_checked_at": "2026-05-05T11:39:13Z",
@@ -305,6 +393,22 @@
       "last_checked_at": "2026-05-05T11:39:47Z",
       "latest_version": "0.12.2"
     },
+    "github_releases:ninja-build/ninja": {
+      "etag": "W/\"1b336f3a73df671bbc66e971ad49ce44ed2ca83ec27fa873a1e8e67c02e4fbb0\"",
+      "last_checked_at": "2026-05-06T18:29:34Z",
+      "latest_seen_version": "1.13.2",
+      "latest_version": "1.13.2",
+      "source_identity": "github_releases:ninja-build/ninja",
+      "source_kind": "github_releases"
+    },
+    "github_releases:nushell/nushell": {
+      "etag": "W/\"90f1844014ac76b017296c50f1cf59dcccc3bc8132c0799a956cbec01ef0833f\"",
+      "last_checked_at": "2026-05-06T18:29:31Z",
+      "latest_seen_version": "0.112.2",
+      "latest_version": "0.112.2",
+      "source_identity": "github_releases:nushell/nushell",
+      "source_kind": "github_releases"
+    },
     "github_releases:obsidianmd/obsidian-releases": {
       "etag": "\"ce91aba18bd98eec3d900b7ccbe2d0551518b9122ab214b9a6bb8bf6d5c23b84\"",
       "last_checked_at": "2026-05-05T11:39:49Z",
@@ -370,11 +474,6 @@
       "last_checked_at": "2026-05-05T11:38:57Z",
       "latest_version": "0.13.1"
     },
-    "github_releases:anomalyco/opencode": {
-      "etag": "\"64af373b9102be56aa1d7dfea9042b2ee87d0ff99fdead70fda651229285191c\"",
-      "last_checked_at": "2026-05-05T11:39:51Z",
-      "latest_version": "1.14.39"
-    },
     "github_releases:starship/starship": {
       "etag": "\"97788814091e9c29957c8851b2c4c4b52f1584d40370b15986596c764d8174fb\"",
       "last_checked_at": "2026-05-05T11:40:14Z",
@@ -409,6 +508,22 @@
       "etag": "\"37c7dec14e44f90141665746fe4022c16d8788076b919833ec02ae2cefac8b8f\"",
       "last_checked_at": "2026-05-05T11:40:24Z",
       "latest_version": "2.5.1"
+    },
+    "github_releases:xpack-dev-tools/clang-xpack": {
+      "etag": "W/\"ee99837c48c1de5d3ba479d00e143dbaf0b8fdc28c606902f97eb4cd4e05afb1\"",
+      "last_checked_at": "2026-05-06T18:31:32Z",
+      "latest_seen_version": "21.1.8-1",
+      "latest_version": "21.1.8-1",
+      "source_identity": "github_releases:xpack-dev-tools/clang-xpack",
+      "source_kind": "github_releases"
+    },
+    "github_releases:xpack-dev-tools/gcc-xpack": {
+      "etag": "W/\"197f5eba5816044052ebc8a7b505f7550d9e2918595bdac63c7971b78fe7263d\"",
+      "last_checked_at": "2026-05-06T18:31:33Z",
+      "latest_seen_version": "15.2.0-1",
+      "latest_version": "15.2.0-1",
+      "source_identity": "github_releases:xpack-dev-tools/gcc-xpack",
+      "source_kind": "github_releases"
     },
     "github_releases:yt-dlp/yt-dlp": {
       "etag": "\"843f4682017102f35d540be7ff8871c589527928cbca7c24f91ebf2a6ed2a351\"",

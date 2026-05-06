@@ -60,6 +60,20 @@ def _render_table(chunks: list[str], header: str, table: dict) -> None:
     chunks.append("")
 
 
+def _render_package_policy(chunks: list[str], doc: dict) -> None:
+    if "provides" in doc:
+        chunks.append(_line("provides", doc["provides"]))
+        chunks.append("")
+    for key in ("conflicts", "replaces"):
+        if key not in doc:
+            continue
+        value = doc[key]
+        if not isinstance(value, dict):
+            raise GenerateError(f"package policy field {key} must be a table")
+        if value:
+            _render_table(chunks, f"[{key}]", value)
+
+
 def _render_artifact_templates(chunks: list[str], artifacts: list[dict]) -> None:
     for artifact in artifacts:
         chunks.append("[[artifacts]]")
@@ -107,6 +121,8 @@ def render_package_text(doc: dict) -> str:
     chunks.append(_line("license", doc["license"]))
     chunks.append(_line("homepage", doc["homepage"]))
     chunks.append("")
+
+    _render_package_policy(chunks, doc)
 
     source = doc.get("source")
     if isinstance(source, dict):

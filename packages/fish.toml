@@ -1,0 +1,37 @@
+name = "fish"
+license = "GPL-2.0-only"
+homepage = "https://github.com/fish-shell/fish-shell"
+
+[source.release]
+kind = "github_releases"
+repo = "fish-shell/fish-shell"
+include_prereleases = false
+
+[source.version]
+kind = "github_tag"
+
+[source.checksum]
+kind = "asset_digest"
+
+[source.asset]
+kind = "release_asset_url"
+
+[[artifacts]]
+target = "x86_64-unknown-linux-gnu"
+asset = "fish-{version}-linux-x86_64.tar.xz"
+archive = "tar.xz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "fish"
+path = "fish"
+
+[[artifacts]]
+target = "aarch64-unknown-linux-gnu"
+asset = "fish-{version}-linux-aarch64.tar.xz"
+archive = "tar.xz"
+strip_components = 0
+
+[[artifacts.binaries]]
+name = "fish"
+path = "fish"
