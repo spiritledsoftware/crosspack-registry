@@ -2,6 +2,12 @@ name = "cargo-binstall"
 license = "GPL-3.0"
 homepage = "https://github.com/cargo-bins/cargo-binstall"
 
+[[integrations]]
+kind = "path_plugin"
+host = "cargo"
+name = "binstall"
+source = "cargo-binstall"
+
 [source.release]
 kind = "github_releases"
 repo = "cargo-bins/cargo-binstall"

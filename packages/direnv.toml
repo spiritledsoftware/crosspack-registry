@@ -2,6 +2,15 @@ name = "direnv"
 license = "MIT"
 homepage = "https://github.com/direnv/direnv"
 
+[[shell_init]]
+name = "direnv"
+binary = "direnv"
+strategy = "eval_stdout"
+bash = ["hook", "bash"]
+zsh = ["hook", "zsh"]
+fish = ["hook", "fish"]
+powershell = ["hook", "pwsh"]
+
 [source]
 provider = "github"
 repo = "direnv/direnv"
