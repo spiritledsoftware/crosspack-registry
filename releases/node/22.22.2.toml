@@ -1,6 +1,29 @@
 name = "node"
 version = "22.22.2"
 
+[[integrations]]
+kind = "man_page"
+platforms = ["linux", "macos"]
+section = "1"
+source = "share/man/man1/*.1"
+
+[[integrations]]
+kind = "man_page"
+platforms = ["linux", "macos"]
+section = "1"
+source = "lib/node_modules/npm/man/man1/*.1"
+
+[[integrations]]
+kind = "man_page"
+platforms = ["linux", "macos"]
+section = "5"
+source = "lib/node_modules/npm/man/man5/*.5"
+
+[[integrations]]
+kind = "man_page"
+platforms = ["linux", "macos"]
+section = "7"
+source = "lib/node_modules/npm/man/man7/*.7"
 [[artifacts]]
 target = "x86_64-unknown-linux-gnu"
 url = "https://nodejs.org/dist/latest-v22.x/node-v22.22.2-linux-x64.tar.xz"

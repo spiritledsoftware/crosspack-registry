@@ -76,3 +76,9 @@ strip_components = 1
 [[artifacts.binaries]]
 name = "nvim"
 path = "bin/nvim.exe"
+
+[[integrations]]
+kind = "man_page"
+platforms = ["linux", "macos"]
+section = "1"
+source = "share/man/man1/*.1"

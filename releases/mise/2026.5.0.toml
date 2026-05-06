@@ -1,6 +1,11 @@
 name = "mise"
 version = "2026.5.0"
 
+[[integrations]]
+kind = "man_page"
+platforms = ["linux", "macos"]
+section = "1"
+source = "mise/man/man1/*.1"
 [[artifacts]]
 target = "x86_64-unknown-linux-gnu"
 url = "https://github.com/jdx/mise/releases/download/v2026.5.0/mise-v2026.5.0-linux-x64.tar.gz"

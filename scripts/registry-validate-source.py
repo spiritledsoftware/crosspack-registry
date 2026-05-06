@@ -27,7 +27,9 @@ RELEASE_KIND_VALUES = {
 VERSION_KIND_VALUES = {"asset_name_regex", "github_tag", "prefixed_semver_field", "regex_capture", "semver_field"}
 CHECKSUM_KIND_VALUES = {"asset_digest", "download_sha256", "download_index", "shasums256", "url_sha256"}
 ASSET_KIND_VALUES = {"json_index_asset", "release_asset_url", "templated"}
-INTEGRATION_KIND_VALUES = {"docker_cli_plugin", "path_plugin", "service"}
+INTEGRATION_KIND_VALUES = {"docker_cli_plugin", "man_page", "path_plugin", "service"}
+MAN_PAGE_SECTIONS = {str(section) for section in range(1, 10)}
+MAN_PAGE_PLATFORMS = {"linux", "macos", "windows"}
 SHELL_INIT_STRATEGY_VALUES = {"eval_stdout"}
 SHELL_INIT_FIELDS = ("bash", "zsh", "fish", "powershell")
 
@@ -89,13 +91,37 @@ def _validate_integrations(doc: dict) -> None:
         kind = _expect_non_empty_str(integration, "kind", prefix)
         if kind not in INTEGRATION_KIND_VALUES:
             raise ValidationError(f"{prefix}.kind must be a supported integration kind")
-        name = _expect_non_empty_str(integration, "name", prefix)
-        if kind in {"docker_cli_plugin", "path_plugin"}:
+        name = integration.get("name")
+        if kind != "man_page":
+            name = _expect_non_empty_str(integration, "name", prefix)
+        elif name is not None and (not isinstance(name, str) or not name.strip()):
+            raise ValidationError(f"{prefix}.name must be a non-empty string when present")
+        if kind in {"docker_cli_plugin", "man_page", "path_plugin"}:
             source = _expect_non_empty_str(integration, "source", prefix)
             _validate_integration_source(source, f"{prefix}.source")
+            if kind == "man_page":
+                section = _expect_non_empty_str(integration, "section", prefix)
+                if section not in MAN_PAGE_SECTIONS:
+                    raise ValidationError(f"{prefix}.section must be one of {', '.join(sorted(MAN_PAGE_SECTIONS))}")
+                platforms = integration.get("platforms", [])
+                if not isinstance(platforms, list) or not all(
+                    isinstance(platform, str) and platform in MAN_PAGE_PLATFORMS
+                    for platform in platforms
+                ):
+                    raise ValidationError(f"{prefix}.platforms must contain only {', '.join(sorted(MAN_PAGE_PLATFORMS))}")
+                if not (
+                    source.endswith(f".{section}")
+                    or source.endswith(f".{section}.gz")
+                    or source.endswith(f".*{section}")
+                    or source.endswith(f".*{section}.gz")
+                ):
+                    raise ValidationError(f"{prefix}.source must end with .{section} or .{section}.gz")
         if kind == "path_plugin":
             host = _expect_non_empty_str(integration, "host", prefix)
             key = f"{kind}:{host}:{name}"
+        elif kind == "man_page":
+            section = _expect_non_empty_str(integration, "section", prefix)
+            key = f"{kind}:{section}:{name or source}"
         else:
             key = f"{kind}:{name}"
         if kind == "service":

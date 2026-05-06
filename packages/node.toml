@@ -133,3 +133,27 @@ path = "npx.cmd"
 [[artifacts.binaries]]
 name = "corepack"
 path = "corepack.cmd"
+
+[[integrations]]
+kind = "man_page"
+platforms = ["linux", "macos"]
+section = "1"
+source = "share/man/man1/*.1"
+
+[[integrations]]
+kind = "man_page"
+platforms = ["linux", "macos"]
+section = "1"
+source = "lib/node_modules/npm/man/man1/*.1"
+
+[[integrations]]
+kind = "man_page"
+platforms = ["linux", "macos"]
+section = "5"
+source = "lib/node_modules/npm/man/man5/*.5"
+
+[[integrations]]
+kind = "man_page"
+platforms = ["linux", "macos"]
+section = "7"
+source = "lib/node_modules/npm/man/man7/*.7"

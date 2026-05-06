@@ -1,6 +1,11 @@
 name = "neovim"
 version = "0.12.2"
 
+[[integrations]]
+kind = "man_page"
+platforms = ["linux", "macos"]
+section = "1"
+source = "share/man/man1/*.1"
 [[artifacts]]
 target = "x86_64-unknown-linux-gnu"
 url = "https://github.com/neovim/neovim/releases/download/v0.12.2/nvim-linux-x86_64.tar.gz"

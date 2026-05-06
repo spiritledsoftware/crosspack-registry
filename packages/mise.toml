@@ -34,7 +34,7 @@ strip_components = 0
 
 [[artifacts.binaries]]
 name = "mise"
-path = "mise"
+path = "mise/bin/mise"
 
 [[artifacts]]
 target = "aarch64-unknown-linux-gnu"
@@ -44,7 +44,7 @@ strip_components = 0
 
 [[artifacts.binaries]]
 name = "mise"
-path = "mise"
+path = "mise/bin/mise"
 
 [[artifacts]]
 target = "x86_64-apple-darwin"
@@ -54,7 +54,7 @@ strip_components = 0
 
 [[artifacts.binaries]]
 name = "mise"
-path = "mise"
+path = "mise/bin/mise"
 
 [[artifacts]]
 target = "aarch64-apple-darwin"
@@ -64,7 +64,7 @@ strip_components = 0
 
 [[artifacts.binaries]]
 name = "mise"
-path = "mise"
+path = "mise/bin/mise"
 
 [[artifacts]]
 target = "x86_64-pc-windows-msvc"
@@ -74,7 +74,7 @@ strip_components = 0
 
 [[artifacts.binaries]]
 name = "mise"
-path = "mise.exe"
+path = "mise/bin/mise.exe"
 
 [[artifacts]]
 target = "aarch64-pc-windows-msvc"
@@ -84,4 +84,10 @@ strip_components = 0
 
 [[artifacts.binaries]]
 name = "mise"
-path = "mise.exe"
+path = "mise/bin/mise.exe"
+
+[[integrations]]
+kind = "man_page"
+platforms = ["linux", "macos"]
+section = "1"
+source = "mise/man/man1/*.1"
